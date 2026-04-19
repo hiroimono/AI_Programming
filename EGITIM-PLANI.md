@@ -1,0 +1,200 @@
+# 🎯 AI-Native Uygulama Geliştirme Eğitim Planı
+
+> **Süre:** 6 Hafta | **Günlük Efor:** ~2 saat | **Haftalık Çıktı:** 1 çalışan uygulama
+> **Mevcut Yetkinlik:** Angular/RxJS, .NET (ileri), Node.js (orta), SQL Server (ileri), PostgreSQL (orta)
+> **Hedef:** Raporda belirtilen AI-Native mimariyi uçtan uca uygulayabilir hale gelmek
+
+---
+
+## Genel Bakış
+
+```
+Hafta 1 ──► Hafta 2 ──► Hafta 3 ──► Hafta 4 ──► Hafta 5 ──► Hafta 6
+Python &     SSE &       pgvector    LangGraph    Docker &     Capstone
+FastAPI      Streaming   & RAG       & Agents     Observ.      Proje
+   │            │            │           │            │            │
+   ▼            ▼            ▼           ▼            ▼            ▼
+Sınıflan-   AI Yazı     Bilgi       Araştırma    Gözlemle-    Tam AI
+dırıcı      Asistanı    Bankası     Asistanı     nebilir      Platform
+  App          App         App         App        Servis         App
+```
+
+---
+
+## Hafta 1: Python & FastAPI Temelleri + İlk AI Çağrısı
+
+**📁 Klasör:** `Level-1/ai-classifier-app`
+**🎯 Uygulama:** Akıllı Müşteri Geri Bildirim Sınıflandırıcı
+
+**Ne Öğrenilecek:**
+
+- Python temelleri (.NET/C# ile karşılaştırmalı hızlı geçiş)
+- FastAPI ile REST API oluşturma (WebAPI benzeri ama daha hafif)
+- OpenAI SDK ile ilk AI çağrısı
+- Pydantic ile veri doğrulama (DTO benzeri)
+- Angular HttpClient ile backend bağlantısı
+
+**Gerçek Hayat Senaryosu:** Bir şirkete gelen müşteri geri bildirimlerini (şikayet, öneri,
+soru, övgü) otomatik olarak kategorize eden ve duygu analizi yapan sistem.
+
+**Neden Bu Uygulama?** En basit AI pattern'i olan "Gönder → AI İşle → Sonucu Göster"
+akışını öğretir. Streaming yok, vektör DB yok — saf API çağrısı.
+
+---
+
+## Hafta 2: SSE Streaming + Gerçek Zamanlı AI Chat
+
+**📁 Klasör:** `Level-2/ai-writing-assistant`
+**🎯 Uygulama:** AI Yazı Asistanı
+
+**Ne Öğrenilecek:**
+
+- Server-Sent Events (SSE) protokolü
+- OpenAI streaming API (token-by-token)
+- Angular'da RxJS ile SSE tüketimi
+- StreamingResponse (FastAPI)
+- Sohbet geçmişi yönetimi (conversation memory)
+
+**Gerçek Hayat Senaryosu:** Kullanıcının konu başlığı verip blog yazısı, e-posta taslağı
+veya rapor ürettirdiği bir yazı asistanı. ChatGPT benzeri akış deneyimi.
+
+**Neden Bu Uygulama?** Raporun en kritik tavsiyesi olan SSE streaming'i pratiğe döker.
+Hafta 1'deki "bekle ve al" yerine "anlık akış" deneyimi.
+
+---
+
+## Hafta 3: PostgreSQL + pgvector + RAG Pipeline
+
+**📁 Klasör:** `Level-3/ai-knowledge-base`
+**🎯 Uygulama:** Şirket İçi Akıllı Bilgi Bankası
+
+**Ne Öğrenilecek:**
+
+- pgvector kurulumu ve PostgreSQL entegrasyonu
+- Embedding kavramı (metin → vektör dönüşümü)
+- Doküman chunking (metin parçalama) stratejileri
+- Basit RAG pipeline (Retrieve → Augment → Generate)
+- Cosine similarity ile anlamsal arama
+- Dosya yükleme (PDF/TXT) ve işleme
+
+**Gerçek Hayat Senaryosu:** Şirket dokümanlarını (politika, prosedür, kılavuz) yükleyip
+doğal dilde soru sorarak anında cevap alan bir iç bilgi bankası.
+
+**Neden Bu Uygulama?** RAG, AI uygulamalarının %80'inin temelini oluşturur.
+pgvector ile tek DB'de hem SQL hem vektör araması.
+
+---
+
+## Hafta 4: LangChain + LangGraph ile Otonom Ajanlar
+
+**📁 Klasör:** `Level-4/ai-research-assistant`
+**🎯 Uygulama:** Çok Yetenekli Araştırma Asistanı
+
+**Ne Öğrenilecek:**
+
+- LangChain temelleri (chains, prompts, tools)
+- LangGraph ile graf tabanlı iş akışları
+- ReAct pattern (Think → Act → Observe döngüsü)
+- Function/Tool calling
+- Orkestratör + Uzman Aracı mimarisi
+- Stateful agent (durumlu ajan) yönetimi
+
+**Gerçek Hayat Senaryosu:** Kullanıcının bir araştırma sorusu sorduğunda:
+web'de arama yapan, veritabanını sorgulayan, sonuçları analiz eden ve
+özet rapor üreten çok aracılı bir sistem.
+
+**Neden Bu Uygulama?** Rapordaki "Orkestratör Motor + Uzman Aracılar"
+konseptini tam olarak hayata geçirir.
+
+---
+
+## Hafta 5: Docker + Deployment + Langfuse Gözlemlenebilirlik
+
+**📁 Klasör:** `Level-5/ai-observable-service`
+**🎯 Uygulama:** Gözlemlenebilir AI Servisi
+
+**Ne Öğrenilecek:**
+
+- Docker ile konteynerleştirme (Dockerfile, docker-compose)
+- Multi-service orchestration (Angular + FastAPI + PostgreSQL + Langfuse)
+- Langfuse entegrasyonu (trace, span, generation)
+- Token maliyeti takibi ve dashboard
+- RAG kalite ölçümü (faithfulness, relevance)
+- Environment yönetimi (dev/staging/prod)
+
+**Gerçek Hayat Senaryosu:** Hafta 3-4'te yapılan uygulamaları production-ready
+hale getirip, her AI çağrısının maliyetini, kalitesini ve performansını
+gerçek zamanlı izleyen bir monitoring sistemi.
+
+**Neden Bu Uygulama?** Rapordaki "AI Observability" gereksinimi.
+Startup kurulacaksa maliyet kontrolü şart.
+
+---
+
+## Hafta 6: Capstone — Tam Entegre AI Platformu
+
+**📁 Klasör:** `Level-6/ai-business-platform`
+**🎯 Uygulama:** AI Destekli Akıllı İş Yönetim Platformu
+
+**Ne Öğrenilecek:**
+
+- Tüm bileşenlerin entegrasyonu
+- Kullanıcı kimlik doğrulama (JWT Auth)
+- Multi-tenant veri izolasyonu (Row Level Security)
+- Circuit Breaker pattern (hata toleransı)
+- Graceful degradation (yedek model geçişi)
+- Cloud deployment (Google Cloud Run veya Railway)
+
+**Gerçek Hayat Senaryosu:** Bir startup'ın ilk MVP'si olabilecek tam bir platform:
+
+- Doküman yükleme ve akıllı arama (RAG)
+- Gerçek zamanlı AI chat (SSE)
+- Otonom görev yürütme (Agents)
+- Kullanım ve maliyet dashboard'u (Langfuse)
+- Çoklu kullanıcı desteği (Auth + RLS)
+
+---
+
+## Teknoloji Haritası
+
+| Hafta | Frontend               | Backend                    | AI/ML                | Database              | DevOps                 |
+| ----- | ---------------------- | -------------------------- | -------------------- | --------------------- | ---------------------- |
+| 1     | Angular, HttpClient    | FastAPI, Pydantic          | OpenAI SDK (basit)   | -                     | -                      |
+| 2     | Angular, RxJS, SSE     | FastAPI, StreamingResponse | OpenAI Streaming     | -                     | -                      |
+| 3     | Angular, Dosya Yükleme | FastAPI, Background Tasks  | OpenAI Embeddings    | PostgreSQL + pgvector | -                      |
+| 4     | Angular, Kompleks UI   | FastAPI, WebSocket         | LangChain, LangGraph | pgvector              | -                      |
+| 5     | Angular (CDN)          | FastAPI (Container)        | Langfuse Tracing     | pgvector (Container)  | Docker, docker-compose |
+| 6     | Angular + Auth         | FastAPI + JWT              | Tümü                 | pgvector + RLS        | Cloud Deploy           |
+
+---
+
+## Kurulum Gereksinimleri (Tüm Haftalarda Kullanılacak)
+
+### Hafta 1'den Önce Kurulmalı
+
+- [x] Node.js (mevcut: v24.13.1)
+- [x] Angular CLI (mevcut)
+- [x] VS Code (mevcut)
+- [ ] **Python 3.11+** → Hafta 1 rehberinde kurulum adımları var
+- [ ] **OpenAI API Key** → <https://platform.openai.com/api-keys>s>
+
+### Hafta 3'ten Önce Kurulmalı
+
+- [ ] PostgreSQL 16+ (pgvector uzantısıyla)
+
+### Hafta 5'ten Önce Kurulmalı
+
+- [ ] Docker Desktop
+
+---
+
+## Başarı Kriterleri
+
+Bu eğitimi tamamlayan kişi:
+✅ Python/FastAPI ile production-grade AI backend yazabilir
+✅ Angular ile gerçek zamanlı AI arayüzleri geliştirebilir
+✅ RAG mimarisi kurarak şirket verilerini AI'ya bağlayabilir
+✅ Otonom AI ajanları tasarlayıp orkestre edebilir
+✅ Sistemi Docker ile paketleyip buluta deploy edebilir
+✅ AI maliyetini ve kalitesini Langfuse ile izleyebilir
+✅ Startup MVP'si çıkarabilecek seviyeye gelir

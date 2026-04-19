@@ -1,0 +1,202 @@
+# AI-Native Application Development Training Plan
+
+> **Duration:** 6 Weeks | **Daily Effort:** ~2 hours | **Weekly Output:** 1 working application
+> **Current Skills:** Angular/RxJS, .NET (advanced), Node.js (intermediate), SQL Server (advanced), PostgreSQL (intermediate)
+> **Goal:** Be able to implement the AI-Native architecture described in the report end-to-end
+
+---
+
+## Overview
+
+```text
+Week 1  ──► Week 2  ──► Week 3  ──► Week 4  ──► Week 5  ──► Week 6
+Python &     SSE &       pgvector    LangGraph    Docker &     Capstone
+FastAPI      Streaming   & RAG       & Agents     Observ.      Project
+   │            │            │           │            │            │
+   ▼            ▼            ▼           ▼            ▼            ▼
+Classifier   AI Writing  Knowledge   Research     Observable   Full AI
+  App        Assistant    Base App    Assistant    Service      Platform
+```
+
+---
+
+## Week 1: Python & FastAPI Fundamentals + First AI Call
+
+**📁 Folder:** `Level-1/ai-classifier-app`
+**🎯 App:** Smart Customer Feedback Classifier
+
+**What You'll Learn:**
+
+- Python fundamentals (quick transition with .NET/C# comparisons)
+- Creating REST APIs with FastAPI (like WebAPI but lighter)
+- First AI call with OpenAI SDK
+- Data validation with Pydantic (similar to DTOs)
+- Connecting Angular HttpClient to the backend
+
+**Real-World Scenario:**
+A system that automatically categorizes customer feedback
+(complaint, suggestion, question, praise) and performs sentiment analysis.
+
+**Why This App?** Teaches the simplest AI pattern: "Send → AI Processes → Show Result".
+No streaming, no vector DB — pure API call.
+
+---
+
+## Week 2: SSE Streaming + Real-Time AI Chat
+
+**📁 Folder:** `Level-2/ai-writing-assistant`
+**🎯 App:** AI Writing Assistant
+
+**What You'll Learn:**
+
+- Server-Sent Events (SSE) protocol
+- OpenAI streaming API (token-by-token)
+- Consuming SSE with RxJS in Angular
+- StreamingResponse (FastAPI)
+- Conversation history management (conversation memory)
+
+**Real-World Scenario:**
+A writing assistant where users provide a topic and generate
+blog posts, email drafts, or reports. ChatGPT-like streaming experience.
+
+**Why This App?** Puts the report's most critical recommendation — SSE streaming — into practice.
+Instead of Week 1's "wait and receive", you get "instant streaming".
+
+---
+
+## Week 3: PostgreSQL + pgvector + RAG Pipeline
+
+**📁 Folder:** `Level-3/ai-knowledge-base`
+**🎯 App:** Internal Smart Knowledge Base
+
+**What You'll Learn:**
+
+- pgvector setup and PostgreSQL integration
+- Embedding concept (text → vector conversion)
+- Document chunking strategies
+- Simple RAG pipeline (Retrieve → Augment → Generate)
+- Semantic search with cosine similarity
+- File upload (PDF/TXT) and processing
+
+**Real-World Scenario:** Upload company documents (policies, procedures, manuals)
+and get instant answers by asking questions in natural language.
+
+**Why This App?** RAG is the foundation of 80% of AI applications.
+Single DB for both SQL and vector search with pgvector.
+
+---
+
+## Week 4: LangChain + LangGraph with Autonomous Agents
+
+**📁 Folder:** `Level-4/ai-research-assistant`
+**🎯 App:** Multi-Skilled Research Assistant
+
+**What You'll Learn:**
+
+- LangChain fundamentals (chains, prompts, tools)
+- Graph-based workflows with LangGraph
+- ReAct pattern (Think → Act → Observe loop)
+- Function/Tool calling
+- Orchestrator + Specialist Agent architecture
+- Stateful agent management
+
+**Real-World Scenario:** When a user asks a research question: a multi-agent system
+that searches the web, queries the database, analyzes results,
+and produces a summary report.
+
+**Why This App?** Fully implements the "Orchestrator Engine + Specialist Agents"
+concept from the report.
+
+---
+
+## Week 5: Docker + Deployment + Langfuse Observability
+
+**📁 Folder:** `Level-5/ai-observable-service`
+**🎯 App:** Observable AI Service
+
+**What You'll Learn:**
+
+- Containerization with Docker (Dockerfile, docker-compose)
+- Multi-service orchestration (Angular + FastAPI + PostgreSQL + Langfuse)
+- Langfuse integration (trace, span, generation)
+- Token cost tracking and dashboard
+- RAG quality measurement (faithfulness, relevance)
+- Environment management (dev/staging/prod)
+
+**Real-World Scenario:** Making the apps from Weeks 3-4 production-ready,
+with a monitoring system that tracks cost, quality, and performance
+of every AI call in real time.
+
+**Why This App?** The "AI Observability" requirement from the report.
+Cost control is essential if building a startup.
+
+---
+
+## Week 6: Capstone — Fully Integrated AI Platform
+
+**📁 Folder:** `Level-6/ai-business-platform`
+**🎯 App:** AI-Powered Smart Business Management Platform
+
+**What You'll Learn:**
+
+- Integration of all components
+- User authentication (JWT Auth)
+- Multi-tenant data isolation (Row Level Security)
+- Circuit Breaker pattern (fault tolerance)
+- Graceful degradation (fallback model switching)
+- Cloud deployment (Google Cloud Run or Railway)
+
+**Real-World Scenario:** A complete platform that could be a startup's first MVP:
+
+- Document upload and smart search (RAG)
+- Real-time AI chat (SSE)
+- Autonomous task execution (Agents)
+- Usage and cost dashboard (Langfuse)
+- Multi-user support (Auth + RLS)
+
+---
+
+## Technology Map
+
+| Week | Frontend             | Backend                    | AI/ML                | Database              | DevOps                 |
+| ---- | -------------------- | -------------------------- | -------------------- | --------------------- | ---------------------- |
+| 1    | Angular, HttpClient  | FastAPI, Pydantic          | OpenAI SDK (basic)   | -                     | -                      |
+| 2    | Angular, RxJS, SSE   | FastAPI, StreamingResponse | OpenAI Streaming     | -                     | -                      |
+| 3    | Angular, File Upload | FastAPI, Background Tasks  | OpenAI Embeddings    | PostgreSQL + pgvector | -                      |
+| 4    | Angular, Complex UI  | FastAPI, WebSocket         | LangChain, LangGraph | pgvector              | -                      |
+| 5    | Angular (CDN)        | FastAPI (Container)        | Langfuse Tracing     | pgvector (Container)  | Docker, docker-compose |
+| 6    | Angular + Auth       | FastAPI + JWT              | All combined         | pgvector + RLS        | Cloud Deploy           |
+
+---
+
+## Installation Requirements (Used Across All Weeks)
+
+### Must Install Before Week 1:
+
+- [x] Node.js (installed: v24.13.1)
+- [x] Angular CLI (installed)
+- [x] VS Code (installed)
+- [x] **Python 3.12+** (installed)
+- [ ] **OpenAI API Key** → https://platform.openai.com/api-keys
+
+### Must Install Before Week 3:
+
+- [ ] PostgreSQL 16+ (with pgvector extension)
+
+### Must Install Before Week 5:
+
+- [ ] Docker Desktop
+
+---
+
+## Success Criteria
+
+Upon completing this training, you will be able to:
+
+- Write production-grade AI backends with Python/FastAPI
+- Build real-time AI interfaces with Angular
+- Set up RAG architecture connecting company data to AI
+- Design and orchestrate autonomous AI agents
+- Package systems with Docker and deploy to the cloud
+- Monitor AI cost and quality with Langfuse
+- Reach a level where you can ship a startup MVP

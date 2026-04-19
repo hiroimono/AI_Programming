@@ -1,0 +1,127 @@
+﻿<!-- classifier.component.html  AI Classifier UI -->
+
+<div class="container">
+  <!-- Header -->
+  <header class="header">
+    <h1>AI Feedback Classifier</h1>
+    <p class="subtitle">Automatically categorize customer feedback using artificial intelligence</p>
+    <span class="badge">Week 1 - FastAPI + Angular + OpenAI</span>
+  </header>
+
+  <!-- Input Section -->
+  <section class="input-section">
+    <label for="feedback">Customer Feedback</label>
+    <textarea
+      id="feedback"
+      [(ngModel)]="feedbackText"
+      placeholder="Type customer feedback here or select one of the samples below..."
+      rows="4"
+      [disabled]="isLoading()"
+    ></textarea>
+
+    <div class="char-count">
+      {{ feedbackText().length }} / 2000 characters
+      @if (feedbackText().length > 0 && feedbackText().length < 10) {
+        <span class="warning"> (minimum 10 characters required)</span>
+      }
+    </div>
+
+    <!-- Buttons -->
+    <div class="button-group">
+      <button class="btn btn-primary" (click)="classify()" [disabled]="!canSubmit()">
+        @if (isLoading()) {
+          <span class="spinner"></span> Analyzing...
+        } @else {
+          Analyze
+        }
+      </button>
+
+      <button class="btn btn-secondary" (click)="reset()" [disabled]="isLoading()">
+        Clear
+      </button>
+    </div>
+  </section>
+
+  <!-- Sample Texts -->
+  <section class="samples-section">
+    <h3>Sample Texts (click to test)</h3>
+    <div class="samples-grid">
+      @for (sample of sampleTexts; track $index) {
+        <button class="sample-btn" (click)="useSample(sample)" [disabled]="isLoading()">
+          {{ sample.substring(0, 60) }}...
+        </button>
+      }
+    </div>
+  </section>
+
+  <!-- Error Message -->
+  @if (error()) {
+    <div class="error-box">{{ error() }}</div>
+  }
+
+  <!-- Result Card -->
+  @if (result(); as r) {
+    <section class="result-section">
+      <h2>Analysis Result</h2>
+
+      <div class="result-grid">
+        <!-- Category -->
+        <div class="result-card">
+          <div class="result-label">Category</div>
+          <div
+            class="result-value category-badge"
+            [style.background-color]="getCategoryColor(r.category)"
+          >
+            {{ r.category }}
+          </div>
+        </div>
+
+        <!-- Sentiment -->
+        <div class="result-card">
+          <div class="result-label">Sentiment</div>
+          <div class="result-value">{{ getSentimentEmoji(r.sentiment) }} {{ r.sentiment }}</div>
+        </div>
+
+        <!-- Confidence Score -->
+        <div class="result-card">
+          <div class="result-label">Confidence</div>
+          <div class="result-value">{{ confidencePercent() }}%</div>
+          <div class="confidence-bar">
+            <div
+              class="confidence-fill"
+              [style.width.%]="confidencePercent()"
+              [style.background-color]="getConfidenceColor()"
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <div class="summary-card">
+        <div class="result-label">Summary</div>
+        <p>{{ r.summary }}</p>
+      </div>
+
+      <!-- Suggestions -->
+      @if (r.suggestions.length > 0) {
+        <div class="suggestions-card">
+          <div class="result-label">Suggested Actions</div>
+          <ul>
+            @for (suggestion of r.suggestions; track $index) {
+              <li>{{ suggestion }}</li>
+            }
+          </ul>
+        </div>
+      }
+    </section>
+  }
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>
+      Backend: <strong>FastAPI (Python)</strong> |
+      Frontend: <strong>Angular 21</strong> |
+      AI: <strong>OpenAI GPT-4o-mini</strong>
+    </p>
+  </footer>
+</div>
