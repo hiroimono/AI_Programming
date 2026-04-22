@@ -1,0 +1,57 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "App 1: Backend (FastAPI)",
+      "type": "shell",
+      "command": "& ./venv/Scripts/Activate.ps1; uvicorn main:app --reload --port 8000",
+      "options": {
+        "cwd": "${workspaceFolder}/Level-1/ai-classifier-app/backend"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": { "regexp": "." },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "Application startup complete"
+        }
+      },
+      "presentation": {
+        "group": "app1",
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "App 1: Frontend (Angular)",
+      "type": "shell",
+      "command": "ng serve",
+      "options": {
+        "cwd": "${workspaceFolder}/Level-1/ai-classifier-app/frontend"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": { "regexp": "." },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "Application bundle generation complete"
+        }
+      },
+      "presentation": {
+        "group": "app1",
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "App 1: Start All",
+      "dependsOn": ["App 1: Backend (FastAPI)", "App 1: Frontend (Angular)"],
+      "dependsOrder": "parallel",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}

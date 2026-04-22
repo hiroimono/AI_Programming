@@ -8,10 +8,9 @@
 
 import json
 
-from openai import AsyncAzureOpenAI, AsyncOpenAI
-
 from config import settings
 from models import ClassificationResponse
+from openai import AsyncAzureOpenAI, AsyncOpenAI
 
 # -------------------------------------------------
 # OpenAI Client Creation

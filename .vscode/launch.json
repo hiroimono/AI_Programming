@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug FastAPI Backend",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["main:app", "--reload", "--port", "8000"],
+      "cwd": "${workspaceFolder}/Level-1/ai-classifier-app/backend",
+      "python": "${workspaceFolder}/Level-1/ai-classifier-app/backend/venv/Scripts/python.exe",
+      "jinja": true,
+      "justMyCode": true
+    }
+  ]
+}

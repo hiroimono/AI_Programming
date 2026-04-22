@@ -2,10 +2,17 @@
   "python.defaultInterpreterPath": "${workspaceFolder}/Level-1/ai-classifier-app/backend/venv/Scripts/python.exe",
   "python.analysis.extraPaths": ["${workspaceFolder}/Level-1/ai-classifier-app/backend"],
   "pylint.args": ["--disable=C0114"],
+  "search.exclude": {
+    "**/node_modules": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true
+  },
   "markdownlint.config": {
     "MD020": false,
     "MD026": false,
     "MD034": false,
-    "MD060": false
+    "MD060": false,
+    "MD040": false
   }
 }
