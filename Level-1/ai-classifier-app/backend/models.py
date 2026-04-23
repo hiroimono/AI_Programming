@@ -64,3 +64,16 @@ class HealthResponse(BaseModel):
 
     status: str
     model: str
+
+
+class FileClassificationResponse(BaseModel):
+    """
+    Response for file-based classification.
+    Extends the text classification with file metadata.
+    """
+
+    filename: str = Field(..., description="Original uploaded filename")
+    extracted_text: str = Field(..., description="Text extracted from the file")
+    classification: ClassificationResponse = Field(
+        ..., description="AI classification result"
+    )

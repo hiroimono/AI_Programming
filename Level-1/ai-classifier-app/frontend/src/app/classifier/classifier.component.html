@@ -8,106 +8,218 @@
     <span class="badge">Week 1 - FastAPI + Angular + OpenAI</span>
   </header>
 
-  <!-- Input Section -->
-  <section class="input-section">
-    <label for="feedback">Customer Feedback</label>
-    <textarea
-      id="feedback"
-      [(ngModel)]="feedbackText"
-      placeholder="Type customer feedback here or select one of the samples below..."
-      rows="4"
-      [disabled]="isLoading()"
-    ></textarea>
+  <!-- Tab Switcher -->
+  <div class="tab-bar">
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'text'"
+      (click)="switchTab('text')"
+    >
+      ✏️ Text Input
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'file'"
+      (click)="switchTab('file')"
+    >
+      📁 File Upload
+    </button>
+  </div>
 
-    <div class="char-count">
-      {{ feedbackText().length }} / 2000 characters
-      @if (feedbackText().length > 0 && feedbackText().length < 10) {
-        <span class="warning"> (minimum 10 characters required)</span>
-      }
-    </div>
+  <!-- Text Input Tab -->
+  @if (activeTab() === 'text') {
+    <section class="input-section">
+      <label for="feedback">Customer Feedback</label>
+      <textarea
+        id="feedback"
+        [(ngModel)]="feedbackText"
+        placeholder="Type customer feedback here or select one of the samples below..."
+        rows="4"
+        [disabled]="isLoading()"
+      ></textarea>
 
-    <!-- Buttons -->
-    <div class="button-group">
-      <button class="btn btn-primary" (click)="classify()" [disabled]="!canSubmit()">
-        @if (isLoading()) {
-          <span class="spinner"></span> Analyzing...
-        } @else {
-          Analyze
+      <div class="char-count">
+        {{ feedbackText().length }} / 2000 characters
+        @if (feedbackText().length > 0 && feedbackText().length < 10) {
+          <span class="warning"> (minimum 10 characters required)</span>
         }
-      </button>
+      </div>
 
-      <button class="btn btn-secondary" (click)="reset()" [disabled]="isLoading()">
-        Clear
-      </button>
-    </div>
-  </section>
-
-  <!-- Sample Texts -->
-  <section class="samples-section">
-    <h3>Sample Texts (click to test)</h3>
-    <div class="samples-grid">
-      @for (sample of sampleTexts; track $index) {
-        <button class="sample-btn" (click)="useSample(sample)" [disabled]="isLoading()">
-          {{ sample.substring(0, 60) }}...
+      <div class="button-group">
+        <button class="btn btn-primary" (click)="classify()" [disabled]="!canSubmit()">
+          @if (isLoading()) {
+            <span class="spinner"></span> Analyzing...
+          } @else {
+            Analyze
+          }
         </button>
-      }
-    </div>
-  </section>
+        <button class="btn btn-secondary" (click)="reset()" [disabled]="isLoading()">Clear</button>
+      </div>
+    </section>
+
+    <!-- Sample Texts -->
+    <section class="samples-section">
+      <h3>Sample Texts (click to test)</h3>
+      <div class="samples-grid">
+        @for (sample of sampleTexts; track $index) {
+          <button class="sample-btn" (click)="useSample(sample)" [disabled]="isLoading()">
+            {{ sample.substring(0, 60) }}...
+          </button>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- File Upload Tab -->
+  @if (activeTab() === 'file') {
+    <section class="input-section">
+      <label>Upload Feedback File</label>
+
+      <!-- Drop Zone -->
+      <div
+        class="drop-zone"
+        [class.drag-over]="isDragOver()"
+        [class.has-file]="selectedFile() !== null"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event)"
+        (click)="fileInput.click()"
+      >
+        @if (selectedFile(); as file) {
+          <div class="file-preview">
+            <span class="file-icon">{{ getFileIcon(file.name) }}</span>
+            <div class="file-info">
+              <span class="file-name">{{ file.name }}</span>
+              <span class="file-size">{{ formatFileSize(file.size) }}</span>
+            </div>
+            <button class="file-remove" (click)="removeFile(); $event.stopPropagation()">✕</button>
+          </div>
+        } @else {
+          <div class="drop-zone-content">
+            <span class="drop-icon">📂</span>
+            <p>Drag & drop a file here or <strong>click to browse</strong></p>
+            <span class="drop-hint">PDF, TXT, DOCX, JPG, PNG — Max 10 MB</span>
+          </div>
+        }
+      </div>
+
+      <input
+        #fileInput
+        type="file"
+        accept=".pdf,.txt,.docx,.jpg,.jpeg,.png"
+        (change)="onFileSelected($event)"
+        hidden
+      />
+
+      <div class="button-group">
+        <button class="btn btn-primary" (click)="classifyFile()" [disabled]="!canSubmitFile()">
+          @if (isLoading()) {
+            <span class="spinner"></span> Processing...
+          } @else {
+            Analyze File
+          }
+        </button>
+        <button class="btn btn-secondary" (click)="reset()" [disabled]="isLoading()">Clear</button>
+      </div>
+    </section>
+  }
 
   <!-- Error Message -->
   @if (error()) {
     <div class="error-box">{{ error() }}</div>
   }
 
-  <!-- Result Card -->
+  <!-- Text Classification Result -->
   @if (result(); as r) {
     <section class="result-section">
       <h2>Analysis Result</h2>
 
       <div class="result-grid">
-        <!-- Category -->
         <div class="result-card">
           <div class="result-label">Category</div>
-          <div
-            class="result-value category-badge"
-            [style.background-color]="getCategoryColor(r.category)"
-          >
+          <div class="result-value category-badge" [style.background-color]="getCategoryColor(r.category)">
             {{ r.category }}
           </div>
         </div>
-
-        <!-- Sentiment -->
         <div class="result-card">
           <div class="result-label">Sentiment</div>
           <div class="result-value">{{ getSentimentEmoji(r.sentiment) }} {{ r.sentiment }}</div>
         </div>
-
-        <!-- Confidence Score -->
         <div class="result-card">
           <div class="result-label">Confidence</div>
           <div class="result-value">{{ confidencePercent() }}%</div>
           <div class="confidence-bar">
-            <div
-              class="confidence-fill"
-              [style.width.%]="confidencePercent()"
-              [style.background-color]="getConfidenceColor()"
-            ></div>
+            <div class="confidence-fill" [style.width.%]="confidencePercent()" [style.background-color]="getConfidenceColor()"></div>
           </div>
         </div>
       </div>
 
-      <!-- Summary -->
       <div class="summary-card">
         <div class="result-label">Summary</div>
         <p>{{ r.summary }}</p>
       </div>
 
-      <!-- Suggestions -->
       @if (r.suggestions.length > 0) {
         <div class="suggestions-card">
           <div class="result-label">Suggested Actions</div>
           <ul>
             @for (suggestion of r.suggestions; track $index) {
+              <li>{{ suggestion }}</li>
+            }
+          </ul>
+        </div>
+      }
+    </section>
+  }
+
+  <!-- File Classification Result -->
+  @if (fileResult(); as fr) {
+    <section class="result-section">
+      <h2>📄 File Analysis Result</h2>
+
+      <!-- File Info -->
+      <div class="file-result-header">
+        <span class="file-icon">{{ getFileIcon(fr.filename) }}</span>
+        <strong>{{ fr.filename }}</strong>
+      </div>
+
+      <!-- Extracted Text Preview -->
+      <div class="extracted-text-card">
+        <div class="result-label">Extracted Text</div>
+        <p class="extracted-text">{{ fr.extracted_text }}</p>
+      </div>
+
+      <!-- Classification Results -->
+      <div class="result-grid">
+        <div class="result-card">
+          <div class="result-label">Category</div>
+          <div class="result-value category-badge" [style.background-color]="getCategoryColor(fr.classification.category)">
+            {{ fr.classification.category }}
+          </div>
+        </div>
+        <div class="result-card">
+          <div class="result-label">Sentiment</div>
+          <div class="result-value">{{ getSentimentEmoji(fr.classification.sentiment) }} {{ fr.classification.sentiment }}</div>
+        </div>
+        <div class="result-card">
+          <div class="result-label">Confidence</div>
+          <div class="result-value">{{ fileConfidencePercent() }}%</div>
+          <div class="confidence-bar">
+            <div class="confidence-fill" [style.width.%]="fileConfidencePercent()" [style.background-color]="getConfidenceColor(fileConfidencePercent())"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-card">
+        <div class="result-label">Summary</div>
+        <p>{{ fr.classification.summary }}</p>
+      </div>
+
+      @if (fr.classification.suggestions.length > 0) {
+        <div class="suggestions-card">
+          <div class="result-label">Suggested Actions</div>
+          <ul>
+            @for (suggestion of fr.classification.suggestions; track $index) {
               <li>{{ suggestion }}</li>
             }
           </ul>

@@ -306,6 +306,158 @@ textarea:disabled {
   margin: 0;
 }
 
+/* === Tab Bar === */
+.tab-bar {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #94a3b8;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+}
+
+.tab-btn:hover {
+  color: #475569;
+}
+
+.tab-btn.active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+}
+
+/* === Drop Zone === */
+.drop-zone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 0.5rem;
+}
+
+.drop-zone:hover {
+  border-color: #93c5fd;
+  background: #f0f9ff;
+}
+
+.drop-zone.drag-over {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  border-style: solid;
+}
+
+.drop-zone.has-file {
+  border-color: #22c55e;
+  border-style: solid;
+  background: #f0fdf4;
+  padding: 1rem;
+}
+
+.drop-zone-content p {
+  margin: 0.5rem 0 0.25rem;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.drop-icon {
+  font-size: 2rem;
+}
+
+.drop-hint {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+/* === File Preview === */
+.file-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.file-icon {
+  font-size: 1.5rem;
+}
+
+.file-info {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  flex: 1;
+}
+
+.file-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #1a1a2e;
+}
+
+.file-size {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.file-remove {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: #fee2e2;
+  color: #dc2626;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.file-remove:hover {
+  background: #fecaca;
+}
+
+/* === File Result Header === */
+.file-result-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+/* === Extracted Text === */
+.extracted-text-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.extracted-text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #334155;
+  max-height: 150px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
 /* === Responsive === */
 @media (max-width: 600px) {
   .result-grid {

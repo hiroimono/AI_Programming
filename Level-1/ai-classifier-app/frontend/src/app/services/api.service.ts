@@ -12,6 +12,7 @@ import { Observable } from 'rxjs';
 import {
   ClassificationRequest,
   ClassificationResponse,
+  FileClassificationResponse,
   HealthResponse,
 } from '../models/classification.model';
 
@@ -47,5 +48,19 @@ export class ApiService {
   classifyFeedback(text: string): Observable<ClassificationResponse> {
     const request: ClassificationRequest = { text };
     return this.http.post<ClassificationResponse>(`${this.baseUrl}/classify`, request);
+  }
+
+  /**
+   * Classify customer feedback from an uploaded file.
+   *
+   * Uses FormData to send the file as multipart/form-data.
+   * Backend extracts text from the file, then classifies it.
+   *
+   * Supported formats: .pdf, .txt, .docx, .jpg, .jpeg, .png
+   */
+  classifyFile(file: File): Observable<FileClassificationResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<FileClassificationResponse>(`${this.baseUrl}/classify-file`, formData);
   }
 }

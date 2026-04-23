@@ -23,3 +23,10 @@ export interface HealthResponse {
   status: string;
   model: string;
 }
+
+/** Response for file-based classification */
+export interface FileClassificationResponse {
+  filename: string;
+  extracted_text: string;
+  classification: ClassificationResponse;
+}

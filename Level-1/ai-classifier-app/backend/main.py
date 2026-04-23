@@ -10,12 +10,24 @@
 #   app.MapPost("/api/classify", ...);
 #   app.Run();
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from classifier import classify_feedback
 from config import settings
-from models import ClassificationRequest, ClassificationResponse, HealthResponse
+from file_parser import (
+    extract_text,
+    is_image_file,
+    sanitize_filename,
+    validate_file,
+)
+from image_analyzer import extract_text_from_image
+from models import (
+    ClassificationRequest,
+    ClassificationResponse,
+    FileClassificationResponse,
+    HealthResponse,
+)
 
 # -------------------------------------------------
 # FastAPI Application Creation
@@ -98,6 +110,54 @@ async def classify(request: ClassificationRequest):
         raise HTTPException(
             status_code=500,
             detail=f"An error occurred during classification: {str(e)}",
+        ) from e
+
+
+@app.post("/api/classify-file", response_model=FileClassificationResponse)
+async def classify_file(file: UploadFile):
+    """
+    Classify customer feedback from an uploaded file.
+
+    Flow:
+    1. Validate file type and size
+    2. Extract text (PDF/DOCX/TXT → text parser, images → GPT Vision)
+    3. Send extracted text to OpenAI for classification
+    4. Return filename + extracted text + classification result
+
+    Supported formats: .pdf, .txt, .docx, .jpg, .jpeg, .png
+    """
+    # Read file content
+    content = await file.read()
+    filename = sanitize_filename(file.filename or "unnamed_file")
+
+    # Validate file type and size
+    error = validate_file(filename, file.content_type, len(content))
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+
+    try:
+        # Extract text based on file type
+        if is_image_file(filename):
+            # Images → GPT Vision API (much better than OCR)
+            extracted_text = await extract_text_from_image(filename, content)
+        else:
+            # PDF, DOCX, TXT → text extraction
+            extracted_text = await extract_text(filename, content)
+
+        # Classify the extracted text
+        classification = await classify_feedback(extracted_text)
+
+        return FileClassificationResponse(
+            filename=filename,
+            extracted_text=extracted_text,
+            classification=classification,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"An error occurred processing '{filename}': {str(e)}",
         ) from e
 
 
