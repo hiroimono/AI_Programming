@@ -154,7 +154,9 @@ export class ApiService {
   }
 
   /** Classify text AND save it as a .txt file in output/{Category}/ */
-  classifyAndSave(text: string): Observable<{ classification: ClassificationResponse; saved_filename: string }> {
+  classifyAndSave(
+    text: string,
+  ): Observable<{ classification: ClassificationResponse; saved_filename: string }> {
     const request: ClassificationRequest = { text };
     return this.http.post<{ classification: ClassificationResponse; saved_filename: string }>(
       `${this.baseUrl}/classify-text`,
@@ -178,11 +180,7 @@ export class ApiService {
   }
 
   /** Move a file from one category to another */
-  moveFile(
-    filename: string,
-    fromCategory: string,
-    toCategory: string,
-  ): Observable<unknown> {
+  moveFile(filename: string, fromCategory: string, toCategory: string): Observable<unknown> {
     return this.http.post(`${this.baseUrl}/files/move`, null, {
       params: {
         filename,

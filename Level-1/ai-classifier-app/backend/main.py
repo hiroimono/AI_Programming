@@ -30,7 +30,6 @@ from file_organizer import (
     organize_file,
     save_results_json,
 )
-from watchfiles import awatch
 from file_parser import extract_text, is_image_file, sanitize_filename, validate_file
 from image_analyzer import extract_text_from_image
 from models import (
@@ -39,6 +38,7 @@ from models import (
     FileClassificationResponse,
     HealthResponse,
 )
+from watchfiles import awatch
 
 # -------------------------------------------------
 # FastAPI Application Creation
@@ -251,9 +251,7 @@ async def classify_files(files: list[UploadFile]):
 
         for idx, (filename, content, content_type) in enumerate(file_data):
             # Validate
-            validation_error = validate_file(
-                filename, content_type, len(content)
-            )
+            validation_error = validate_file(filename, content_type, len(content))
             if validation_error:
                 errors.append(f"{filename}: {validation_error}")
                 event = {
@@ -268,9 +266,7 @@ async def classify_files(files: list[UploadFile]):
             try:
                 # Extract text
                 if is_image_file(filename):
-                    extracted_text = await extract_text_from_image(
-                        filename, content
-                    )
+                    extracted_text = await extract_text_from_image(filename, content)
                 else:
                     extracted_text = await extract_text(filename, content)
 
@@ -369,9 +365,7 @@ async def download_results():
             content=zip_bytes,
             media_type="application/zip",
             headers={
-                "Content-Disposition": (
-                    'attachment; filename="classified-results.zip"'
-                )
+                "Content-Disposition": ('attachment; filename="classified-results.zip"')
             },
         )
     except FileNotFoundError as exc:

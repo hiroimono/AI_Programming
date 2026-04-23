@@ -16,7 +16,11 @@
     <button class="tab-btn" [class.active]="activeTab() === 'file'" (click)="switchTab('file')">
       📁 File Upload
     </button>
-    <button class="tab-btn" [class.active]="activeTab() === 'manager'" (click)="switchTab('manager')">
+    <button
+      class="tab-btn"
+      [class.active]="activeTab() === 'manager'"
+      (click)="switchTab('manager')"
+    >
       ⚙️ Output Manager
     </button>
   </div>
@@ -41,14 +45,22 @@
       </div>
 
       <div class="button-group">
-        <button class="btn btn-primary" (click)="classify()" [disabled]="isLoading() || !canSubmit()">
+        <button
+          class="btn btn-primary"
+          (click)="classify()"
+          [disabled]="isLoading() || !canSubmit()"
+        >
           @if (loadingAction() === 'analyze') {
             <span class="spinner"></span> Analyzing...
           } @else {
             Analyze
           }
         </button>
-        <button class="btn btn-save" (click)="classifyAndSave()" [disabled]="isLoading() || !canSubmit()">
+        <button
+          class="btn btn-save"
+          (click)="classifyAndSave()"
+          [disabled]="isLoading() || !canSubmit()"
+        >
           @if (loadingAction() === 'classify') {
             <span class="spinner"></span> Processing...
           } @else {
@@ -146,7 +158,10 @@
                 <span class="stats-card-label">{{ cat }}</span>
               </div>
               <div class="stats-card-bar">
-                <div class="stats-card-bar-fill" [style.width.%]="(categoryStats()[cat] || 0) > 0 ? 100 : 0"></div>
+                <div
+                  class="stats-card-bar-fill"
+                  [style.width.%]="(categoryStats()[cat] || 0) > 0 ? 100 : 0"
+                ></div>
               </div>
             </div>
           }
@@ -234,7 +249,11 @@
         </div>
 
         <div class="batch-actions">
-          <button class="btn-batch-classify" [disabled]="!canSubmitBatch()" (click)="classifyBatch()">
+          <button
+            class="btn-batch-classify"
+            [disabled]="!canSubmitBatch()"
+            (click)="classifyBatch()"
+          >
             @if (isLoading()) {
               <span class="spinner"></span>
               <span>Analyzing {{ selectedFiles().length }} files…</span>
@@ -348,7 +367,9 @@
                     [style.background]="getConfidenceColor(item.classification.confidence * 100)"
                   ></div>
                 </div>
-                <span class="conf-pct">{{ (item.classification.confidence * 100).toFixed(0) }}%</span>
+                <span class="conf-pct"
+                  >{{ (item.classification.confidence * 100).toFixed(0) }}%</span
+                >
               </div>
             </div>
           }
@@ -393,7 +414,7 @@
         </div>
         <button class="btn-refresh" (click)="loadManagerFiles()" [disabled]="managerLoading()">
           <svg class="refresh-svg" viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
-            <path d="M13.65 2.35A8 8 0 1 0 16 8h-2a6 6 0 1 1-1.76-4.24L10 6h6V0l-2.35 2.35z"/>
+            <path d="M13.65 2.35A8 8 0 1 0 16 8h-2a6 6 0 1 1-1.76-4.24L10 6h6V0l-2.35 2.35z" />
           </svg>
           Refresh
         </button>
@@ -401,31 +422,47 @@
 
       @if (managerLoading()) {
         <div class="manager-loading">
-          <div class="loading-dots">
-            <span></span><span></span><span></span>
-          </div>
+          <div class="loading-dots"><span></span><span></span><span></span></div>
           <p>Loading files…</p>
         </div>
       } @else if (managerFiles().length === 0) {
         <div class="manager-empty">
           <div class="empty-visual">
             <svg viewBox="0 0 80 80" width="80" height="80" fill="none">
-              <rect x="10" y="20" width="60" height="45" rx="6" stroke="#cbd5e1" stroke-width="2" fill="#f8fafc"/>
-              <path d="M10 30h60" stroke="#e2e8f0" stroke-width="2"/>
-              <rect x="20" y="38" width="20" height="3" rx="1.5" fill="#e2e8f0"/>
-              <rect x="20" y="46" width="15" height="3" rx="1.5" fill="#e2e8f0"/>
-              <circle cx="55" cy="50" r="10" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
-              <path d="M52 50h6M55 47v6" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/>
+              <rect
+                x="10"
+                y="20"
+                width="60"
+                height="45"
+                rx="6"
+                stroke="#cbd5e1"
+                stroke-width="2"
+                fill="#f8fafc"
+              />
+              <path d="M10 30h60" stroke="#e2e8f0" stroke-width="2" />
+              <rect x="20" y="38" width="20" height="3" rx="1.5" fill="#e2e8f0" />
+              <rect x="20" y="46" width="15" height="3" rx="1.5" fill="#e2e8f0" />
+              <circle cx="55" cy="50" r="10" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5" />
+              <path
+                d="M52 50h6M55 47v6"
+                stroke="#94a3b8"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
             </svg>
           </div>
           <p class="empty-title">No classified files yet</p>
-          <p class="empty-hint">Upload and classify files in the <strong>File Upload</strong> tab to see them here.</p>
+          <p class="empty-hint">
+            Upload and classify files in the <strong>File Upload</strong> tab to see them here.
+          </p>
         </div>
       } @else {
         <div class="manager-toolbar">
           <span class="toolbar-hint">
             <svg viewBox="0 0 16 16" width="14" height="14" fill="#94a3b8">
-              <path d="M8 1.5a1 1 0 0 1 1 1V6h3.5a1 1 0 0 1 .7 1.7l-4.5 4.5a1 1 0 0 1-1.4 0l-4.5-4.5A1 1 0 0 1 3.5 6H7V2.5a1 1 0 0 1 1-1z"/>
+              <path
+                d="M8 1.5a1 1 0 0 1 1 1V6h3.5a1 1 0 0 1 .7 1.7l-4.5 4.5a1 1 0 0 1-1.4 0l-4.5-4.5A1 1 0 0 1 3.5 6H7V2.5a1 1 0 0 1 1-1z"
+              />
             </svg>
             Drag files between columns to reclassify
           </span>
@@ -433,7 +470,9 @@
             <span class="toolbar-total">{{ managerFiles().length }} files</span>
             <button class="btn-expand" (click)="openManagerModal()" title="Expand view">
               <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
-                <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                <path
+                  d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"
+                />
               </svg>
               Expand
             </button>
@@ -464,9 +503,12 @@
                   >
                     <div class="fc-grip" title="Drag to move">
                       <svg viewBox="0 0 6 10" width="6" height="10">
-                        <circle cx="1" cy="1" r="1"/><circle cx="5" cy="1" r="1"/>
-                        <circle cx="1" cy="5" r="1"/><circle cx="5" cy="5" r="1"/>
-                        <circle cx="1" cy="9" r="1"/><circle cx="5" cy="9" r="1"/>
+                        <circle cx="1" cy="1" r="1" />
+                        <circle cx="5" cy="1" r="1" />
+                        <circle cx="1" cy="5" r="1" />
+                        <circle cx="5" cy="5" r="1" />
+                        <circle cx="1" cy="9" r="1" />
+                        <circle cx="5" cy="9" r="1" />
                       </svg>
                     </div>
                     <div class="fc-info">
@@ -482,15 +524,26 @@
                       title="Delete file"
                     >
                       <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor">
-                        <path d="M5.5 5.5a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm-7-3A1.5 1.5 0 0 1 5 1h6a1.5 1.5 0 0 1 1.5 1.5H14a.5.5 0 0 1 0 1h-.54l-.77 9.67A1.5 1.5 0 0 1 11.19 14H4.81a1.5 1.5 0 0 1-1.5-1.33L2.54 3.5H2a.5.5 0 0 1 0-1h1.5zM5 2.5a.5.5 0 0 0-.5.5h7a.5.5 0 0 0-.5-.5H5z"/>
+                        <path
+                          d="M5.5 5.5a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm-7-3A1.5 1.5 0 0 1 5 1h6a1.5 1.5 0 0 1 1.5 1.5H14a.5.5 0 0 1 0 1h-.54l-.77 9.67A1.5 1.5 0 0 1 11.19 14H4.81a1.5 1.5 0 0 1-1.5-1.33L2.54 3.5H2a.5.5 0 0 1 0-1h1.5zM5 2.5a.5.5 0 0 0-.5.5h7a.5.5 0 0 0-.5-.5H5z"
+                        />
                       </svg>
                     </button>
                   </div>
                 }
                 @if (getFilesForCategory(cat).length === 0) {
                   <div class="col-empty">
-                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#d1d5db" stroke-width="1.5">
-                      <path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2z"/>
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="28"
+                      height="28"
+                      fill="none"
+                      stroke="#d1d5db"
+                      stroke-width="1.5"
+                    >
+                      <path
+                        d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2z"
+                      />
                     </svg>
                     <span>Drop files here</span>
                   </div>
@@ -514,7 +567,9 @@
           </div>
           <button class="modal-close" (click)="closeManagerModal()" title="Close">
             <svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor">
-              <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+              <path
+                d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"
+              />
             </svg>
           </button>
         </div>
@@ -544,9 +599,12 @@
                     >
                       <div class="fc-grip" title="Drag to move">
                         <svg viewBox="0 0 6 10" width="6" height="10">
-                          <circle cx="1" cy="1" r="1"/><circle cx="5" cy="1" r="1"/>
-                          <circle cx="1" cy="5" r="1"/><circle cx="5" cy="5" r="1"/>
-                          <circle cx="1" cy="9" r="1"/><circle cx="5" cy="9" r="1"/>
+                          <circle cx="1" cy="1" r="1" />
+                          <circle cx="5" cy="1" r="1" />
+                          <circle cx="1" cy="5" r="1" />
+                          <circle cx="5" cy="5" r="1" />
+                          <circle cx="1" cy="9" r="1" />
+                          <circle cx="5" cy="9" r="1" />
                         </svg>
                       </div>
                       <div class="fc-info">
@@ -562,15 +620,26 @@
                         title="Delete file"
                       >
                         <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor">
-                          <path d="M5.5 5.5a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm-7-3A1.5 1.5 0 0 1 5 1h6a1.5 1.5 0 0 1 1.5 1.5H14a.5.5 0 0 1 0 1h-.54l-.77 9.67A1.5 1.5 0 0 1 11.19 14H4.81a1.5 1.5 0 0 1-1.5-1.33L2.54 3.5H2a.5.5 0 0 1 0-1h1.5zM5 2.5a.5.5 0 0 0-.5.5h7a.5.5 0 0 0-.5-.5H5z"/>
+                          <path
+                            d="M5.5 5.5a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm-7-3A1.5 1.5 0 0 1 5 1h6a1.5 1.5 0 0 1 1.5 1.5H14a.5.5 0 0 1 0 1h-.54l-.77 9.67A1.5 1.5 0 0 1 11.19 14H4.81a1.5 1.5 0 0 1-1.5-1.33L2.54 3.5H2a.5.5 0 0 1 0-1h1.5zM5 2.5a.5.5 0 0 0-.5.5h7a.5.5 0 0 0-.5-.5H5z"
+                          />
                         </svg>
                       </button>
                     </div>
                   }
                   @if (getFilesForCategory(cat).length === 0) {
                     <div class="col-empty">
-                      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#d1d5db" stroke-width="1.5">
-                        <path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2z"/>
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="28"
+                        height="28"
+                        fill="none"
+                        stroke="#d1d5db"
+                        stroke-width="1.5"
+                      >
+                        <path
+                          d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2z"
+                        />
                       </svg>
                       <span>Drop files here</span>
                     </div>

@@ -206,9 +206,7 @@ def delete_file(category: str, filename: str) -> bool:
     return True
 
 
-def move_file(
-    filename: str, from_category: str, to_category: str
-) -> bool:
+def move_file(filename: str, from_category: str, to_category: str) -> bool:
     """Move a file from one category to another. Returns True if moved."""
     if from_category not in VALID_CATEGORIES:
         return False
