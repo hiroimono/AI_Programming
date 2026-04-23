@@ -124,7 +124,9 @@ export class ClassifierComponent {
 
     const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
     if (!this.allowedExtensions.includes(ext)) {
-      this.error.set(`Unsupported file type: '${ext}'. Allowed: ${this.allowedExtensions.join(', ')}`);
+      this.error.set(
+        `Unsupported file type: '${ext}'. Allowed: ${this.allowedExtensions.join(', ')}`,
+      );
       this.selectedFile.set(null);
       return;
     }

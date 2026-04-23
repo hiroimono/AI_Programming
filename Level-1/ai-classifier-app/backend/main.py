@@ -10,17 +10,11 @@
 #   app.MapPost("/api/classify", ...);
 #   app.Run();
 
-from fastapi import FastAPI, HTTPException, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
-
 from classifier import classify_feedback
 from config import settings
-from file_parser import (
-    extract_text,
-    is_image_file,
-    sanitize_filename,
-    validate_file,
-)
+from fastapi import FastAPI, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from file_parser import extract_text, is_image_file, sanitize_filename, validate_file
 from image_analyzer import extract_text_from_image
 from models import (
     ClassificationRequest,

@@ -10,18 +10,10 @@
 
   <!-- Tab Switcher -->
   <div class="tab-bar">
-    <button
-      class="tab-btn"
-      [class.active]="activeTab() === 'text'"
-      (click)="switchTab('text')"
-    >
+    <button class="tab-btn" [class.active]="activeTab() === 'text'" (click)="switchTab('text')">
       ✏️ Text Input
     </button>
-    <button
-      class="tab-btn"
-      [class.active]="activeTab() === 'file'"
-      (click)="switchTab('file')"
-    >
+    <button class="tab-btn" [class.active]="activeTab() === 'file'" (click)="switchTab('file')">
       📁 File Upload
     </button>
   </div>
@@ -137,7 +129,10 @@
       <div class="result-grid">
         <div class="result-card">
           <div class="result-label">Category</div>
-          <div class="result-value category-badge" [style.background-color]="getCategoryColor(r.category)">
+          <div
+            class="result-value category-badge"
+            [style.background-color]="getCategoryColor(r.category)"
+          >
             {{ r.category }}
           </div>
         </div>
@@ -149,7 +144,11 @@
           <div class="result-label">Confidence</div>
           <div class="result-value">{{ confidencePercent() }}%</div>
           <div class="confidence-bar">
-            <div class="confidence-fill" [style.width.%]="confidencePercent()" [style.background-color]="getConfidenceColor()"></div>
+            <div
+              class="confidence-fill"
+              [style.width.%]="confidencePercent()"
+              [style.background-color]="getConfidenceColor()"
+            ></div>
           </div>
         </div>
       </div>
@@ -193,19 +192,28 @@
       <div class="result-grid">
         <div class="result-card">
           <div class="result-label">Category</div>
-          <div class="result-value category-badge" [style.background-color]="getCategoryColor(fr.classification.category)">
+          <div
+            class="result-value category-badge"
+            [style.background-color]="getCategoryColor(fr.classification.category)"
+          >
             {{ fr.classification.category }}
           </div>
         </div>
         <div class="result-card">
           <div class="result-label">Sentiment</div>
-          <div class="result-value">{{ getSentimentEmoji(fr.classification.sentiment) }} {{ fr.classification.sentiment }}</div>
+          <div class="result-value">
+            {{ getSentimentEmoji(fr.classification.sentiment) }} {{ fr.classification.sentiment }}
+          </div>
         </div>
         <div class="result-card">
           <div class="result-label">Confidence</div>
           <div class="result-value">{{ fileConfidencePercent() }}%</div>
           <div class="confidence-bar">
-            <div class="confidence-fill" [style.width.%]="fileConfidencePercent()" [style.background-color]="getConfidenceColor(fileConfidencePercent())"></div>
+            <div
+              class="confidence-fill"
+              [style.width.%]="fileConfidencePercent()"
+              [style.background-color]="getConfidenceColor(fileConfidencePercent())"
+            ></div>
           </div>
         </div>
       </div>
@@ -231,9 +239,8 @@
   <!-- Footer -->
   <footer class="footer">
     <p>
-      Backend: <strong>FastAPI (Python)</strong> |
-      Frontend: <strong>Angular 21</strong> |
-      AI: <strong>OpenAI GPT-4o-mini</strong>
+      Backend: <strong>FastAPI (Python)</strong> | Frontend: <strong>Angular 21</strong> | AI:
+      <strong>OpenAI GPT-4o-mini</strong>
     </p>
   </footer>
 </div>

@@ -13,7 +13,6 @@ import io
 import docx
 import fitz  # PyMuPDF
 
-
 # Allowed file extensions and their MIME types (security: double validation)
 ALLOWED_TYPES: dict[str, list[str]] = {
     ".pdf": ["application/pdf"],
@@ -118,7 +117,9 @@ def _extract_from_pdf(content: bytes) -> str:
 
     text = "\n".join(text_parts).strip()
     if not text:
-        raise ValueError("PDF contains no extractable text (might be scanned/image-based)")
+        raise ValueError(
+            "PDF contains no extractable text (might be scanned/image-based)"
+        )
     return text
 
 
