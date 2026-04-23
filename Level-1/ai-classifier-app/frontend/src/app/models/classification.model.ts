@@ -30,3 +30,29 @@ export interface FileClassificationResponse {
   extracted_text: string;
   classification: ClassificationResponse;
 }
+
+/** Response for multi-file batch classification */
+export interface BatchClassificationResponse {
+  results: FileClassificationResponse[];
+  errors: string[];
+  summary: Record<string, number>;
+}
+
+/** SSE progress event from batch classification */
+export interface BatchProgressEvent {
+  index: number;
+  total: number;
+  filename: string;
+  result?: FileClassificationResponse;
+  error?: string;
+}
+
+/** Category stats from output folder */
+export type CategoryStats = Record<string, number>;
+
+/** File entry from the output folder */
+export interface OutputFile {
+  filename: string;
+  category: string;
+  size: number;
+}

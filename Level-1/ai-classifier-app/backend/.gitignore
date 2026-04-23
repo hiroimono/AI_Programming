@@ -4,3 +4,4 @@ __pycache__/
 .env
 test-upload-files.zip
 generate_test_files.py
+output/

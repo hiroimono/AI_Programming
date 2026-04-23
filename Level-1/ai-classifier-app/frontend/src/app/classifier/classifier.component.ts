@@ -7,19 +7,27 @@
 // - Signals (signal, computed)  reactive state management
 // - inject()  functional DI instead of constructor-based DI
 
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { KeyValuePipe } from '@angular/common';
 import { ApiService } from '../services/api.service';
-import { ClassificationResponse, FileClassificationResponse } from '../models/classification.model';
+import {
+  ClassificationResponse,
+  FileClassificationResponse,
+  BatchClassificationResponse,
+  CategoryStats,
+  OutputFile,
+} from '../models/classification.model';
 
 @Component({
   selector: 'app-classifier',
-  imports: [FormsModule],
+  imports: [FormsModule, KeyValuePipe],
   templateUrl: './classifier.component.html',
   styleUrl: './classifier.component.css',
 })
-export class ClassifierComponent {
+export class ClassifierComponent implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
+  private fileWatcher: EventSource | null = null;
 
   // ---------------------
   // State (Signals)
@@ -28,31 +36,47 @@ export class ClassifierComponent {
   feedbackText = signal('');
   result = signal<ClassificationResponse | null>(null);
   isLoading = signal(false);
+  loadingAction = signal<'analyze' | 'classify' | ''>('');
   error = signal('');
 
-  // File upload state
-  activeTab = signal<'text' | 'file'>('text');
-  selectedFile = signal<File | null>(null);
-  fileResult = signal<FileClassificationResponse | null>(null);
+  // Tab state: text | file | manager
+  activeTab = signal<'text' | 'file' | 'manager'>('text');
   isDragOver = signal(false);
 
-  // Allowed file types
+  // File upload state (merged single + batch)
+  selectedFiles = signal<File[]>([]);
+  batchResult = signal<BatchClassificationResponse | null>(null);
+  batchProgress = signal(0);
+  currentFile = signal('');
+  completedCount = signal(0);
+
+  // Category stats (shown on file upload tab)
+  categoryStats = signal<CategoryStats>({});
+
+  // File Manager state
+  managerFiles = signal<OutputFile[]>([]);
+  managerLoading = signal(false);
+  draggedFile = signal<OutputFile | null>(null);
+  managerModalOpen = signal(false);
+
+  // Config
   readonly allowedExtensions = ['.pdf', '.txt', '.docx', '.jpg', '.jpeg', '.png'];
-  readonly maxFileSize = 10 * 1024 * 1024; // 10 MB
+  readonly maxFileSize = 10 * 1024 * 1024;
+  readonly maxBatchFiles = 20;
+  readonly allCategories = ['Complaint', 'Suggestion', 'Question', 'Praise'];
 
   // Computed
   canSubmit = computed(() => this.feedbackText().trim().length >= 10 && !this.isLoading());
-  canSubmitFile = computed(() => this.selectedFile() !== null && !this.isLoading());
+  canSubmitBatch = computed(() => this.selectedFiles().length > 0 && !this.isLoading());
 
   confidencePercent = computed(() => {
     const r = this.result();
     return r ? Math.round(r.confidence * 100) : 0;
   });
 
-  fileConfidencePercent = computed(() => {
-    const r = this.fileResult();
-    return r ? Math.round(r.classification.confidence * 100) : 0;
-  });
+  ngOnInit(): void {
+    this.loadCategoryStats();
+  }
 
   // ---------------------
   // Sample texts (for testing)
@@ -69,10 +93,26 @@ export class ClassifierComponent {
   // Methods
   // ---------------------
 
-  /** Switch between text and file tabs */
-  switchTab(tab: 'text' | 'file'): void {
+  /** Switch between text, file and manager tabs */
+  switchTab(tab: 'text' | 'file' | 'manager'): void {
     this.activeTab.set(tab);
     this.error.set('');
+    if (tab === 'file') {
+      this.loadCategoryStats();
+    }
+    if (tab === 'manager') {
+      this.loadManagerFiles();
+      this.startFileWatcher();
+    } else {
+      this.stopFileWatcher();
+    }
+  }
+
+  /** Load category stats from backend */
+  loadCategoryStats(): void {
+    this.apiService.getCategoryStats().subscribe({
+      next: (stats) => this.categoryStats.set(stats),
+    });
   }
 
   /** Select a sample text and fill the textarea */
@@ -80,7 +120,6 @@ export class ClassifierComponent {
     this.activeTab.set('text');
     this.feedbackText.set(text);
     this.result.set(null);
-    this.fileResult.set(null);
     this.error.set('');
   }
 
@@ -88,7 +127,7 @@ export class ClassifierComponent {
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      this.setFile(input.files[0]);
+      this.addFiles(Array.from(input.files));
     }
   }
 
@@ -113,38 +152,8 @@ export class ClassifierComponent {
     this.isDragOver.set(false);
 
     if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
-      this.setFile(event.dataTransfer.files[0]);
+      this.addFiles(Array.from(event.dataTransfer.files));
     }
-  }
-
-  /** Validate and set the selected file */
-  private setFile(file: File): void {
-    this.error.set('');
-    this.fileResult.set(null);
-
-    const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
-    if (!this.allowedExtensions.includes(ext)) {
-      this.error.set(
-        `Unsupported file type: '${ext}'. Allowed: ${this.allowedExtensions.join(', ')}`,
-      );
-      this.selectedFile.set(null);
-      return;
-    }
-
-    if (file.size > this.maxFileSize) {
-      this.error.set(`File too large: ${(file.size / (1024 * 1024)).toFixed(1)} MB. Max: 10 MB`);
-      this.selectedFile.set(null);
-      return;
-    }
-
-    this.selectedFile.set(file);
-  }
-
-  /** Remove selected file */
-  removeFile(): void {
-    this.selectedFile.set(null);
-    this.fileResult.set(null);
-    this.error.set('');
   }
 
   /** Send AI classification request (text mode) */
@@ -152,6 +161,7 @@ export class ClassifierComponent {
     if (!this.canSubmit()) return;
 
     this.isLoading.set(true);
+    this.loadingAction.set('analyze');
     this.error.set('');
     this.result.set(null);
 
@@ -159,32 +169,308 @@ export class ClassifierComponent {
       next: (response) => {
         this.result.set(response);
         this.isLoading.set(false);
+        this.loadingAction.set('');
       },
       error: (err) => {
         this.error.set(err.error?.detail || 'An error occurred. Is the backend running?');
         this.isLoading.set(false);
+        this.loadingAction.set('');
       },
     });
   }
 
-  /** Send AI classification request (file mode) */
-  classifyFile(): void {
-    const file = this.selectedFile();
-    if (!file || !this.canSubmitFile()) return;
+  /** Classify text AND save as .txt file to output/{Category}/ */
+  classifyAndSave(): void {
+    if (!this.canSubmit()) return;
+
+    this.isLoading.set(true);
+    this.loadingAction.set('classify');
+    this.error.set('');
+    this.result.set(null);
+
+    this.apiService.classifyAndSave(this.feedbackText()).subscribe({
+      next: (response) => {
+        this.result.set(response.classification);
+        this.isLoading.set(false);
+        this.loadingAction.set('');
+        this.loadCategoryStats();
+      },
+      error: (err) => {
+        this.error.set(err.error?.detail || 'An error occurred. Is the backend running?');
+        this.isLoading.set(false);
+        this.loadingAction.set('');
+      },
+    });
+  }
+
+  // ---------------------
+  // File upload methods
+  // ---------------------
+
+  /** Add files to batch list with validation */
+  addFiles(files: File[]): void {
+    this.error.set('');
+    const current = this.selectedFiles();
+    const remaining = this.maxBatchFiles - current.length;
+
+    if (remaining <= 0) {
+      this.error.set(`Maximum ${this.maxBatchFiles} files allowed.`);
+      return;
+    }
+
+    const toAdd: File[] = [];
+    for (const file of files.slice(0, remaining)) {
+      const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+      if (!this.allowedExtensions.includes(ext)) {
+        this.error.set(
+          `Skipped '${file.name}': unsupported type. Allowed: ${this.allowedExtensions.join(', ')}`,
+        );
+        continue;
+      }
+      if (file.size > this.maxFileSize) {
+        this.error.set(`Skipped '${file.name}': too large (max 10 MB).`);
+        continue;
+      }
+      // Avoid duplicates by name
+      if (!current.some((f) => f.name === file.name)) {
+        toAdd.push(file);
+      }
+    }
+
+    this.selectedFiles.set([...current, ...toAdd]);
+  }
+
+  /** Remove a file from batch list */
+  removeBatchFile(index: number): void {
+    const files = [...this.selectedFiles()];
+    files.splice(index, 1);
+    this.selectedFiles.set(files);
+    if (files.length === 0) {
+      this.batchResult.set(null);
+    }
+  }
+
+  /** Clear all batch files */
+  clearBatch(): void {
+    this.selectedFiles.set([]);
+    this.batchResult.set(null);
+    this.batchProgress.set(0);
+    this.currentFile.set('');
+    this.completedCount.set(0);
+    this.error.set('');
+  }
+
+  /** Send batch classification request via SSE stream */
+  classifyBatch(): void {
+    const files = this.selectedFiles();
+    if (files.length === 0 || !this.canSubmitBatch()) return;
 
     this.isLoading.set(true);
     this.error.set('');
-    this.fileResult.set(null);
-    this.result.set(null);
+    this.batchResult.set(null);
+    this.batchProgress.set(0);
+    this.completedCount.set(0);
+    this.currentFile.set(files[0]?.name || '');
 
-    this.apiService.classifyFile(file).subscribe({
-      next: (response) => {
-        this.fileResult.set(response);
+    const { promise } = this.apiService.classifyFilesStream(files, (event) => {
+      // Update progress per file
+      const completed = event.index + 1;
+      const pct = Math.round((completed / event.total) * 100);
+      this.completedCount.set(completed);
+      this.batchProgress.set(pct);
+      this.currentFile.set(event.filename);
+    });
+
+    promise
+      .then((response) => {
+        this.batchResult.set(response);
+        this.batchProgress.set(100);
+        this.currentFile.set('');
         this.isLoading.set(false);
+      })
+      .catch((err) => {
+        this.error.set(err.message || 'An error occurred processing files.');
+        this.batchProgress.set(0);
+        this.currentFile.set('');
+        this.isLoading.set(false);
+      });
+  }
+
+  /** Classify a single file from the list (per-file button) */
+  classifySingleFile(index: number): void {
+    const file = this.selectedFiles()[index];
+    if (!file || this.isLoading()) return;
+
+    this.isLoading.set(true);
+    this.error.set('');
+    this.currentFile.set(file.name);
+    this.batchProgress.set(0);
+    this.completedCount.set(0);
+
+    const { promise } = this.apiService.classifyFilesStream([file], (event) => {
+      this.batchProgress.set(Math.round(((event.index + 1) / event.total) * 100));
+    });
+
+    promise
+      .then((response) => {
+        // Merge result into existing batch result
+        const existing = this.batchResult();
+        if (existing) {
+          this.batchResult.set({
+            results: [...existing.results, ...response.results],
+            errors: [...existing.errors, ...response.errors],
+            summary: { ...existing.summary, ...response.summary },
+          });
+        } else {
+          this.batchResult.set(response);
+        }
+        // Remove the classified file from queue
+        const files = [...this.selectedFiles()];
+        files.splice(index, 1);
+        this.selectedFiles.set(files);
+        this.batchProgress.set(100);
+        this.currentFile.set('');
+        this.isLoading.set(false);
+        this.loadCategoryStats();
+      })
+      .catch((err) => {
+        this.error.set(err.message || 'Failed to classify file.');
+        this.batchProgress.set(0);
+        this.currentFile.set('');
+        this.isLoading.set(false);
+      });
+  }
+
+  // ---------------------
+  // File Manager methods
+  // ---------------------
+
+  /** Load all classified files from output */
+  loadManagerFiles(): void {
+    this.managerLoading.set(true);
+    this.apiService.getFiles().subscribe({
+      next: (files) => {
+        this.managerFiles.set(files);
+        this.managerLoading.set(false);
       },
-      error: (err) => {
-        this.error.set(err.error?.detail || 'An error occurred processing the file.');
-        this.isLoading.set(false);
+      error: () => {
+        this.managerFiles.set([]);
+        this.managerLoading.set(false);
+      },
+    });
+  }
+
+  /** Get files for a specific category (File Manager) */
+  getFilesForCategory(category: string): OutputFile[] {
+    return this.managerFiles().filter((f) => f.category === category);
+  }
+
+  /** Delete a file from File Manager */
+  deleteManagerFile(file: OutputFile): void {
+    this.apiService.deleteFile(file.category, file.filename).subscribe({
+      next: () => {
+        this.managerFiles.set(this.managerFiles().filter((f) => f !== file));
+        this.loadCategoryStats();
+      },
+      error: () => this.error.set(`Failed to delete '${file.filename}'.`),
+    });
+  }
+
+  /** Start drag in File Manager */
+  onManagerDragStart(event: DragEvent, file: OutputFile): void {
+    this.draggedFile.set(file);
+    event.dataTransfer?.setData('text/plain', JSON.stringify(file));
+  }
+
+  /** Drag over a category column */
+  onCategoryDragOver(event: DragEvent): void {
+    event.preventDefault();
+  }
+
+  /** Drop file onto a category column */
+  onCategoryDrop(event: DragEvent, targetCategory: string): void {
+    event.preventDefault();
+    const file = this.draggedFile();
+    if (!file || file.category === targetCategory) {
+      this.draggedFile.set(null);
+      return;
+    }
+
+    this.apiService.moveFile(file.filename, file.category, targetCategory).subscribe({
+      next: () => {
+        // Update local state
+        const updated = this.managerFiles().map((f) =>
+          f === file ? { ...f, category: targetCategory } : f,
+        );
+        this.managerFiles.set(updated);
+        this.draggedFile.set(null);
+        this.loadCategoryStats();
+      },
+      error: () => {
+        this.error.set(`Failed to move '${file.filename}'.`);
+        this.draggedFile.set(null);
+      },
+    });
+  }
+
+  /** Open expanded modal */
+  openManagerModal(): void {
+    this.managerModalOpen.set(true);
+  }
+
+  /** Close expanded modal */
+  closeManagerModal(): void {
+    this.managerModalOpen.set(false);
+  }
+
+  /** Close modal on backdrop click */
+  onModalBackdropClick(event: MouseEvent): void {
+    if ((event.target as HTMLElement).classList.contains('modal-backdrop')) {
+      this.closeManagerModal();
+    }
+  }
+
+  // ---------------------
+  // File watcher (SSE)
+  // ---------------------
+
+  /** Start watching output directory for real-time changes */
+  private startFileWatcher(): void {
+    this.stopFileWatcher();
+    this.fileWatcher = this.apiService.watchFileChanges(() => {
+      this.loadManagerFiles();
+      this.loadCategoryStats();
+    });
+  }
+
+  /** Stop watching (when leaving manager tab or destroying component) */
+  private stopFileWatcher(): void {
+    if (this.fileWatcher) {
+      this.fileWatcher.close();
+      this.fileWatcher = null;
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.stopFileWatcher();
+  }
+
+  /** Download organized ZIP results */
+  downloadResults(): void {
+    const result = this.batchResult();
+    if (!result) return;
+
+    this.apiService.downloadResults().subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'classified-results.zip';
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: () => {
+        this.error.set('Failed to download results.');
       },
     });
   }
@@ -193,8 +479,11 @@ export class ClassifierComponent {
   reset(): void {
     this.feedbackText.set('');
     this.result.set(null);
-    this.selectedFile.set(null);
-    this.fileResult.set(null);
+    this.selectedFiles.set([]);
+    this.batchResult.set(null);
+    this.batchProgress.set(0);
+    this.currentFile.set('');
+    this.completedCount.set(0);
     this.error.set('');
   }
 
@@ -242,13 +531,47 @@ export class ClassifierComponent {
   getFileIcon(filename: string): string {
     const ext = filename.substring(filename.lastIndexOf('.')).toLowerCase();
     const icons: Record<string, string> = {
-      '.pdf': '📄',
-      '.txt': '📝',
-      '.docx': '📃',
-      '.jpg': '🖼️',
-      '.jpeg': '🖼️',
-      '.png': '🖼️',
+      '.pdf': '�',
+      '.txt': '📋',
+      '.docx': '📘',
+      '.jpg': '🎨',
+      '.jpeg': '🎨',
+      '.png': '🎨',
     };
     return icons[ext] || '📎';
+  }
+
+  /** Get icon for category */
+  getCategoryIcon(category: string): string {
+    const icons: Record<string, string> = {
+      Complaint: '🚨',
+      Suggestion: '💡',
+      Question: '❓',
+      Praise: '⭐',
+    };
+    return icons[category] || '📌';
+  }
+
+  /** Get file type label */
+  getFileTypeLabel(filename: string): string {
+    const ext = filename.substring(filename.lastIndexOf('.')).toLowerCase();
+    const labels: Record<string, string> = {
+      '.pdf': 'PDF',
+      '.txt': 'TXT',
+      '.docx': 'DOCX',
+      '.jpg': 'JPG',
+      '.jpeg': 'JPEG',
+      '.png': 'PNG',
+    };
+    return labels[ext] || 'FILE';
+  }
+
+  /** Get CSS class for file type badge */
+  getFileTypeClass(filename: string): string {
+    const ext = filename.substring(filename.lastIndexOf('.')).toLowerCase();
+    if (['.jpg', '.jpeg', '.png'].includes(ext)) return 'type-image';
+    if (ext === '.pdf') return 'type-pdf';
+    if (ext === '.docx') return 'type-docx';
+    return 'type-txt';
   }
 }
