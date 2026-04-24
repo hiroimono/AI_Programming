@@ -18,6 +18,8 @@ import {
   FileClassificationResponse,
   HealthResponse,
   OutputFile,
+  PromptConfig,
+  PromptConfigResponse,
 } from '../models/classification.model';
 
 @Injectable({
@@ -228,5 +230,25 @@ export class ApiService {
     const es = new EventSource(`${this.baseUrl}/files/watch`);
     es.addEventListener('change', () => onChange());
     return es;
+  }
+
+  /** Get current prompt configuration */
+  getPromptConfig(): Observable<PromptConfigResponse> {
+    return this.http.get<PromptConfigResponse>(`${this.baseUrl}/prompt-config`);
+  }
+
+  /** Update prompt configuration */
+  updatePromptConfig(config: PromptConfig): Observable<PromptConfigResponse> {
+    return this.http.put<PromptConfigResponse>(`${this.baseUrl}/prompt-config`, config);
+  }
+
+  /** Reset prompt configuration to defaults */
+  resetPromptConfig(): Observable<PromptConfigResponse> {
+    return this.http.post<PromptConfigResponse>(`${this.baseUrl}/prompt-config/reset`, null);
+  }
+
+  /** Get default prompt configuration for comparison */
+  getDefaultPromptConfig(): Observable<PromptConfigResponse> {
+    return this.http.get<PromptConfigResponse>(`${this.baseUrl}/prompt-config/default`);
   }
 }

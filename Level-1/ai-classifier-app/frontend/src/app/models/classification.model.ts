@@ -56,3 +56,32 @@ export interface OutputFile {
   category: string;
   size: number;
 }
+
+/** Confidence calibration rule */
+export interface ConfidenceRule {
+  range: string;
+  description: string;
+}
+
+/** Prompt configuration variables */
+export interface PromptConfig {
+  role: string;
+  task: string;
+  response_language: string;
+  categories: string[];
+  sentiments: string[];
+  confidence_calibration: ConfidenceRule[];
+  low_confidence_warning: string;
+  low_confidence_examples: string[];
+  summary_instruction: string;
+  max_suggestions: number;
+  additional_rules: string;
+  temperature: number;
+}
+
+/** Prompt config API response */
+export interface PromptConfigResponse {
+  config: PromptConfig;
+  preview: string;
+  is_default?: boolean;
+}

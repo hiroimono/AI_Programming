@@ -17,6 +17,7 @@ import {
   BatchClassificationResponse,
   CategoryStats,
   OutputFile,
+  PromptConfig,
 } from '../models/classification.model';
 
 @Component({
@@ -39,8 +40,8 @@ export class ClassifierComponent implements OnInit, OnDestroy {
   loadingAction = signal<'analyze' | 'classify' | ''>('');
   error = signal('');
 
-  // Tab state: text | file | manager
-  activeTab = signal<'text' | 'file' | 'manager'>('text');
+  // Tab state: text | file | manager | prompt
+  activeTab = signal<'text' | 'file' | 'manager' | 'prompt'>('text');
   isDragOver = signal(false);
 
   // File upload state (merged single + batch)
@@ -70,6 +71,19 @@ export class ClassifierComponent implements OnInit, OnDestroy {
   previewFile = signal<{ filename: string; category: string; size: number; text: string } | null>(
     null,
   );
+
+  // Prompt settings state
+  promptConfig = signal<PromptConfig | null>(null);
+  promptPreview = signal('');
+  promptIsDefault = signal(true);
+  promptLoading = signal(false);
+  promptSaving = signal(false);
+  promptError = signal('');
+  promptSuccess = signal('');
+  showPromptPreview = signal(false);
+  newCategory = signal('');
+  newSentiment = signal('');
+  newExample = signal('');
 
   // Config
   readonly allowedExtensions = ['.pdf', '.txt', '.docx', '.jpg', '.jpeg', '.png'];
@@ -117,8 +131,8 @@ export class ClassifierComponent implements OnInit, OnDestroy {
   // Methods
   // ---------------------
 
-  /** Switch between text, file and manager tabs */
-  switchTab(tab: 'text' | 'file' | 'manager'): void {
+  /** Switch between text, file, manager, and prompt tabs */
+  switchTab(tab: 'text' | 'file' | 'manager' | 'prompt'): void {
     this.activeTab.set(tab);
     this.error.set('');
     if (tab === 'file') {
@@ -126,6 +140,9 @@ export class ClassifierComponent implements OnInit, OnDestroy {
     }
     if (tab === 'manager') {
       this.loadManagerFiles();
+    }
+    if (tab === 'prompt') {
+      this.loadPromptConfig();
     }
   }
 
@@ -752,5 +769,151 @@ export class ClassifierComponent implements OnInit, OnDestroy {
     if (ext === '.pdf') return 'type-pdf';
     if (ext === '.docx') return 'type-docx';
     return 'type-txt';
+  }
+
+  // ---------------------
+  // Prompt Settings
+  // ---------------------
+
+  /** Load prompt configuration from backend */
+  loadPromptConfig(): void {
+    this.promptLoading.set(true);
+    this.promptError.set('');
+    this.apiService.getPromptConfig().subscribe({
+      next: (res) => {
+        this.promptConfig.set(res.config);
+        this.promptPreview.set(res.preview);
+        this.promptIsDefault.set(res.is_default ?? true);
+        this.promptLoading.set(false);
+      },
+      error: (err) => {
+        this.promptError.set(err?.error?.detail || 'Failed to load prompt config');
+        this.promptLoading.set(false);
+      },
+    });
+  }
+
+  /** Save prompt configuration */
+  savePromptConfig(): void {
+    const config = this.promptConfig();
+    if (!config) return;
+    this.promptSaving.set(true);
+    this.promptError.set('');
+    this.promptSuccess.set('');
+    this.apiService.updatePromptConfig(config).subscribe({
+      next: (res) => {
+        this.promptConfig.set(res.config);
+        this.promptPreview.set(res.preview);
+        this.promptIsDefault.set(res.is_default ?? true);
+        this.promptSaving.set(false);
+        this.promptSuccess.set('Prompt configuration saved successfully!');
+        setTimeout(() => this.promptSuccess.set(''), 3000);
+      },
+      error: (err) => {
+        this.promptError.set(err?.error?.detail || 'Failed to save prompt config');
+        this.promptSaving.set(false);
+      },
+    });
+  }
+
+  /** Reset prompt to defaults */
+  resetPromptConfig(): void {
+    this.promptSaving.set(true);
+    this.promptError.set('');
+    this.promptSuccess.set('');
+    this.apiService.resetPromptConfig().subscribe({
+      next: (res) => {
+        this.promptConfig.set(res.config);
+        this.promptPreview.set(res.preview);
+        this.promptIsDefault.set(true);
+        this.promptSaving.set(false);
+        this.promptSuccess.set('Prompt configuration reset to defaults!');
+        setTimeout(() => this.promptSuccess.set(''), 3000);
+      },
+      error: (err) => {
+        this.promptError.set(err?.error?.detail || 'Failed to reset prompt config');
+        this.promptSaving.set(false);
+      },
+    });
+  }
+
+  /** Update a field in promptConfig (helper for two-way binding) */
+  updatePromptField(field: keyof PromptConfig, value: unknown): void {
+    const config = this.promptConfig();
+    if (!config) return;
+    this.promptConfig.set({ ...config, [field]: value });
+  }
+
+  /** Add a new category */
+  addCategory(): void {
+    const val = this.newCategory().trim();
+    if (!val) return;
+    const config = this.promptConfig();
+    if (!config || config.categories.includes(val)) return;
+    this.promptConfig.set({ ...config, categories: [...config.categories, val] });
+    this.newCategory.set('');
+  }
+
+  /** Remove a category */
+  removeCategory(cat: string): void {
+    const config = this.promptConfig();
+    if (!config || config.categories.length <= 1) return;
+    this.promptConfig.set({
+      ...config,
+      categories: config.categories.filter((c) => c !== cat),
+    });
+  }
+
+  /** Add a new sentiment */
+  addSentiment(): void {
+    const val = this.newSentiment().trim();
+    if (!val) return;
+    const config = this.promptConfig();
+    if (!config || config.sentiments.includes(val)) return;
+    this.promptConfig.set({ ...config, sentiments: [...config.sentiments, val] });
+    this.newSentiment.set('');
+  }
+
+  /** Remove a sentiment */
+  removeSentiment(sent: string): void {
+    const config = this.promptConfig();
+    if (!config || config.sentiments.length <= 1) return;
+    this.promptConfig.set({
+      ...config,
+      sentiments: config.sentiments.filter((s) => s !== sent),
+    });
+  }
+
+  /** Add a new low-confidence example */
+  addExample(): void {
+    const val = this.newExample().trim();
+    if (!val) return;
+    const config = this.promptConfig();
+    if (!config) return;
+    this.promptConfig.set({
+      ...config,
+      low_confidence_examples: [...config.low_confidence_examples, val],
+    });
+    this.newExample.set('');
+  }
+
+  /** Remove a low-confidence example */
+  removeExample(idx: number): void {
+    const config = this.promptConfig();
+    if (!config) return;
+    this.promptConfig.set({
+      ...config,
+      low_confidence_examples: config.low_confidence_examples.filter((_, i) => i !== idx),
+    });
+  }
+
+  /** Update a confidence calibration rule description */
+  updateCalibration(idx: number, description: string): void {
+    const config = this.promptConfig();
+    if (!config) return;
+    const updated = config.confidence_calibration.map((rule, i) =>
+      i === idx ? { ...rule, description } : rule,
+    );
+    this.promptConfig.set({ ...config, confidence_calibration: updated });
   }
 }

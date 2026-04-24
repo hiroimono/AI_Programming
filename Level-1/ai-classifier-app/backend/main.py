@@ -41,6 +41,13 @@ from models import (
     FileClassificationResponse,
     HealthResponse,
 )
+from prompt_manager import (
+    build_system_prompt,
+    get_default_config,
+    load_config,
+    reset_config,
+    save_config,
+)
 from test_generator import generate_test_files
 
 # -------------------------------------------------
@@ -486,6 +493,76 @@ async def generate_test_files_endpoint(count: int = 40):
             status_code=500,
             detail=f"Failed to generate test files: {str(e)}",
         ) from e
+
+
+# -------------------------------------------------
+# Prompt Configuration Endpoints
+# -------------------------------------------------
+
+
+@app.get("/api/prompt-config")
+async def get_prompt_config():
+    """
+    Get the current prompt configuration variables.
+    Returns both the config and the generated system prompt preview.
+    """
+    config = load_config()
+    return {
+        "config": config,
+        "preview": build_system_prompt(config),
+        "is_default": config == get_default_config(),
+    }
+
+
+@app.put("/api/prompt-config")
+async def update_prompt_config(body: dict):
+    """
+    Update prompt configuration variables.
+    Validates required fields before saving.
+    """
+    required = ["role", "task", "response_language", "categories", "sentiments"]
+    for field in required:
+        if field not in body:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Missing required field: {field}",
+            )
+
+    if not isinstance(body.get("categories"), list) or len(body["categories"]) < 1:
+        raise HTTPException(status_code=400, detail="At least one category is required")
+    if not isinstance(body.get("sentiments"), list) or len(body["sentiments"]) < 1:
+        raise HTTPException(
+            status_code=400, detail="At least one sentiment is required"
+        )
+
+    save_config(body)
+    config = load_config()
+    return {
+        "config": config,
+        "preview": build_system_prompt(config),
+        "is_default": config == get_default_config(),
+    }
+
+
+@app.post("/api/prompt-config/reset")
+async def reset_prompt_config():
+    """Reset prompt configuration to defaults."""
+    config = reset_config()
+    return {
+        "config": config,
+        "preview": build_system_prompt(config),
+        "is_default": True,
+    }
+
+
+@app.get("/api/prompt-config/default")
+async def get_default_prompt_config():
+    """Get the default prompt configuration for comparison."""
+    config = get_default_config()
+    return {
+        "config": config,
+        "preview": build_system_prompt(config),
+    }
 
 
 @app.get("/api/files/watch")

@@ -23,6 +23,9 @@
     >
       ⚙️ Output Manager
     </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'prompt'" (click)="switchTab('prompt')">
+      🧠 Prompt Settings
+    </button>
   </div>
 
   <!-- Text Input Tab -->
@@ -777,6 +780,284 @@
         </div>
       </div>
     </div>
+  }
+
+  <!-- ===== PROMPT SETTINGS TAB ===== -->
+  @if (activeTab() === 'prompt') {
+    <section class="input-section prompt-section">
+      <div class="prompt-header">
+        <div class="prompt-title-group">
+          <div class="prompt-title-icon">🧠</div>
+          <div>
+            <h2>Prompt Settings</h2>
+            <p class="prompt-subtitle">Configure the AI system prompt variables</p>
+          </div>
+        </div>
+        <div class="prompt-actions">
+          <button
+            class="btn btn-secondary"
+            (click)="showPromptPreview.set(!showPromptPreview())"
+            [disabled]="promptLoading()"
+          >
+            👁️ {{ showPromptPreview() ? 'Hide' : 'Show' }} Preview
+          </button>
+          <button
+            class="btn btn-danger"
+            (click)="resetPromptConfig()"
+            [disabled]="promptSaving() || promptIsDefault()"
+            title="Reset to default configuration"
+          >
+            🔄 Reset
+          </button>
+          <button
+            class="btn btn-primary"
+            (click)="savePromptConfig()"
+            [disabled]="promptSaving() || promptLoading()"
+          >
+            @if (promptSaving()) {
+              <span class="spinner-small"></span> Saving…
+            } @else {
+              💾 Save
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- Status messages -->
+      @if (promptError()) {
+        <div class="prompt-alert prompt-alert-error">⚠️ {{ promptError() }}</div>
+      }
+      @if (promptSuccess()) {
+        <div class="prompt-alert prompt-alert-success">✅ {{ promptSuccess() }}</div>
+      }
+
+      @if (promptLoading()) {
+        <div class="prompt-loading">
+          <span class="spinner-small"></span>
+          <span>Loading prompt configuration…</span>
+        </div>
+      } @else if (promptConfig(); as cfg) {
+        <!-- Prompt Preview Panel -->
+        @if (showPromptPreview()) {
+          <div class="prompt-preview-panel">
+            <h3 class="prompt-preview-title">📋 Generated System Prompt</h3>
+            <pre class="prompt-preview-text">{{ promptPreview() }}</pre>
+          </div>
+        }
+
+        <div class="prompt-grid">
+          <!-- Role & Task -->
+          <div class="prompt-card prompt-card-wide">
+            <h3 class="prompt-card-title">🎭 Role & Task</h3>
+            <div class="prompt-field">
+              <label class="prompt-label">AI Role</label>
+              <input
+                type="text"
+                class="prompt-input"
+                title="AI Role"
+                [value]="cfg.role"
+                (input)="updatePromptField('role', $any($event.target).value)"
+              />
+            </div>
+            <div class="prompt-field">
+              <label class="prompt-label">Task Description</label>
+              <input
+                type="text"
+                class="prompt-input"
+                title="Task Description"
+                [value]="cfg.task"
+                (input)="updatePromptField('task', $any($event.target).value)"
+              />
+            </div>
+            <div class="prompt-field-row">
+              <div class="prompt-field">
+                <label class="prompt-label">Response Language</label>
+                <input
+                  type="text"
+                  class="prompt-input"
+                  title="Response Language"
+                  [value]="cfg.response_language"
+                  (input)="updatePromptField('response_language', $any($event.target).value)"
+                />
+              </div>
+              <div class="prompt-field">
+                <label class="prompt-label">Temperature (0.0 – 2.0)</label>
+                <div class="prompt-range-group">
+                  <input
+                    type="range"
+                    class="prompt-range"
+                    title="Temperature"
+                    min="0"
+                    max="2"
+                    step="0.1"
+                    [value]="cfg.temperature"
+                    (input)="updatePromptField('temperature', +$any($event.target).value)"
+                  />
+                  <span class="prompt-range-value">{{ cfg.temperature }}</span>
+                </div>
+              </div>
+              <div class="prompt-field">
+                <label class="prompt-label">Max Suggestions</label>
+                <input
+                  type="number"
+                  class="prompt-input prompt-input-sm"
+                  title="Max Suggestions"
+                  min="1"
+                  max="10"
+                  [value]="cfg.max_suggestions"
+                  (input)="updatePromptField('max_suggestions', +$any($event.target).value)"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Categories -->
+          <div class="prompt-card">
+            <h3 class="prompt-card-title">🏷️ Categories</h3>
+            <div class="prompt-tags">
+              @for (cat of cfg.categories; track cat) {
+                <span class="prompt-tag">
+                  {{ cat }}
+                  <button
+                    class="prompt-tag-remove"
+                    (click)="removeCategory(cat)"
+                    [disabled]="cfg.categories.length <= 1"
+                    title="Remove category"
+                  >
+                    ×
+                  </button>
+                </span>
+              }
+            </div>
+            <div class="prompt-add-row">
+              <input
+                type="text"
+                class="prompt-input prompt-input-sm"
+                placeholder="New category…"
+                [value]="newCategory()"
+                (input)="newCategory.set($any($event.target).value)"
+                (keydown.enter)="addCategory()"
+              />
+              <button class="btn btn-small" (click)="addCategory()">+ Add</button>
+            </div>
+          </div>
+
+          <!-- Sentiments -->
+          <div class="prompt-card">
+            <h3 class="prompt-card-title">😊 Sentiments</h3>
+            <div class="prompt-tags">
+              @for (sent of cfg.sentiments; track sent) {
+                <span class="prompt-tag prompt-tag-sentiment">
+                  {{ sent }}
+                  <button
+                    class="prompt-tag-remove"
+                    (click)="removeSentiment(sent)"
+                    [disabled]="cfg.sentiments.length <= 1"
+                    title="Remove sentiment"
+                  >
+                    ×
+                  </button>
+                </span>
+              }
+            </div>
+            <div class="prompt-add-row">
+              <input
+                type="text"
+                class="prompt-input prompt-input-sm"
+                placeholder="New sentiment…"
+                [value]="newSentiment()"
+                (input)="newSentiment.set($any($event.target).value)"
+                (keydown.enter)="addSentiment()"
+              />
+              <button class="btn btn-small" (click)="addSentiment()">+ Add</button>
+            </div>
+          </div>
+
+          <!-- Confidence Calibration -->
+          <div class="prompt-card prompt-card-wide">
+            <h3 class="prompt-card-title">🎯 Confidence Calibration</h3>
+            @for (rule of cfg.confidence_calibration; track rule.range; let i = $index) {
+              <div class="prompt-calibration-row">
+                <span class="prompt-calibration-range">{{ rule.range }}</span>
+                <input
+                  type="text"
+                  class="prompt-input"
+                  title="Confidence calibration description"
+                  [value]="rule.description"
+                  (input)="updateCalibration(i, $any($event.target).value)"
+                />
+              </div>
+            }
+          </div>
+
+          <!-- Low Confidence Warning -->
+          <div class="prompt-card prompt-card-wide">
+            <h3 class="prompt-card-title">⚠️ Low Confidence Warning</h3>
+            <textarea
+              class="prompt-textarea"
+              rows="3"
+              title="Low confidence warning"
+              [value]="cfg.low_confidence_warning"
+              (input)="updatePromptField('low_confidence_warning', $any($event.target).value)"
+            ></textarea>
+          </div>
+
+          <!-- Low Confidence Examples -->
+          <div class="prompt-card prompt-card-wide">
+            <h3 class="prompt-card-title">📝 Low-Confidence Examples</h3>
+            <div class="prompt-examples">
+              @for (ex of cfg.low_confidence_examples; track ex; let i = $index) {
+                <div class="prompt-example-row">
+                  <span class="prompt-example-text">{{ ex }}</span>
+                  <button
+                    class="prompt-tag-remove"
+                    (click)="removeExample(i)"
+                    title="Remove example"
+                  >
+                    ×
+                  </button>
+                </div>
+              }
+            </div>
+            <div class="prompt-add-row">
+              <input
+                type="text"
+                class="prompt-input"
+                placeholder="Add a low-confidence example text…"
+                [value]="newExample()"
+                (input)="newExample.set($any($event.target).value)"
+                (keydown.enter)="addExample()"
+              />
+              <button class="btn btn-small" (click)="addExample()">+ Add</button>
+            </div>
+          </div>
+
+          <!-- Summary Instruction -->
+          <div class="prompt-card prompt-card-wide">
+            <h3 class="prompt-card-title">📄 Summary Instruction</h3>
+            <textarea
+              class="prompt-textarea"
+              rows="2"
+              title="Summary instruction"
+              [value]="cfg.summary_instruction"
+              (input)="updatePromptField('summary_instruction', $any($event.target).value)"
+            ></textarea>
+          </div>
+
+          <!-- Additional Rules -->
+          <div class="prompt-card prompt-card-wide">
+            <h3 class="prompt-card-title">📌 Additional Rules (optional)</h3>
+            <textarea
+              class="prompt-textarea"
+              rows="3"
+              placeholder="Add any extra rules you want the AI to follow…"
+              [value]="cfg.additional_rules"
+              (input)="updatePromptField('additional_rules', $any($event.target).value)"
+            ></textarea>
+          </div>
+        </div>
+      }
+    </section>
   }
 
   <!-- File Preview Modal -->
