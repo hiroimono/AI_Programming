@@ -55,7 +55,11 @@ DEFAULT_CONFIG: dict[str, Any] = {
         '"Çok memnunum, bir daha almam" (contradictory: satisfaction + rejection)',
         "Mixed feedback touching complaint, praise, and question in the same text",
     ],
-    "summary_instruction": "Should be concise and in the same language as the input text. If the text is contradictory or sarcastic, explicitly mention that in the summary.",
+    "summary_instruction": (
+        "Should be concise and in the same language as the input text. "
+        "If the text is contradictory or sarcastic, "
+        "explicitly mention that in the summary."
+    ),
     "max_suggestions": 3,
     "additional_rules": "",
     "temperature": 0.1,
@@ -148,7 +152,8 @@ Give your answers always in {config["response_language"]}.
 {calibration_block}
    IMPORTANT: {config["low_confidence_warning"]}
 4. summary: {config["summary_instruction"]}
-5. suggestions: minimum 1, maximum {config["max_suggestions"]} action suggestions. Must be practical and actionable.
+5. suggestions: minimum 1, maximum {config["max_suggestions"]} action suggestions. \
+Must be practical and actionable.
 6. Your response MUST be ONLY JSON, do not write anything else.{additional}
 
 ## Examples of low-confidence texts (confidence should be 0.2-0.4):
