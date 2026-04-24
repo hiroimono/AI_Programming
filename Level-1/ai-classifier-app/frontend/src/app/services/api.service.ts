@@ -179,6 +179,16 @@ export class ApiService {
     return this.http.delete(`${this.baseUrl}/files/${category}/${filename}`);
   }
 
+  /** Bulk delete multiple files */
+  bulkDeleteFiles(
+    items: { category: string; filename: string }[],
+  ): Observable<{ deleted: string[]; failed: string[] }> {
+    return this.http.post<{ deleted: string[]; failed: string[] }>(
+      `${this.baseUrl}/files/bulk-delete`,
+      items,
+    );
+  }
+
   /** Move a file from one category to another */
   moveFile(filename: string, fromCategory: string, toCategory: string): Observable<unknown> {
     return this.http.post(`${this.baseUrl}/files/move`, null, {
@@ -187,6 +197,24 @@ export class ApiService {
         from_category: fromCategory,
         to_category: toCategory,
       },
+    });
+  }
+
+  /** Get text preview of a file */
+  previewFile(
+    category: string,
+    filename: string,
+  ): Observable<{ filename: string; category: string; size: number; text: string }> {
+    return this.http.get<{ filename: string; category: string; size: number; text: string }>(
+      `${this.baseUrl}/files/${category}/${encodeURIComponent(filename)}/preview`,
+    );
+  }
+
+  /** Generate random test files as a downloadable ZIP */
+  generateTestFiles(count: number = 40): Observable<Blob> {
+    return this.http.post(`${this.baseUrl}/generate-test-files`, null, {
+      params: { count: count.toString() },
+      responseType: 'blob',
     });
   }
 

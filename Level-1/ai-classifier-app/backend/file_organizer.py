@@ -21,6 +21,7 @@ import hashlib
 import json
 import os
 import shutil
+import time
 import zipfile
 from io import BytesIO
 
@@ -30,6 +31,24 @@ from models import FileClassificationResponse
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
 
 VALID_CATEGORIES = {"Complaint", "Suggestion", "Question", "Praise"}
+
+# Retry settings for Windows file locking (WinError 32)
+# uvicorn --reload uses watchfiles internally which can hold
+# directory handles on Windows even with --reload-include '*.py'
+_MAX_RETRIES = 10
+_RETRY_DELAY = 0.3  # seconds
+
+
+def _retry_op(func, *args):
+    """Retry a file operation that may fail due to Windows file locking."""
+    for attempt in range(_MAX_RETRIES):
+        try:
+            return func(*args)
+        except PermissionError:
+            if attempt < _MAX_RETRIES - 1:
+                time.sleep(_RETRY_DELAY)
+            else:
+                raise
 
 
 def _file_hash(content: bytes) -> str:
@@ -77,8 +96,7 @@ def organize_file(
 
     if existing_cat is None:
         # Case 1: New file — just add
-        with open(target_path, "wb") as f:
-            f.write(content)
+        _retry_op(_write_file, target_path, content)
         return "added"
 
     if existing_cat == category:
@@ -92,12 +110,11 @@ def organize_file(
             return "unchanged"
 
         # Case 3: Content changed — overwrite
-        with open(existing_path, "wb") as f:  # type: ignore[arg-type]
-            f.write(content)
+        _retry_op(_write_file, existing_path, content)  # type: ignore[arg-type]
         return "updated"
 
     # Case 4: Different category — move
-    os.remove(existing_path)  # type: ignore[arg-type]
+    _retry_op(os.remove, existing_path)  # type: ignore[arg-type]
 
     # Clean up empty old category folder
     old_dir = os.path.join(OUTPUT_DIR, existing_cat)
@@ -107,6 +124,12 @@ def organize_file(
     with open(target_path, "wb") as f:
         f.write(content)
     return "moved"
+
+
+def _write_file(path: str, content: bytes) -> None:
+    """Write content to a file (used with _retry_op)."""
+    with open(path, "wb") as f:
+        f.write(content)
 
 
 def save_results_json(
@@ -198,7 +221,7 @@ def delete_file(category: str, filename: str) -> bool:
     file_path = os.path.join(OUTPUT_DIR, category, filename)
     if not os.path.isfile(file_path):
         return False
-    os.remove(file_path)
+    _retry_op(os.remove, file_path)
     # Clean up empty folder
     cat_dir = os.path.join(OUTPUT_DIR, category)
     if os.path.isdir(cat_dir) and not os.listdir(cat_dir):
@@ -221,7 +244,7 @@ def move_file(filename: str, from_category: str, to_category: str) -> bool:
 
     dst_dir = os.path.join(OUTPUT_DIR, to_category)
     os.makedirs(dst_dir, exist_ok=True)
-    shutil.move(src, os.path.join(dst_dir, filename))
+    _retry_op(shutil.move, src, os.path.join(dst_dir, filename))
 
     # Clean up empty source folder
     src_dir = os.path.join(OUTPUT_DIR, from_category)

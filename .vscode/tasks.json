@@ -4,7 +4,7 @@
     {
       "label": "App 1: Backend (FastAPI)",
       "type": "shell",
-      "command": "& ./venv/Scripts/Activate.ps1; uvicorn main:app --reload --port 8000",
+      "command": "& ./venv/Scripts/Activate.ps1; uvicorn main:app --reload --reload-exclude output --port 8000",
       "options": {
         "cwd": "${workspaceFolder}/Level-1/ai-classifier-app/backend"
       },

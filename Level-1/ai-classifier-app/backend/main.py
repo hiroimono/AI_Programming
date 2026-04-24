@@ -10,10 +10,13 @@
 #   app.MapPost("/api/classify", ...);
 #   app.Run();
 
+import asyncio
 import json
 import os
 import re
+import zipfile
 from datetime import datetime, timezone
+from io import BytesIO
 
 from classifier import classify_feedback
 from config import settings
@@ -38,7 +41,7 @@ from models import (
     FileClassificationResponse,
     HealthResponse,
 )
-from watchfiles import awatch
+from test_generator import generate_test_files
 
 # -------------------------------------------------
 # FastAPI Application Creation
@@ -396,6 +399,45 @@ async def remove_file(category: str, filename: str):
     )
 
 
+@app.get("/api/files/{category}/{filename}/preview")
+async def preview_file(category: str, filename: str):
+    """Return text preview of a file from a category folder."""
+    file_path = os.path.join(OUTPUT_DIR, category, filename)
+    if not os.path.isfile(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    with open(file_path, "rb") as f:
+        content = f.read()
+
+    # Extract text based on file type
+    if is_image_file(filename):
+        text = await extract_text_from_image(filename, content)
+    else:
+        text = await extract_text(filename, content)
+
+    return {
+        "filename": filename,
+        "category": category,
+        "size": len(content),
+        "text": text or "(No text content could be extracted)",
+    }
+
+
+@app.post("/api/files/bulk-delete")
+async def bulk_delete_files(items: list[dict]):
+    """Delete multiple files at once. Each item: {category, filename}."""
+    deleted = []
+    failed = []
+    for item in items:
+        cat = item.get("category", "")
+        name = item.get("filename", "")
+        if delete_file(cat, name):
+            deleted.append(name)
+        else:
+            failed.append(name)
+    return {"deleted": deleted, "failed": failed}
+
+
 @app.post("/api/files/move")
 async def move_file_endpoint(
     filename: str,
@@ -416,29 +458,76 @@ async def move_file_endpoint(
     )
 
 
+@app.post("/api/generate-test-files")
+async def generate_test_files_endpoint(count: int = 40):
+    """
+    Generate random test files (TXT, PDF, DOCX) across all categories.
+    Returns a ZIP file for browser download — nothing is saved to disk.
+    """
+    if count < 1 or count > 100:
+        raise HTTPException(
+            status_code=400,
+            detail="Count must be between 1 and 100.",
+        )
+    try:
+        files = generate_test_files(count)
+        buf = BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+            for filename, category, content in files:
+                zf.writestr(f"{category}/{filename}", content)
+        buf.seek(0)
+        return StreamingResponse(
+            buf,
+            media_type="application/zip",
+            headers={"Content-Disposition": "attachment; filename=test-files.zip"},
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate test files: {str(e)}",
+        ) from e
+
+
 @app.get("/api/files/watch")
 async def watch_files():
     """
     SSE endpoint for real-time file system change notifications.
 
-    Watches the output/ directory recursively using watchfiles (Rust-based).
+    Uses polling (every 2 seconds) to detect changes in the output/
+    directory. Unlike watchfiles, this does NOT hold any directory
+    handles open, avoiding Windows WinError 32 file locking issues.
+
     When files are added, modified, or deleted — even manually via
     Windows Explorer — the frontend receives a 'change' event and
     refreshes its file list.
-
-    On Windows this uses the ReadDirectoryChangesW API internally.
     """
 
-    async def event_stream():
-        # Ensure output directory exists before watching
-        os.makedirs(OUTPUT_DIR, exist_ok=True)
+    def _snapshot() -> set[tuple[str, float]]:
+        """Build a snapshot of (filepath, mtime) for all files in output/."""
+        result = set()
+        if not os.path.isdir(OUTPUT_DIR):
+            return result
+        for root, _dirs, files in os.walk(OUTPUT_DIR):
+            for fname in files:
+                fpath = os.path.join(root, fname)
+                try:
+                    result.add((fpath, os.path.getmtime(fpath)))
+                except OSError:
+                    pass
+        return result
 
-        # Initial connection signal
+    async def event_stream():
+        os.makedirs(OUTPUT_DIR, exist_ok=True)
         yield "event: connected\ndata: {}\n\n"
 
-        # Watch for any file changes (recursive by default)
-        async for changes in awatch(OUTPUT_DIR):
-            yield f"event: change\ndata: {json.dumps({'count': len(changes)})}\n\n"
+        prev = _snapshot()
+        while True:
+            await asyncio.sleep(2)
+            curr = _snapshot()
+            if curr != prev:
+                diff = len(curr.symmetric_difference(prev))
+                prev = curr
+                yield f"event: change\ndata: {json.dumps({'count': diff})}\n\n"
 
     return StreamingResponse(
         event_stream(),

@@ -7,7 +7,7 @@
 // - Signals (signal, computed)  reactive state management
 // - inject()  functional DI instead of constructor-based DI
 
-import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, signal, computed, effect, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { KeyValuePipe } from '@angular/common';
 import { ApiService } from '../services/api.service';
@@ -49,6 +49,9 @@ export class ClassifierComponent implements OnInit, OnDestroy {
   batchProgress = signal(0);
   currentFile = signal('');
   completedCount = signal(0);
+  processingIndex = signal(-1);
+  completedIndices = signal<Set<number>>(new Set());
+  failedIndices = signal<Set<number>>(new Set());
 
   // Category stats (shown on file upload tab)
   categoryStats = signal<CategoryStats>({});
@@ -58,6 +61,15 @@ export class ClassifierComponent implements OnInit, OnDestroy {
   managerLoading = signal(false);
   draggedFile = signal<OutputFile | null>(null);
   managerModalOpen = signal(false);
+  generatingTests = signal(false);
+  selectedManagerFiles = signal<Set<string>>(new Set());
+
+  // File preview state
+  previewOpen = signal(false);
+  previewLoading = signal(false);
+  previewFile = signal<{ filename: string; category: string; size: number; text: string } | null>(
+    null,
+  );
 
   // Config
   readonly allowedExtensions = ['.pdf', '.txt', '.docx', '.jpg', '.jpeg', '.png'];
@@ -74,8 +86,20 @@ export class ClassifierComponent implements OnInit, OnDestroy {
     return r ? Math.round(r.confidence * 100) : 0;
   });
 
+  // Auto-scroll to the currently processing file card
+  private scrollEffect = effect(() => {
+    const idx = this.processingIndex();
+    if (idx < 0) return;
+    // Small delay so Angular renders the class change first
+    setTimeout(() => {
+      const el = document.querySelector('.batch-file-item.file-processing');
+      el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 50);
+  });
+
   ngOnInit(): void {
     this.loadCategoryStats();
+    this.startFileWatcher();
   }
 
   // ---------------------
@@ -102,9 +126,6 @@ export class ClassifierComponent implements OnInit, OnDestroy {
     }
     if (tab === 'manager') {
       this.loadManagerFiles();
-      this.startFileWatcher();
-    } else {
-      this.stopFileWatcher();
     }
   }
 
@@ -270,10 +291,27 @@ export class ClassifierComponent implements OnInit, OnDestroy {
     this.batchResult.set(null);
     this.batchProgress.set(0);
     this.completedCount.set(0);
+    this.processingIndex.set(0);
+    this.completedIndices.set(new Set());
+    this.failedIndices.set(new Set());
     this.currentFile.set(files[0]?.name || '');
 
     const { promise } = this.apiService.classifyFilesStream(files, (event) => {
-      // Update progress per file
+      // Mark current file as completed or failed
+      const done = new Set(this.completedIndices());
+      const failed = new Set(this.failedIndices());
+      if (event.error) {
+        failed.add(event.index);
+        this.failedIndices.set(failed);
+      } else {
+        done.add(event.index);
+        this.completedIndices.set(done);
+      }
+
+      // Move processing indicator to next file
+      const nextIndex = event.index + 1;
+      this.processingIndex.set(nextIndex < event.total ? nextIndex : -1);
+
       const completed = event.index + 1;
       const pct = Math.round((completed / event.total) * 100);
       this.completedCount.set(completed);
@@ -286,12 +324,15 @@ export class ClassifierComponent implements OnInit, OnDestroy {
         this.batchResult.set(response);
         this.batchProgress.set(100);
         this.currentFile.set('');
+        this.processingIndex.set(-1);
         this.isLoading.set(false);
+        this.loadCategoryStats();
       })
       .catch((err) => {
         this.error.set(err.message || 'An error occurred processing files.');
         this.batchProgress.set(0);
         this.currentFile.set('');
+        this.processingIndex.set(-1);
         this.isLoading.set(false);
       });
   }
@@ -373,6 +414,144 @@ export class ClassifierComponent implements OnInit, OnDestroy {
         this.loadCategoryStats();
       },
       error: () => this.error.set(`Failed to delete '${file.filename}'.`),
+    });
+  }
+
+  /** Unique key for a file (used in selection set) */
+  private fileKey(file: OutputFile): string {
+    return `${file.category}::${file.filename}`;
+  }
+
+  /** Toggle selection of a single file */
+  toggleFileSelect(file: OutputFile): void {
+    const key = this.fileKey(file);
+    const set = new Set(this.selectedManagerFiles());
+    if (set.has(key)) {
+      set.delete(key);
+    } else {
+      set.add(key);
+    }
+    this.selectedManagerFiles.set(set);
+  }
+
+  /** Check if a file is selected */
+  isFileSelected(file: OutputFile): boolean {
+    return this.selectedManagerFiles().has(this.fileKey(file));
+  }
+
+  /** Toggle select all files in a category */
+  toggleSelectCategory(category: string): void {
+    const catFiles = this.getFilesForCategory(category);
+    const set = new Set(this.selectedManagerFiles());
+    const allSelected = catFiles.every((f) => set.has(this.fileKey(f)));
+
+    for (const f of catFiles) {
+      if (allSelected) {
+        set.delete(this.fileKey(f));
+      } else {
+        set.add(this.fileKey(f));
+      }
+    }
+    this.selectedManagerFiles.set(set);
+  }
+
+  /** Check if all files in a category are selected */
+  isCategoryAllSelected(category: string): boolean {
+    const catFiles = this.getFilesForCategory(category);
+    if (catFiles.length === 0) return false;
+    return catFiles.every((f) => this.selectedManagerFiles().has(this.fileKey(f)));
+  }
+
+  /** Check if some (but not all) files in a category are selected */
+  isCategorySomeSelected(category: string): boolean {
+    const catFiles = this.getFilesForCategory(category);
+    const set = this.selectedManagerFiles();
+    const selectedCount = catFiles.filter((f) => set.has(this.fileKey(f))).length;
+    return selectedCount > 0 && selectedCount < catFiles.length;
+  }
+
+  /** Get count of selected files in a category */
+  getSelectedCountForCategory(category: string): number {
+    const catFiles = this.getFilesForCategory(category);
+    const set = this.selectedManagerFiles();
+    return catFiles.filter((f) => set.has(this.fileKey(f))).length;
+  }
+
+  /** Bulk delete all selected files */
+  deleteSelectedFiles(): void {
+    const set = this.selectedManagerFiles();
+    if (set.size === 0) return;
+
+    const items = Array.from(set).map((key) => {
+      const [category, filename] = key.split('::');
+      return { category, filename };
+    });
+
+    this.apiService.bulkDeleteFiles(items).subscribe({
+      next: (res) => {
+        const deletedSet = new Set(res.deleted);
+        this.managerFiles.set(this.managerFiles().filter((f) => !deletedSet.has(f.filename)));
+        this.selectedManagerFiles.set(new Set());
+        this.loadCategoryStats();
+        if (res.failed.length > 0) {
+          this.error.set(`Failed to delete ${res.failed.length} file(s).`);
+        }
+      },
+      error: () => this.error.set('Failed to delete selected files.'),
+    });
+  }
+
+  /** Clear selection */
+  clearSelection(): void {
+    this.selectedManagerFiles.set(new Set());
+  }
+
+  /** Open file preview modal (triggered by fast double-click) */
+  openFilePreview(file: OutputFile): void {
+    this.previewOpen.set(true);
+    this.previewLoading.set(true);
+    this.previewFile.set(null);
+    this.apiService.previewFile(file.category, file.filename).subscribe({
+      next: (data) => {
+        this.previewFile.set(data);
+        this.previewLoading.set(false);
+      },
+      error: () => {
+        this.previewFile.set({
+          filename: file.filename,
+          category: file.category,
+          size: file.size,
+          text: '(Failed to load preview)',
+        });
+        this.previewLoading.set(false);
+      },
+    });
+  }
+
+  /** Close file preview modal */
+  closeFilePreview(): void {
+    this.previewOpen.set(false);
+    this.previewFile.set(null);
+  }
+
+  /** Generate random test files and download as ZIP */
+  generateTestFiles(): void {
+    this.generatingTests.set(true);
+    this.error.set('');
+    this.apiService.generateTestFiles(40).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'test-files.zip';
+        a.click();
+        URL.revokeObjectURL(url);
+        this.generatingTests.set(false);
+      },
+      error: () => {
+        this.error.set('Failed to generate test files.');
+        this.generatingTests.set(false);
+      },
     });
   }
 
