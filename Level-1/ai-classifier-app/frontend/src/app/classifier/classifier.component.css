@@ -2921,6 +2921,70 @@ textarea:disabled {
     margin: 0.5rem 1rem;
   }
 
+  /* ---- Prompt inputs/textareas — smaller font, better sizing ---- */
+  .prompt-input {
+    font-size: 0.78rem;
+    padding: 0.45rem 0.65rem;
+  }
+
+  .prompt-textarea {
+    font-size: 0.78rem;
+    padding: 0.45rem 0.65rem;
+    min-height: 80px;
+  }
+
+  .prompt-label {
+    font-size: 0.74rem;
+  }
+
+  .prompt-card-title {
+    font-size: 0.82rem;
+  }
+
+  /* Tags — smaller and centered */
+  .prompt-tags {
+    justify-content: center;
+    gap: 0.4rem;
+  }
+
+  .prompt-tag {
+    font-size: 0.72rem;
+    padding: 0.25rem 0.5rem 0.25rem 0.6rem;
+  }
+
+  .prompt-tag-remove {
+    width: 16px;
+    height: 16px;
+    font-size: 0.65rem;
+  }
+
+  /* Calibration inputs — wider and taller */
+  .prompt-calibration-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.3rem;
+  }
+
+  .prompt-calibration-range {
+    font-size: 0.72rem;
+    min-width: auto;
+  }
+
+  .prompt-calibration-row .prompt-input {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  /* Batch result row — better wrapping */
+  .result-row .row-category {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.4rem;
+  }
+
+  .result-row .row-sentiment {
+    font-size: 0.85rem;
+  }
+
   /* ---- Footer ---- */
   .footer {
     margin-top: 1rem;

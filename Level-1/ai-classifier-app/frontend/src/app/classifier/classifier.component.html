@@ -995,7 +995,7 @@
             <h3 class="prompt-card-title">⚠️ Low Confidence Warning</h3>
             <textarea
               class="prompt-textarea"
-              rows="3"
+              rows="4"
               title="Low confidence warning"
               [value]="cfg.low_confidence_warning"
               (input)="updatePromptField('low_confidence_warning', $any($event.target).value)"
@@ -1037,7 +1037,7 @@
             <h3 class="prompt-card-title">📄 Summary Instruction</h3>
             <textarea
               class="prompt-textarea"
-              rows="2"
+              rows="4"
               title="Summary instruction"
               [value]="cfg.summary_instruction"
               (input)="updatePromptField('summary_instruction', $any($event.target).value)"
