@@ -128,11 +128,11 @@
         @if (r.suggestions.length > 0) {
           <div class="suggestions-card">
             <div class="result-label">Suggested Actions</div>
-            <ul>
+            <div class="suggestions-list" role="list">
               @for (suggestion of r.suggestions; track $index) {
-                <li>{{ suggestion }}</li>
+                <div role="listitem">{{ suggestion }}</div>
               }
-            </ul>
+            </div>
           </div>
         }
       </section>
@@ -379,11 +379,11 @@
         @if (br.errors.length > 0) {
           <div class="batch-errors">
             <div class="error-header">⚠️ Failed Files</div>
-            <ul>
+            <div class="error-list" role="list">
               @for (err of br.errors; track $index) {
-                <li>{{ err }}</li>
+                <div role="listitem">{{ err }}</div>
               }
-            </ul>
+            </div>
           </div>
         }
 

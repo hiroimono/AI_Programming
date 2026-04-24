@@ -290,15 +290,24 @@ textarea:disabled {
   line-height: 1.5;
 }
 
-.suggestions-card ul {
+.suggestions-list {
   margin: 0;
   padding-left: 1.25rem;
 }
 
-.suggestions-card li {
+.suggestions-list [role='listitem'] {
   font-size: 0.9rem;
   line-height: 1.6;
   color: #334155;
+  position: relative;
+  padding-left: 0.5rem;
+}
+
+.suggestions-list [role='listitem']::before {
+  content: '\2022';
+  position: absolute;
+  left: -0.75rem;
+  color: #94a3b8;
 }
 
 /* === Batch Upload === */
@@ -973,15 +982,24 @@ textarea:disabled {
   margin-bottom: 0.35rem;
 }
 
-.batch-errors ul {
+.error-list {
   margin: 0;
   padding-left: 1.25rem;
   font-size: 0.8rem;
   color: #dc2626;
 }
 
-.batch-errors li {
+.error-list [role='listitem'] {
   margin-bottom: 0.15rem;
+  position: relative;
+  padding-left: 0.5rem;
+}
+
+.error-list [role='listitem']::before {
+  content: '\2022';
+  position: absolute;
+  left: -0.75rem;
+  color: #dc2626;
 }
 
 /* Download Section */
@@ -1387,7 +1405,7 @@ textarea:disabled {
 }
 
 .manager-column:hover {
-  border-color: color-mix(in srgb, var(--col-color) 30%, #e8ecf1);
+  border-color: #d0d5dd;
 }
 
 /* Column header */
@@ -1456,7 +1474,7 @@ textarea:disabled {
 }
 
 .file-card:hover {
-  border-color: color-mix(in srgb, var(--col-color) 40%, #cbd5e1);
+  border-color: #b0bec5;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
   transform: translateY(-1px);
 }
@@ -1603,6 +1621,7 @@ textarea:disabled {
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.55);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
