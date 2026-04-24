@@ -1,0 +1,16 @@
+# .dockerignore — Files to exclude from Docker build context
+# ===========================================================
+# Same concept as .gitignore but for Docker.
+# Keeps the image small and avoids leaking secrets.
+
+venv/
+__pycache__/
+*.pyc
+.env
+.git/
+.gitignore
+.pylintrc
+output/
+test-upload-files.zip
+generate_test_files.py
+*.md

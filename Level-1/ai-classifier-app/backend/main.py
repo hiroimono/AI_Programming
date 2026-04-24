@@ -75,11 +75,20 @@ app = FastAPI(
 #                 .AllowAnyMethod()
 #                 .AllowAnyHeader()));
 
+# Build allowed origins list from environment variable
+# ALLOWED_ORIGINS can be comma-separated: "https://myapp.pages.dev,http://localhost:4200"
+_origins_env = os.getenv("ALLOWED_ORIGINS", "")
+_allowed_origins = [
+    origin.strip()
+    for origin in _origins_env.split(",")
+    if origin.strip()
+]
+if not _allowed_origins:
+    _allowed_origins = ["http://localhost:4200"]  # Default for local dev
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:4200",  # Angular dev server
-    ],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

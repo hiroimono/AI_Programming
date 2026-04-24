@@ -1,0 +1,4 @@
+# Cloudflare Pages SPA Routing
+# Redirect all non-file requests to index.html so Angular router handles them.
+# Without this, refreshing the page on a deep link shows a 404 error.
+/*  /index.html  200

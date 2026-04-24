@@ -21,6 +21,7 @@ import {
   PromptConfig,
   PromptConfigResponse,
 } from '../models/classification.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -29,8 +30,8 @@ export class ApiService {
   // DI using inject() function in Angular 21
   private http = inject(HttpClient);
 
-  // Backend address  in production this comes from environment files
-  private baseUrl = 'http://localhost:8000/api';
+  // API URL from environment config (localhost for dev, Railway URL for prod)
+  private baseUrl = environment.apiUrl;
 
   /**
    * Backend health check.
