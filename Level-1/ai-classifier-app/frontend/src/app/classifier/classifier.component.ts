@@ -11,6 +11,7 @@ import { Component, inject, signal, computed, effect, OnInit, OnDestroy } from '
 import { FormsModule } from '@angular/forms';
 import { KeyValuePipe } from '@angular/common';
 import { ApiService } from '../services/api.service';
+import { environment } from '../../environments/environment';
 import {
   ClassificationResponse,
   FileClassificationResponse,
@@ -113,7 +114,9 @@ export class ClassifierComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadCategoryStats();
-    this.startFileWatcher();
+    if (!environment.production) {
+      this.startFileWatcher();
+    }
   }
 
   // ---------------------

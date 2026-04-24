@@ -79,9 +79,7 @@ app = FastAPI(
 # ALLOWED_ORIGINS can be comma-separated: "https://myapp.pages.dev,http://localhost:4200"
 _origins_env = os.getenv("ALLOWED_ORIGINS", "")
 _allowed_origins = [
-    origin.strip()
-    for origin in _origins_env.split(",")
-    if origin.strip()
+    origin.strip() for origin in _origins_env.split(",") if origin.strip()
 ]
 if not _allowed_origins:
     _allowed_origins = ["http://localhost:4200"]  # Default for local dev
