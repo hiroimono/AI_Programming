@@ -6,6 +6,7 @@
 # This is the most important file of this week.
 # Teaches how to call OpenAI and the basics of "prompt engineering".
 
+import asyncio
 import json
 
 from config import settings
@@ -24,11 +25,12 @@ if settings.use_azure:
         azure_endpoint=settings.azure_openai_endpoint,
         api_key=settings.azure_openai_key,
         api_version="2024-12-01-preview",
+        timeout=30.0,
     )
     MODEL = settings.azure_openai_deployment
 else:
     # Direct OpenAI API usage
-    client = AsyncOpenAI(api_key=settings.openai_api_key)
+    client = AsyncOpenAI(api_key=settings.openai_api_key, timeout=30.0)
     MODEL = settings.openai_model
 
 
@@ -61,14 +63,25 @@ Give your answers always in Turkish.
 ## Rules:
 1. category MUST be one of these 4 values: Complaint, Suggestion, Question, Praise
 2. sentiment MUST be one of these 3 values: Positive, Negative, Neutral
-3. confidence: how confident you are in your classification, calibrated as follows:
-   - 0.9-1.0: Text clearly belongs to one category with zero ambiguity
-   - 0.7-0.89: Text mostly fits one category but has minor mixed signals
-   - 0.5-0.69: Text contains conflicting signals between two categories
-   - below 0.5: Text is very ambiguous or does not clearly fit any category
-4. summary: should be concise and in the same language as the input text
+3. confidence: CRITICAL — you MUST calibrate confidence strictly based on text clarity:
+   - 0.9-1.0: Text is 100% clear, only ONE category applies, no ambiguity at all
+   - 0.7-0.89: Text mostly fits one category but contains a minor secondary signal
+   - 0.5-0.69: Text mixes TWO categories (e.g. complaint + suggestion)
+   - 0.3-0.49: Text contains contradictions, sarcasm, or signals from 3+ categories
+   - below 0.3: Text is incoherent, self-contradictory, or deliberately confusing
+   IMPORTANT: If the text contains sarcasm, irony, contradictory statements, or
+   mixes praise with complaints in the same sentence, confidence MUST be below 0.5.
+   Never give high confidence to ambiguous or mixed-signal texts.
+4. summary: should be concise and in the same language as the input text.
+   If the text is contradictory or sarcastic, explicitly mention that in the summary.
 5. suggestions: minimum 1, maximum 3 action suggestions. Must be practical and actionable.
-6. Your response MUST be ONLY JSON, do not write anything else."""
+6. Your response MUST be ONLY JSON, do not write anything else.
+
+## Examples of low-confidence texts (confidence should be 0.2-0.4):
+- "Ürün harika ama çöpe attım" (contradictory: praise + negative action)
+- "Teşekkür ederim bozuk geldiği için" (sarcasm: gratitude + complaint)
+- "Çok memnunum, bir daha almam" (contradictory: satisfaction + rejection)
+- Mixed feedback touching complaint, praise, and question in the same text"""
 
 
 async def classify_feedback(text: str) -> ClassificationResponse:
@@ -98,14 +111,17 @@ async def classify_feedback(text: str) -> ClassificationResponse:
     # temperature: 0.1 = very consistent/deterministic results
     #              (low temperature is ideal for classification)
 
-    response = await client.chat.completions.create(
-        model=MODEL,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": text},
-        ],
-        response_format={"type": "json_object"},
-        temperature=0.1,
+    response = await asyncio.wait_for(
+        client.chat.completions.create(
+            model=MODEL,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": text},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.1,
+        ),
+        timeout=60.0,
     )
 
     # Parse the response
