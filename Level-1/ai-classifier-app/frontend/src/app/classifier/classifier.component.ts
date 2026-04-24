@@ -89,7 +89,7 @@ export class ClassifierComponent implements OnInit, OnDestroy {
   // Config
   readonly allowedExtensions = ['.pdf', '.txt', '.docx', '.jpg', '.jpeg', '.png'];
   readonly maxFileSize = 10 * 1024 * 1024;
-  readonly maxBatchFiles = 20;
+  readonly maxBatchFiles = 40;
   readonly allCategories = ['Complaint', 'Suggestion', 'Question', 'Praise'];
 
   // Computed
