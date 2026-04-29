@@ -41,7 +41,7 @@ Her ikisi de çalışıyorsa Python hazır.
 
 ```powershell
 # Proje klasörüne git
-cd C:\Users\heltutan\Desktop\AI_Programming\Level-1\ai-classifier-app\backend
+cd C:\Users\heltutan\Desktop\AI_Programming\Level-1-App\ai-classifier-app\backend
 
 # Sanal ortam oluştur (.NET'teki restore gibi düşün)
 python -m venv venv
@@ -113,7 +113,7 @@ Tarayıcıda aç: http://localhost:8000/docs
 Yeni bir terminal aç (backend çalışmaya devam etsin):
 
 ```powershell
-cd C:\Users\heltutan\Desktop\AI_Programming\Level-1\ai-classifier-app
+cd C:\Users\heltutan\Desktop\AI_Programming\Level-1-App\ai-classifier-app
 
 # Angular projesi oluştur
 ng new frontend --style=css --routing=false --ssr=false

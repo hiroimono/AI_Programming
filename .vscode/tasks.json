@@ -6,7 +6,7 @@
       "type": "shell",
       "command": "& ./venv/Scripts/Activate.ps1; uvicorn main:app --reload --reload-exclude output --port 8000",
       "options": {
-        "cwd": "${workspaceFolder}/Level-1/ai-classifier-app/backend"
+        "cwd": "${workspaceFolder}/Level-1-App/ai-classifier-app/backend"
       },
       "isBackground": true,
       "problemMatcher": {
@@ -27,7 +27,7 @@
       "type": "shell",
       "command": "ng serve",
       "options": {
-        "cwd": "${workspaceFolder}/Level-1/ai-classifier-app/frontend"
+        "cwd": "${workspaceFolder}/Level-1-App/ai-classifier-app/frontend"
       },
       "isBackground": true,
       "problemMatcher": {

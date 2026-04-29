@@ -1,6 +1,6 @@
 {
-  "python.defaultInterpreterPath": "${workspaceFolder}/Level-1/ai-classifier-app/backend/venv/Scripts/python.exe",
-  "python.analysis.extraPaths": ["${workspaceFolder}/Level-1/ai-classifier-app/backend"],
+  "python.defaultInterpreterPath": "${workspaceFolder}/Level-1-App/ai-classifier-app/backend/venv/Scripts/python.exe",
+  "python.analysis.extraPaths": ["${workspaceFolder}/Level-1-App/ai-classifier-app/backend"],
   "pylint.args": ["--disable=C0114"],
   "search.exclude": {
     "**/node_modules": true
@@ -14,5 +14,13 @@
     "MD034": false,
     "MD060": false,
     "MD040": false
-  }
+  },
+  "chat.restoreLastPanelSession": true,
+  "chat.viewProgressBadge.enabled": true,
+  "json.schemas": [
+    {
+      "fileMatch": ["tsconfig*.json"],
+      "url": "https://raw.githubusercontent.com/SchemaStore/schemastore/master/src/schemas/json/tsconfig.json"
+    }
+  ]
 }

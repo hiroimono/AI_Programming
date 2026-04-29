@@ -41,7 +41,7 @@ In .NET, each project carries its own NuGet packages. Same concept in Python:
 
 ```powershell
 # Navigate to the project folder
-cd C:\Users\heltutan\Desktop\AI_Programming\Level-1\ai-classifier-app\backend
+cd C:\Users\heltutan\Desktop\AI_Programming\Level-1-App\ai-classifier-app\backend
 
 # Create virtual environment (think of it like dotnet restore)
 python -m venv venv
@@ -113,7 +113,7 @@ Open in browser: http://localhost:8000/docs
 Open a new terminal (keep the backend running):
 
 ```powershell
-cd C:\Users\heltutan\Desktop\AI_Programming\Level-1\ai-classifier-app
+cd C:\Users\heltutan\Desktop\AI_Programming\Level-1-App\ai-classifier-app
 
 # Create Angular project
 ng new frontend --style=css --routing=false --ssr=false
