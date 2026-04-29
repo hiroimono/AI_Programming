@@ -1,3 +1,5 @@
+using Gateway.API.Data;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +10,10 @@ builder.Services.AddControllers();
 
 // OpenAPI — generates API documentation (built-in since .NET 9, replaces Swashbuckle)
 builder.Services.AddOpenApi();
+
+// EF Core — registers the database context with PostgreSQL (Neon)
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // CORS — allows the frontend (Angular) to call this backend
 builder.Services.AddCors(options =>
