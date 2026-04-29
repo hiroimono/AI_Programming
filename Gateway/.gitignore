@@ -1,0 +1,19 @@
+# Build outputs
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+.vs/
+
+# IDE
+.idea/
+*.swp
+
+# Environment secrets (DB passwords, API keys)
+appsettings.Development.json
+
+# OS
+Thumbs.db
+.DS_Store

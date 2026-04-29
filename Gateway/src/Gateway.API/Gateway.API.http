@@ -1,0 +1,13 @@
+@Gateway.API_HostAddress = http://localhost:5000
+
+# Health check (HTTP)
+GET {{Gateway.API_HostAddress}}/health
+Accept: application/json
+
+###
+
+# Health check (HTTPS)
+GET https://localhost:5001/health
+Accept: application/json
+
+###
