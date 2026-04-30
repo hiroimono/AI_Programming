@@ -1,5 +1,6 @@
 using System.Text;
 using Gateway.API.Data;
+using Gateway.API.Middleware;
 using Gateway.API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -82,7 +83,14 @@ app.UseAuthorization();   // Role/permission checks
 app.MapControllers();
 
 // YARP — proxy unmatched requests to backend apps based on config routes
-app.MapReverseProxy();
+app.MapReverseProxy(proxyPipeline =>
+{
+  // Subscription check runs inside the YARP pipeline (only for proxied requests)
+  proxyPipeline.UseMiddleware<SubscriptionMiddleware>();
+  proxyPipeline.UseSessionAffinity();
+  proxyPipeline.UseLoadBalancing();
+  proxyPipeline.UsePassiveHealthChecks();
+});
 
 // Health check — verifies the service is running in production
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "Gateway" }));
