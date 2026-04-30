@@ -14,9 +14,8 @@ RUN dotnet publish src/Gateway.API/Gateway.API.csproj -c Release -o /app/publish
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
-# Security: run as non-root user
-RUN adduser --disabled-password --gecos "" appuser
-USER appuser
+# Security: run as non-root user (built-in 'app' user in .NET 8+ images)
+USER app
 
 COPY --from=build /app/publish .
 
