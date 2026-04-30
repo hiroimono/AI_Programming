@@ -1,6 +1,9 @@
+using System.Text;
 using Gateway.API.Data;
 using Gateway.API.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +21,25 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Application services
 builder.Services.AddScoped<AuthService>();
+
+// JWT Authentication
+var jwtSection = builder.Configuration.GetSection("Jwt");
+var secret = jwtSection["Secret"] ?? throw new InvalidOperationException("Jwt:Secret is not configured");
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+  .AddJwtBearer(options =>
+  {
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+      ValidateIssuer = true,
+      ValidateAudience = true,
+      ValidateLifetime = true,
+      ValidateIssuerSigningKey = true,
+      ValidIssuer = jwtSection["Issuer"],
+      ValidAudience = jwtSection["Audience"],
+      IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
+    };
+  });
+builder.Services.AddAuthorization();
 
 // CORS — allows the frontend (Angular) to call this backend
 builder.Services.AddCors(options =>

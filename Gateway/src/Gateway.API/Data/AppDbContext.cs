@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
   public DbSet<User> Users => Set<User>();
   public DbSet<Organization> Organizations => Set<Organization>();
   public DbSet<Membership> Memberships => Set<Membership>();
+  public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
@@ -56,6 +57,18 @@ public class AppDbContext : DbContext
 
       // A user can only belong to an organization once
       e.HasIndex(m => new { m.UserId, m.OrganizationId }).IsUnique();
+    });
+
+    // RefreshToken configuration
+    modelBuilder.Entity<RefreshToken>(e =>
+    {
+      e.HasIndex(rt => rt.Token).IsUnique();
+      e.Property(rt => rt.Token).HasMaxLength(256);
+
+      e.HasOne(rt => rt.User)
+        .WithMany()
+        .HasForeignKey(rt => rt.UserId)
+        .OnDelete(DeleteBehavior.Cascade);
     });
   }
 }
