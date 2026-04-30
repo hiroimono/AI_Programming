@@ -48,6 +48,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
   });
 builder.Services.AddAuthorization();
 
+// YARP Reverse Proxy — routes requests to backend apps based on host/path
+builder.Services.AddReverseProxy()
+  .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+
 // CORS — allows the frontend (Angular) to call this backend
 builder.Services.AddCors(options =>
 {
@@ -76,6 +80,9 @@ app.UseCors();
 app.UseAuthentication();  // JWT validation (to be configured in Phase 1)
 app.UseAuthorization();   // Role/permission checks
 app.MapControllers();
+
+// YARP — proxy unmatched requests to backend apps based on config routes
+app.MapReverseProxy();
 
 // Health check — verifies the service is running in production
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "Gateway" }));
