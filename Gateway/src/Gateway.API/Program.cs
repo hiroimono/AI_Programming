@@ -1,4 +1,5 @@
 using Gateway.API.Data;
+using Gateway.API.Services;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
@@ -14,6 +15,9 @@ builder.Services.AddOpenApi();
 // EF Core — registers the database context with PostgreSQL (Neon)
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Application services
+builder.Services.AddScoped<AuthService>();
 
 // CORS — allows the frontend (Angular) to call this backend
 builder.Services.AddCors(options =>
