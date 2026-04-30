@@ -77,6 +77,21 @@ public class AuthController : ControllerBase
   }
 
   /// <summary>
+  /// POST /api/auth/google — authenticates user via Google id_token.
+  /// Auto-registers if the user doesn't exist yet.
+  /// </summary>
+  [HttpPost("google")]
+  public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
+  {
+    var result = await _authService.GoogleLoginAsync(request);
+
+    if (result is null)
+      return Unauthorized(new { message = "Invalid Google token" });
+
+    return Ok(result);
+  }
+
+  /// <summary>
   /// GET /api/auth/me — returns current user info from JWT claims. Requires valid token.
   /// </summary>
   [Authorize]

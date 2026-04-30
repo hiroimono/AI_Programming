@@ -64,7 +64,8 @@ public class AuthService
   {
     var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email.ToLowerInvariant());
 
-    if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+    // Null PasswordHash means the user registered via external provider (Google/GitHub)
+    if (user is null || user.PasswordHash is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
       return null;
 
     user.LastLoginAt = DateTime.UtcNow;
@@ -207,5 +208,72 @@ public class AuthService
     );
 
     return (new JwtSecurityTokenHandler().WriteToken(tokenDescriptor), expiresAt);
+  }
+
+  /// <summary>
+  /// Validates a Google id_token and logs in (or auto-registers) the user.
+  /// </summary>
+  public async Task<AuthResponse?> GoogleLoginAsync(GoogleLoginRequest request)
+  {
+    // Step 1: Validate the Google id_token using Google's public keys
+    var clientId = _config["Google:ClientId"]!;
+    Google.Apis.Auth.GoogleJsonWebSignature.Payload payload;
+
+    try
+    {
+      var settings = new Google.Apis.Auth.GoogleJsonWebSignature.ValidationSettings
+      {
+        Audience = [clientId] // Only accept tokens issued for OUR app
+      };
+      payload = await Google.Apis.Auth.GoogleJsonWebSignature.ValidateAsync(request.IdToken, settings);
+    }
+    catch
+    {
+      // Token invalid, expired, wrong audience, or tampered with
+      return null;
+    }
+
+    // Step 2: Extract user info from the verified token
+    var email = payload.Email.ToLowerInvariant();
+    var firstName = payload.GivenName ?? "User";
+    var lastName = payload.FamilyName ?? "";
+
+    // Step 3: Find or create user
+    var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+    if (user is null)
+    {
+      // Auto-register: no password needed (social login)
+      user = new User
+      {
+        Id = Guid.NewGuid(),
+        Email = email,
+        PasswordHash = null, // No password — Google-only user
+        FirstName = firstName,
+        LastName = lastName,
+        EmailConfirmed = true, // Google already verified the email
+        CreatedAt = DateTime.UtcNow
+      };
+      _db.Users.Add(user);
+    }
+
+    // Step 4: Update last login and generate tokens
+    user.LastLoginAt = DateTime.UtcNow;
+
+    var (token, expiresAt) = await GenerateJwtTokenAsync(user);
+    var refreshToken = await CreateRefreshTokenAsync(user.Id);
+
+    await _db.SaveChangesAsync();
+
+    return new AuthResponse
+    {
+      Id = user.Id,
+      Email = user.Email,
+      FullName = $"{user.FirstName} {user.LastName}",
+      Token = token,
+      RefreshToken = refreshToken.Token,
+      ExpiresAt = expiresAt,
+      Message = user.CreatedAt == user.LastLoginAt ? "Registration successful via Google" : "Login successful via Google"
+    };
   }
 }

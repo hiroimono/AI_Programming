@@ -9,7 +9,10 @@ public class User
 
   public string Email { get; set; } = string.Empty;
 
-  public string PasswordHash { get; set; } = string.Empty;
+  /// <summary>
+  /// Null for users who registered via external providers (Google, GitHub).
+  /// </summary>
+  public string? PasswordHash { get; set; }
 
   public string FirstName { get; set; } = string.Empty;
 
