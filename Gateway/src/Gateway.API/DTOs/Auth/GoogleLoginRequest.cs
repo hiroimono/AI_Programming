@@ -8,6 +8,6 @@ namespace Gateway.API.DTOs.Auth;
 /// </summary>
 public class GoogleLoginRequest
 {
-    [Required]
-    public string IdToken { get; set; } = string.Empty;
+  [Required]
+  public string IdToken { get; set; } = string.Empty;
 }

@@ -17,12 +17,14 @@ public class AuthService
 {
   private readonly AppDbContext _db;
   private readonly IConfiguration _config;
+  private readonly IHttpClientFactory _httpClientFactory;
   private const int RefreshTokenExpiryDays = 7;
 
-  public AuthService(AppDbContext db, IConfiguration config)
+  public AuthService(AppDbContext db, IConfiguration config, IHttpClientFactory httpClientFactory)
   {
     _db = db;
     _config = config;
+    _httpClientFactory = httpClientFactory;
   }
 
   /// <summary>
@@ -276,4 +278,106 @@ public class AuthService
       Message = user.CreatedAt == user.LastLoginAt ? "Registration successful via Google" : "Login successful via Google"
     };
   }
+
+  /// <summary>
+  /// Exchanges a GitHub authorization code for user info, then logs in or auto-registers.
+  /// </summary>
+  public async Task<AuthResponse?> GitHubLoginAsync(GitHubLoginRequest request)
+  {
+    var clientId = _config["GitHub:ClientId"]!;
+    var clientSecret = _config["GitHub:ClientSecret"]!;
+
+    // Step 1: Exchange authorization code for access_token
+    var httpClient = _httpClientFactory.CreateClient("GitHub");
+
+    var tokenResponse = await httpClient.PostAsJsonAsync(
+      "https://github.com/login/oauth/access_token",
+      new { client_id = clientId, client_secret = clientSecret, code = request.Code }
+    );
+
+    if (!tokenResponse.IsSuccessStatusCode)
+      return null;
+
+    var tokenData = await tokenResponse.Content.ReadFromJsonAsync<GitHubTokenResponse>();
+    if (tokenData?.AccessToken is null)
+      return null;
+
+    // Step 2: Fetch user profile from GitHub API
+    httpClient.DefaultRequestHeaders.Authorization =
+      new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenData.AccessToken);
+
+    var userResponse = await httpClient.GetFromJsonAsync<GitHubUserResponse>("https://api.github.com/user");
+    if (userResponse is null)
+      return null;
+
+    // Step 3: Get email (might be private, fetch from /user/emails)
+    var email = userResponse.Email;
+    if (string.IsNullOrEmpty(email))
+    {
+      var emails = await httpClient.GetFromJsonAsync<List<GitHubEmailResponse>>("https://api.github.com/user/emails");
+      email = emails?.FirstOrDefault(e => e.Primary && e.Verified)?.Email;
+    }
+
+    if (string.IsNullOrEmpty(email))
+      return null; // No verified email available
+
+    email = email.ToLowerInvariant();
+
+    // Step 4: Find or create user
+    var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+    if (user is null)
+    {
+      var nameParts = (userResponse.Name ?? userResponse.Login ?? "User").Split(' ', 2);
+      user = new User
+      {
+        Id = Guid.NewGuid(),
+        Email = email,
+        PasswordHash = null,
+        FirstName = nameParts[0],
+        LastName = nameParts.Length > 1 ? nameParts[1] : "",
+        EmailConfirmed = true,
+        CreatedAt = DateTime.UtcNow
+      };
+      _db.Users.Add(user);
+    }
+
+    // Step 5: Generate tokens
+    user.LastLoginAt = DateTime.UtcNow;
+
+    var (token, expiresAt) = await GenerateJwtTokenAsync(user);
+    var refreshToken = await CreateRefreshTokenAsync(user.Id);
+
+    await _db.SaveChangesAsync();
+
+    return new AuthResponse
+    {
+      Id = user.Id,
+      Email = user.Email,
+      FullName = $"{user.FirstName} {user.LastName}",
+      Token = token,
+      RefreshToken = refreshToken.Token,
+      ExpiresAt = expiresAt,
+      Message = user.CreatedAt == user.LastLoginAt ? "Registration successful via GitHub" : "Login successful via GitHub"
+    };
+  }
+
+  // --- GitHub API response models (internal, not exposed as DTOs) ---
+
+  private record GitHubTokenResponse(
+    [property: System.Text.Json.Serialization.JsonPropertyName("access_token")] string? AccessToken,
+    [property: System.Text.Json.Serialization.JsonPropertyName("token_type")] string? TokenType
+  );
+
+  private record GitHubUserResponse(
+    [property: System.Text.Json.Serialization.JsonPropertyName("login")] string? Login,
+    [property: System.Text.Json.Serialization.JsonPropertyName("name")] string? Name,
+    [property: System.Text.Json.Serialization.JsonPropertyName("email")] string? Email
+  );
+
+  private record GitHubEmailResponse(
+    [property: System.Text.Json.Serialization.JsonPropertyName("email")] string? Email,
+    [property: System.Text.Json.Serialization.JsonPropertyName("primary")] bool Primary,
+    [property: System.Text.Json.Serialization.JsonPropertyName("verified")] bool Verified
+  );
 }

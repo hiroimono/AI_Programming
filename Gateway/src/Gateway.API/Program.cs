@@ -22,6 +22,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Application services
 builder.Services.AddScoped<AuthService>();
 
+// Named HttpClient for GitHub OAuth API calls
+builder.Services.AddHttpClient("GitHub", client =>
+{
+  client.DefaultRequestHeaders.Accept.Add(new("application/json"));
+  client.DefaultRequestHeaders.UserAgent.Add(new("Gateway.API", "1.0"));
+});
+
 // JWT Authentication
 var jwtSection = builder.Configuration.GetSection("Jwt");
 var secret = jwtSection["Secret"] ?? throw new InvalidOperationException("Jwt:Secret is not configured");

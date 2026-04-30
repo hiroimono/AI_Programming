@@ -92,6 +92,21 @@ public class AuthController : ControllerBase
   }
 
   /// <summary>
+  /// POST /api/auth/github — authenticates user via GitHub authorization code.
+  /// Exchanges code for access_token, fetches user info, then issues JWT.
+  /// </summary>
+  [HttpPost("github")]
+  public async Task<IActionResult> GitHubLogin([FromBody] GitHubLoginRequest request)
+  {
+    var result = await _authService.GitHubLoginAsync(request);
+
+    if (result is null)
+      return Unauthorized(new { message = "Invalid GitHub code or unable to fetch user info" });
+
+    return Ok(result);
+  }
+
+  /// <summary>
   /// GET /api/auth/me — returns current user info from JWT claims. Requires valid token.
   /// </summary>
   [Authorize]
