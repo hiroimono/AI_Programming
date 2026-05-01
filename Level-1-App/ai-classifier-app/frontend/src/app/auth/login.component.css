@@ -400,10 +400,7 @@
 ::ng-deep .auth-form input:-webkit-autofill:hover,
 ::ng-deep .auth-form input:-webkit-autofill:focus,
 ::ng-deep .auth-form input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 30px rgba(15, 15, 26, 0.95) inset !important;
-  -webkit-text-fill-color: var(--text-primary) !important;
-  transition: background-color 5000s ease-in-out 0s !important;
-  caret-color: var(--text-primary);
+  caret-color: #e2e8f0;
 }
 
 ::ng-deep .auth-form .mdc-floating-label,

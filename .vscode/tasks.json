@@ -44,8 +44,29 @@
       }
     },
     {
+      "label": "Gateway (.NET)",
+      "type": "shell",
+      "command": "dotnet run",
+      "options": {
+        "cwd": "${workspaceFolder}/Gateway/src/Gateway.API"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": { "regexp": "." },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "Now listening on"
+        }
+      },
+      "presentation": {
+        "group": "app1",
+        "reveal": "always"
+      }
+    },
+    {
       "label": "App 1: Start All",
-      "dependsOn": ["App 1: Backend (FastAPI)", "App 1: Frontend (Angular)"],
+      "dependsOn": ["App 1: Backend (FastAPI)", "App 1: Frontend (Angular)", "Gateway (.NET)"],
       "dependsOrder": "parallel",
       "problemMatcher": [],
       "group": {
