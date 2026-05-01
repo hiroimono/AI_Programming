@@ -387,6 +387,12 @@
 
 ::ng-deep .auth-form .mat-mdc-form-field-input-control {
   color: var(--text-primary) !important;
+  background: transparent !important;
+}
+
+::ng-deep .auth-form input,
+::ng-deep .auth-form .mdc-text-field__input {
+  background: transparent !important;
 }
 
 /* Override browser autofill background */
@@ -394,9 +400,9 @@
 ::ng-deep .auth-form input:-webkit-autofill:hover,
 ::ng-deep .auth-form input:-webkit-autofill:focus,
 ::ng-deep .auth-form input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 30px #1a1a2e inset !important;
+  -webkit-box-shadow: 0 0 0 30px rgba(15, 15, 26, 0.95) inset !important;
   -webkit-text-fill-color: var(--text-primary) !important;
-  transition: background-color 5000s ease-in-out 0s;
+  transition: background-color 5000s ease-in-out 0s !important;
   caret-color: var(--text-primary);
 }
 
