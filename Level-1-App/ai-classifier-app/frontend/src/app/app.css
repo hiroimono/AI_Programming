@@ -1,0 +1,30 @@
+.app-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
+}
+
+.app-header span {
+  color: #cbd5e1;
+  font-size: 0.875rem;
+}
+
+.app-header button {
+  padding: 0.375rem 0.75rem;
+  background: transparent;
+  color: #f87171;
+  border: 1px solid #f87171;
+  border-radius: 4px;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.app-header button:hover {
+  background: #f87171;
+  color: white;
+}

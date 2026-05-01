@@ -5,5 +5,6 @@
 //
 export const environment = {
   production: true,
-  apiUrl: 'https://aiprogramming-production.up.railway.app/api',
+  apiUrl: 'https://gateway-production-072b.up.railway.app/apps/classifier/api',
+  gatewayUrl: 'https://gateway-production-072b.up.railway.app',
 };

@@ -1,1 +1,89 @@
-/* You can add global styles to this file, and also import other style files */
+/* ===== DESIGN SYSTEM — CSS Custom Properties ===== */
+:root {
+  /* Colors */
+  --primary: #6c63ff;
+  --primary-hover: #5a52e0;
+  --secondary: #ff6584;
+  --accent-start: #43e97b;
+  --accent-end: #38f9d7;
+  --dark-bg: #0f0f1a;
+  --dark-surface: #1a1a2e;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-hover: rgba(255, 255, 255, 0.08);
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --error: #ff6b6b;
+  --success: #43e97b;
+  --warning: #fbbf24;
+
+  /* Typography */
+  --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --heading-weight: 700;
+  --heading-tracking: -0.02em;
+
+  /* Spacing & Radius */
+  --radius-card: 16px;
+  --radius-input: 12px;
+  --radius-button: 8px;
+  --shadow-card: 0 25px 50px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 20px rgba(108, 99, 255, 0.3);
+}
+
+/* ===== GLOBAL RESET ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family);
+  /* background: var(--dark-bg); */
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ===== Angular Material Theme Overrides ===== */
+.mat-mdc-form-field {
+  --mdc-outlined-text-field-outline-color: var(--glass-border);
+  --mdc-outlined-text-field-hover-outline-color: var(--primary);
+  --mdc-outlined-text-field-focus-outline-color: var(--primary);
+  --mdc-outlined-text-field-label-text-color: var(--text-secondary);
+  --mdc-outlined-text-field-input-text-color: var(--text-primary);
+  --mdc-outlined-text-field-caret-color: var(--primary);
+}
+
+.mat-mdc-checkbox {
+  --mdc-checkbox-selected-checkmark-color: white;
+  --mdc-checkbox-selected-focus-icon-color: var(--primary);
+  --mdc-checkbox-selected-hover-icon-color: var(--primary);
+  --mdc-checkbox-selected-icon-color: var(--primary);
+  --mdc-checkbox-unselected-icon-color: var(--text-muted);
+}
+
+.mat-mdc-tab-group {
+  --mat-tab-header-active-label-text-color: var(--primary);
+  --mat-tab-header-active-focus-label-text-color: var(--primary);
+  --mat-tab-header-active-hover-label-text-color: var(--primary);
+  --mat-tab-header-inactive-label-text-color: var(--text-secondary);
+  --mat-tab-header-active-focus-indicator-color: var(--primary);
+  --mat-tab-header-active-hover-indicator-color: var(--primary);
+}
+
+.mat-mdc-form-field .mdc-notched-outline__notch {
+  border-left: none !important;
+}
+
+.text-light {
+  color: var(--text-secondary) !important;
+}
+
+.text-white {
+  color: #ffffff !important;
+}

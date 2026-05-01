@@ -1,1 +1,7 @@
-<app-classifier />
+@if (auth.isAuthenticated()) {
+  <header class="app-header">
+    <span>{{ auth.currentUser()?.fullName }}</span>
+    <button (click)="auth.logout()">Logout</button>
+  </header>
+}
+<router-outlet />
