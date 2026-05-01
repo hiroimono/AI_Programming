@@ -213,12 +213,45 @@ public class AuthService
   }
 
   /// <summary>
-  /// Validates a Google id_token and logs in (or auto-registers) the user.
+  /// Validates a Google id_token (or exchanges an auth code first) and logs in (or auto-registers) the user.
   /// </summary>
   public async Task<AuthResponse?> GoogleLoginAsync(GoogleLoginRequest request)
   {
-    // Step 1: Validate the Google id_token using Google's public keys
     var clientId = _config["Google:ClientId"]!;
+    string idToken;
+
+    // If we received an authorization code, exchange it for an id_token first
+    if (!string.IsNullOrEmpty(request.Code))
+    {
+      var clientSecret = _config["Google:ClientSecret"]!;
+      var httpClient = _httpClientFactory.CreateClient();
+
+      var tokenResponse = await httpClient.PostAsync("https://oauth2.googleapis.com/token",
+        new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+          ["code"] = request.Code,
+          ["client_id"] = clientId,
+          ["client_secret"] = clientSecret,
+          ["redirect_uri"] = request.RedirectUri ?? "",
+          ["grant_type"] = "authorization_code"
+        }));
+
+      if (!tokenResponse.IsSuccessStatusCode)
+        return null;
+
+      var tokenData = await tokenResponse.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+      idToken = tokenData.GetProperty("id_token").GetString()!;
+    }
+    else if (!string.IsNullOrEmpty(request.IdToken))
+    {
+      idToken = request.IdToken;
+    }
+    else
+    {
+      return null; // Neither code nor id_token provided
+    }
+
+    // Validate the id_token using Google's public keys
     Google.Apis.Auth.GoogleJsonWebSignature.Payload payload;
 
     try
@@ -227,7 +260,7 @@ public class AuthService
       {
         Audience = [clientId] // Only accept tokens issued for OUR app
       };
-      payload = await Google.Apis.Auth.GoogleJsonWebSignature.ValidateAsync(request.IdToken, settings);
+      payload = await Google.Apis.Auth.GoogleJsonWebSignature.ValidateAsync(idToken, settings);
     }
     catch
     {

@@ -10,6 +10,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { trigger, transition, style, animate, query, stagger } from '@angular/animations';
 import { AuthService } from '../services/auth.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -156,12 +157,20 @@ export class LoginComponent {
   }
 
   onGoogleLogin() {
-    // Phase 2: Trigger Google OAuth popup flow
-    console.log('Google OAuth — coming soon');
+    // Redirect to Google OAuth2 consent page (authorization code flow)
+    const clientId = environment.googleClientId;
+    const redirectUri = `${window.location.origin}/auth/google/callback`;
+    const scope = 'openid email profile';
+
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`;
   }
 
   onGithubLogin() {
-    // Phase 2: Trigger GitHub OAuth flow
-    console.log('GitHub OAuth — coming soon');
+    // Redirect to GitHub OAuth authorize page
+    const clientId = environment.githubClientId;
+    const redirectUri = `${window.location.origin}/auth/github/callback`;
+    const scope = 'user:email';
+
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}`;
   }
 }

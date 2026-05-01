@@ -46,6 +46,17 @@ export class AuthService {
     return this.http.post<AuthResponse>(`${this.gatewayUrl}/api/auth/register`, request);
   }
 
+  googleLogin(code: string, redirectUri: string) {
+    return this.http.post<AuthResponse>(`${this.gatewayUrl}/api/auth/google`, {
+      code,
+      redirectUri,
+    });
+  }
+
+  githubLogin(code: string) {
+    return this.http.post<AuthResponse>(`${this.gatewayUrl}/api/auth/github`, { code });
+  }
+
   logout() {
     const refreshToken = this.currentUserSignal()?.refreshToken;
     this.http.post(`${this.gatewayUrl}/api/auth/logout`, { refreshToken }).subscribe();
