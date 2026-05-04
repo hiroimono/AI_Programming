@@ -396,11 +396,22 @@
 }
 
 /* Override browser autofill background */
+@keyframes autofillOverride {
+  0%,
+  100% {
+    background: transparent !important;
+  }
+}
+
 ::ng-deep .auth-form input:-webkit-autofill,
 ::ng-deep .auth-form input:-webkit-autofill:hover,
 ::ng-deep .auth-form input:-webkit-autofill:focus,
 ::ng-deep .auth-form input:-webkit-autofill:active {
+  -webkit-text-fill-color: #f1f5f9 !important;
   caret-color: #e2e8f0;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  animation: autofillOverride 0s forwards;
 }
 
 ::ng-deep .auth-form .mdc-floating-label,
