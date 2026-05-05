@@ -46,9 +46,19 @@ export class GoogleCallbackComponent implements OnInit {
 
   ngOnInit() {
     const code = this.route.snapshot.queryParamMap.get('code');
+    const returnedState = this.route.snapshot.queryParamMap.get('state');
 
     if (!code) {
       this.error = 'No authorization code received from Google.';
+      return;
+    }
+
+    // Verify OAuth state to prevent CSRF attacks
+    const savedState = sessionStorage.getItem('oauth_state_google');
+    sessionStorage.removeItem('oauth_state_google');
+
+    if (!savedState || savedState !== returnedState) {
+      this.error = 'Invalid OAuth state. Please try logging in again.';
       return;
     }
 

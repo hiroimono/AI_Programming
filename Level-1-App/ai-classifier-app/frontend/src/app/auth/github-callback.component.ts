@@ -46,9 +46,19 @@ export class GitHubCallbackComponent implements OnInit {
 
   ngOnInit() {
     const code = this.route.snapshot.queryParamMap.get('code');
+    const returnedState = this.route.snapshot.queryParamMap.get('state');
 
     if (!code) {
       this.error = 'No authorization code received from GitHub.';
+      return;
+    }
+
+    // Verify OAuth state to prevent CSRF attacks
+    const savedState = sessionStorage.getItem('oauth_state_github');
+    sessionStorage.removeItem('oauth_state_github');
+
+    if (!savedState || savedState !== returnedState) {
+      this.error = 'Invalid OAuth state. Please try logging in again.';
       return;
     }
 

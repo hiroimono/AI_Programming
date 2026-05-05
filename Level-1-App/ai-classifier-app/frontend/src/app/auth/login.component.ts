@@ -161,8 +161,9 @@ export class LoginComponent {
     const clientId = environment.googleClientId;
     const redirectUri = `${window.location.origin}/auth/google/callback`;
     const scope = 'openid email profile';
+    const state = this.generateOAuthState('google');
 
-    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`;
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent&state=${state}`;
   }
 
   onGithubLogin() {
@@ -170,7 +171,20 @@ export class LoginComponent {
     const clientId = environment.githubClientId;
     const redirectUri = `${window.location.origin}/auth/github/callback`;
     const scope = 'user:email';
+    const state = this.generateOAuthState('github');
 
-    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}`;
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&state=${state}`;
+  }
+
+  /**
+   * Generates a cryptographically random state token for OAuth CSRF protection.
+   * Stores it in sessionStorage so the callback component can verify it.
+   */
+  private generateOAuthState(provider: string): string {
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+    const state = Array.from(array, (b) => b.toString(16).padStart(2, '0')).join('');
+    sessionStorage.setItem(`oauth_state_${provider}`, state);
+    return state;
   }
 }
