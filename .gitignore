@@ -1,2 +1,17 @@
 # Personal documents
 Documents/
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Node
+node_modules/
+
+# IDE / OS
+.angular/cache
+.DS_Store
+Thumbs.db
