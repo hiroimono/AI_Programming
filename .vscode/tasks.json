@@ -1,6 +1,7 @@
 {
   "version": "2.0.0",
   "tasks": [
+    // ─── App 1: AI Classifier (Level-1) ────────────────
     {
       "label": "App 1: Backend (FastAPI)",
       "type": "shell",
@@ -44,6 +45,80 @@
       }
     },
     {
+      "label": "App 1: Start All",
+      "dependsOn": [
+        "App 1: Backend (FastAPI)",
+        "App 1: Frontend (Angular)",
+        "Gateway (.NET)"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+
+    // ─── App 2: AI Writing Assistant (Level-2) ─────────
+    {
+      "label": "App 2: Backend (FastAPI)",
+      "type": "shell",
+      "command": "& ./venv/Scripts/Activate.ps1; uvicorn main:app --reload --port 8001",
+      "options": {
+        "cwd": "${workspaceFolder}/Level-2-App/ai-writing-assistant/backend"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": { "regexp": "." },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "Application startup complete"
+        }
+      },
+      "presentation": {
+        "group": "app2",
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "App 2: Frontend (Angular)",
+      "type": "shell",
+      "command": "ng serve --port 4201",
+      "options": {
+        "cwd": "${workspaceFolder}/Level-2-App/ai-writing-assistant/frontend"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": { "regexp": "." },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "Application bundle generation complete"
+        }
+      },
+      "presentation": {
+        "group": "app2",
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "App 2: Start All",
+      "dependsOn": [
+        "App 2: Backend (FastAPI)",
+        "App 2: Frontend (Angular)",
+        "Gateway (.NET)"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+
+    // ─── Shared: Gateway ───────────────────────────────
+    {
       "label": "Gateway (.NET)",
       "type": "shell",
       "command": "dotnet run",
@@ -60,18 +135,8 @@
         }
       },
       "presentation": {
-        "group": "app1",
+        "group": "gateway",
         "reveal": "always"
-      }
-    },
-    {
-      "label": "App 1: Start All",
-      "dependsOn": ["App 1: Backend (FastAPI)", "App 1: Frontend (Angular)", "Gateway (.NET)"],
-      "dependsOrder": "parallel",
-      "problemMatcher": [],
-      "group": {
-        "kind": "build",
-        "isDefault": true
       }
     }
   ]

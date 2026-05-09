@@ -1,0 +1,108 @@
+<div class="chat-container">
+  <!-- Header -->
+  <header class="chat-header">
+    <div class="header-left">
+      <mat-icon class="logo-icon">edit_note</mat-icon>
+      <h1>AI Writing Assistant</h1>
+    </div>
+    <div class="header-right">
+      <mat-form-field appearance="outline" class="mode-select">
+        <mat-select [value]="writingMode()" (selectionChange)="writingMode.set($event.value)">
+          @for (mode of writingModes; track mode.value) {
+            <mat-option [value]="mode.value">
+              <mat-icon>{{ mode.icon }}</mat-icon>
+              {{ mode.label }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <button mat-icon-button (click)="clearChat()" matTooltip="Clear chat">
+        <mat-icon>delete_outline</mat-icon>
+      </button>
+    </div>
+  </header>
+
+  <!-- Messages -->
+  <div class="messages" #messagesContainer>
+    @if (messages().length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-icon">auto_awesome</mat-icon>
+        <h2>Start Writing</h2>
+        <p>Choose a writing mode and describe what you'd like me to write.</p>
+        <div class="suggestions">
+          <button
+            mat-stroked-button
+            (click)="
+              userInput = 'Write a blog post about the future of AI in software development';
+              sendMessage()
+            "
+          >
+            <mat-icon>article</mat-icon> Blog about AI
+          </button>
+          <button
+            mat-stroked-button
+            (click)="
+              userInput = 'Write a professional email requesting a meeting with a client';
+              sendMessage()
+            "
+          >
+            <mat-icon>email</mat-icon> Professional email
+          </button>
+          <button
+            mat-stroked-button
+            (click)="
+              userInput = 'Write a short creative story about a robot discovering emotions';
+              sendMessage()
+            "
+          >
+            <mat-icon>auto_awesome</mat-icon> Creative story
+          </button>
+        </div>
+      </div>
+    }
+
+    @for (msg of messages(); track $index) {
+      <div
+        class="message"
+        [class.user]="msg.role === 'user'"
+        [class.assistant]="msg.role === 'assistant'"
+      >
+        <div class="message-avatar">
+          <mat-icon>{{ msg.role === 'user' ? 'person' : 'smart_toy' }}</mat-icon>
+        </div>
+        <div class="message-content">
+          <div class="message-bubble">{{ msg.content }}</div>
+        </div>
+      </div>
+    }
+
+    @if (isStreaming()) {
+      <div class="streaming-indicator">
+        <mat-spinner diameter="16"></mat-spinner>
+        <span>Writing...</span>
+      </div>
+    }
+  </div>
+
+  <!-- Input -->
+  <footer class="chat-input">
+    <mat-form-field appearance="outline" class="input-field">
+      <textarea
+        matInput
+        [(ngModel)]="userInput"
+        (keydown)="onKeydown($event)"
+        placeholder="Describe what you'd like me to write..."
+        rows="1"
+        [disabled]="isStreaming()"
+      ></textarea>
+    </mat-form-field>
+    <button
+      mat-fab
+      color="primary"
+      (click)="sendMessage()"
+      [disabled]="!userInput.trim() || isStreaming()"
+    >
+      <mat-icon>send</mat-icon>
+    </button>
+  </footer>
+</div>

@@ -1,12 +1,17 @@
 {
-  "python.defaultInterpreterPath": "${workspaceFolder}/Level-1-App/ai-classifier-app/backend/venv/Scripts/python.exe",
-  "python.analysis.extraPaths": ["${workspaceFolder}/Level-1-App/ai-classifier-app/backend"],
-  "pylint.args": ["--disable=C0114"],
+  "python.defaultInterpreterPath": "python",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/Level-1-App/ai-classifier-app/backend",
+    "${workspaceFolder}/Level-2-App/ai-writing-assistant/backend"
+  ],
+  "pylint.args": ["--disable=C0114,C0115,C0116"],
   "search.exclude": {
-    "**/node_modules": true
+    "**/node_modules": true,
+    "**/venv": true
   },
   "files.watcherExclude": {
-    "**/node_modules/**": true
+    "**/node_modules/**": true,
+    "**/venv/**": true
   },
   "markdownlint.config": {
     "MD020": false,

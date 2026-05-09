@@ -2,13 +2,24 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug FastAPI Backend",
+      "name": "Debug App 1: Backend (FastAPI)",
       "type": "debugpy",
       "request": "launch",
       "module": "uvicorn",
       "args": ["main:app", "--reload", "--port", "8000"],
       "cwd": "${workspaceFolder}/Level-1-App/ai-classifier-app/backend",
       "python": "${workspaceFolder}/Level-1-App/ai-classifier-app/backend/venv/Scripts/python.exe",
+      "jinja": true,
+      "justMyCode": true
+    },
+    {
+      "name": "Debug App 2: Backend (FastAPI)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["main:app", "--reload", "--port", "8001"],
+      "cwd": "${workspaceFolder}/Level-2-App/ai-writing-assistant/backend",
+      "python": "${workspaceFolder}/Level-2-App/ai-writing-assistant/backend/venv/Scripts/python.exe",
       "jinja": true,
       "justMyCode": true
     }
