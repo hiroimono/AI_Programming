@@ -46,11 +46,7 @@
     },
     {
       "label": "App 1: Start All",
-      "dependsOn": [
-        "App 1: Backend (FastAPI)",
-        "App 1: Frontend (Angular)",
-        "Gateway (.NET)"
-      ],
+      "dependsOn": ["App 1: Backend (FastAPI)", "App 1: Frontend (Angular)", "Gateway (.NET)"],
       "dependsOrder": "parallel",
       "problemMatcher": [],
       "group": {
@@ -104,11 +100,7 @@
     },
     {
       "label": "App 2: Start All",
-      "dependsOn": [
-        "App 2: Backend (FastAPI)",
-        "App 2: Frontend (Angular)",
-        "Gateway (.NET)"
-      ],
+      "dependsOn": ["App 2: Backend (FastAPI)", "App 2: Frontend (Angular)", "Gateway (.NET)"],
       "dependsOrder": "parallel",
       "problemMatcher": [],
       "group": {
