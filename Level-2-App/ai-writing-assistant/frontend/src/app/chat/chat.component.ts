@@ -1,4 +1,14 @@
-import { Component, inject, signal, ViewChild, ElementRef, OnInit, OnDestroy, NgZone, HostListener } from '@angular/core';
+import {
+  Component,
+  inject,
+  signal,
+  ViewChild,
+  ElementRef,
+  OnInit,
+  OnDestroy,
+  NgZone,
+  HostListener,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -7,11 +17,7 @@ import { ChatService, ChatMessage, WritingMode } from '../services/chat.service'
 
 @Component({
   selector: 'app-chat',
-  imports: [
-    FormsModule,
-    MatIconModule,
-    MatTooltipModule,
-  ],
+  imports: [FormsModule, MatIconModule, MatTooltipModule],
   templateUrl: './chat.component.html',
   styleUrl: './chat.component.scss',
 })
@@ -67,38 +73,40 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.messages.update((msgs) => [...msgs, assistantMessage]);
     this.isStreaming.set(true);
 
-    this.streamSub = this.chatService.streamChat(this.messages().slice(0, -1), this.writingMode()).subscribe({
-      next: (token) => {
-        this.messages.update((msgs) => {
-          const updated = [...msgs];
-          const last = updated[updated.length - 1];
-          updated[updated.length - 1] = { ...last, content: last.content + token };
-          return updated;
-        });
-        this.scheduleScroll();
-      },
-      error: (err) => {
-        this.messages.update((msgs) => {
-          const updated = [...msgs];
-          updated[updated.length - 1] = {
-            role: 'assistant',
-            content: `⚠️ Error: ${err.message}`,
-            timestamp: new Date(),
-          };
-          return updated;
-        });
-        this.isStreaming.set(false);
-      },
-      complete: () => {
-        this.isStreaming.set(false);
-        this.messages.update((msgs) => {
-          const updated = [...msgs];
-          const last = updated[updated.length - 1];
-          updated[updated.length - 1] = { ...last, timestamp: new Date() };
-          return updated;
-        });
-      },
-    });
+    this.streamSub = this.chatService
+      .streamChat(this.messages().slice(0, -1), this.writingMode())
+      .subscribe({
+        next: (token) => {
+          this.messages.update((msgs) => {
+            const updated = [...msgs];
+            const last = updated[updated.length - 1];
+            updated[updated.length - 1] = { ...last, content: last.content + token };
+            return updated;
+          });
+          this.scheduleScroll();
+        },
+        error: (err) => {
+          this.messages.update((msgs) => {
+            const updated = [...msgs];
+            updated[updated.length - 1] = {
+              role: 'assistant',
+              content: `⚠️ Error: ${err.message}`,
+              timestamp: new Date(),
+            };
+            return updated;
+          });
+          this.isStreaming.set(false);
+        },
+        complete: () => {
+          this.isStreaming.set(false);
+          this.messages.update((msgs) => {
+            const updated = [...msgs];
+            const last = updated[updated.length - 1];
+            updated[updated.length - 1] = { ...last, timestamp: new Date() };
+            return updated;
+          });
+        },
+      });
   }
 
   onKeydown(event: KeyboardEvent) {
