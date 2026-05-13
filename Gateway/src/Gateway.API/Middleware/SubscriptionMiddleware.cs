@@ -28,6 +28,15 @@ public class SubscriptionMiddleware
       return;
     }
 
+    // Allow anonymous access if route metadata says so
+    var routeConfig = proxyFeature.Route.Config;
+    if (routeConfig.Metadata?.TryGetValue("AllowAnonymous", out var allowAnon) == true
+        && string.Equals(allowAnon, "true", StringComparison.OrdinalIgnoreCase))
+    {
+      await _next(context);
+      return;
+    }
+
     // Step 1: Authentication check
     if (context.User.Identity?.IsAuthenticated != true)
     {
