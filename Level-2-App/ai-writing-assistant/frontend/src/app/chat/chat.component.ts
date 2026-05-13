@@ -23,6 +23,9 @@ export class ChatComponent implements OnInit, OnDestroy {
   private ngZone = inject(NgZone);
   private userScrolledUp = false;
   private wheelListener: ((e: WheelEvent) => void) | null = null;
+  private touchStartY = 0;
+  private touchMoveListener: ((e: TouchEvent) => void) | null = null;
+  private touchStartListener: ((e: TouchEvent) => void) | null = null;
   private streamSub: Subscription | null = null;
 
   messages = signal<ChatMessage[]>([]);
@@ -286,6 +289,33 @@ export class ChatComponent implements OnInit, OnDestroy {
     };
 
     el.addEventListener('wheel', this.wheelListener, { passive: true });
+
+    // Touch: swipe up during streaming → pause auto-scroll
+    this.touchStartListener = (e: TouchEvent) => {
+      this.touchStartY = e.touches[0].clientY;
+    };
+
+    this.touchMoveListener = (e: TouchEvent) => {
+      const deltaY = this.touchStartY - e.touches[0].clientY;
+
+      // Swipe up (finger moves up, deltaY > 0 = scroll down in content, but finger drag up = scroll up visually)
+      // Actually: finger drags DOWN (positive clientY change) = scrolling UP in content
+      if (deltaY < -10 && this.isStreaming()) {
+        this.userScrolledUp = true;
+      }
+
+      // Finger drags UP (scroll down) while paused → check if near bottom
+      if (deltaY > 10 && this.userScrolledUp) {
+        setTimeout(() => {
+          if (this.isNearBottom()) {
+            this.userScrolledUp = false;
+          }
+        }, 60);
+      }
+    };
+
+    el.addEventListener('touchstart', this.touchStartListener, { passive: true });
+    el.addEventListener('touchmove', this.touchMoveListener, { passive: true });
   }
 
   private detachScrollListener() {
@@ -293,6 +323,12 @@ export class ChatComponent implements OnInit, OnDestroy {
     if (!el) return;
     if (this.wheelListener) {
       el.removeEventListener('wheel', this.wheelListener);
+    }
+    if (this.touchStartListener) {
+      el.removeEventListener('touchstart', this.touchStartListener);
+    }
+    if (this.touchMoveListener) {
+      el.removeEventListener('touchmove', this.touchMoveListener);
     }
   }
 }
