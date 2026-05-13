@@ -6,6 +6,7 @@ import { environment } from '../../environments/environment';
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
+  timestamp?: Date;
 }
 
 export type WritingMode = 'general' | 'blog' | 'email' | 'report' | 'creative';

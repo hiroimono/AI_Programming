@@ -45,7 +45,7 @@
       }
     },
     {
-      "label": "App 1: Start All",
+      "label": "App 1: Start Al-Classifier-App",
       "dependsOn": ["App 1: Backend (FastAPI)", "App 1: Frontend (Angular)", "Gateway (.NET)"],
       "dependsOrder": "parallel",
       "problemMatcher": [],
@@ -99,7 +99,7 @@
       }
     },
     {
-      "label": "App 2: Start All",
+      "label": "App 2: Start AI-Writing-Assistant-App",
       "dependsOn": ["App 2: Backend (FastAPI)", "App 2: Frontend (Angular)", "Gateway (.NET)"],
       "dependsOrder": "parallel",
       "problemMatcher": [],
