@@ -41,7 +41,7 @@ app.add_middleware(
         "http://localhost:4201",
         "http://localhost:5000",
         "https://gateway-production-072b.up.railway.app",
-        "https://ai-programming.pages.dev",
+        "https://ai-classifier.pages.dev",
         "https://ai-writing-assistant.pages.dev",
     ],
     allow_credentials=True,
