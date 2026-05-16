@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -55,9 +55,15 @@ import { environment } from '../../environments/environment';
     ]),
   ],
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private auth = inject(AuthService);
   private router = inject(Router);
+
+  ngOnInit() {
+    if (this.auth.isAuthenticated()) {
+      this.router.navigate(['/']);
+    }
+  }
 
   // Login state
   loginEmail = '';
