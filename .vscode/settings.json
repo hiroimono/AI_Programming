@@ -1,5 +1,5 @@
 {
-  "python.defaultInterpreterPath": "python",
+  "powershell.enableProfileLoading": false,
   "python.analysis.extraPaths": [
     "${workspaceFolder}/Level-1-App/ai-classifier-app/backend",
     "${workspaceFolder}/Level-2-App/ai-writing-assistant/backend"
