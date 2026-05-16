@@ -19,15 +19,27 @@ $input-bg: rgba(255, 255, 255, 0.06);
 .bg-gradient {
   position: fixed;
   inset: 0;
-  background: linear-gradient(135deg, #0d0d1a 0%, #1a0a2e 25%, #0d0d1a 50%, #0a1628 75%, #0d0d1a 100%);
+  background: linear-gradient(
+    135deg,
+    #0d0d1a 0%,
+    #1a0a2e 25%,
+    #0d0d1a 50%,
+    #0a1628 75%,
+    #0d0d1a 100%
+  );
   background-size: 400% 400%;
   animation: gradientShift 15s ease infinite;
   z-index: -2;
 }
 
 @keyframes gradientShift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .bg-shapes {
@@ -73,27 +85,69 @@ $input-bg: rgba(255, 255, 255, 0.06);
   animation: float3 18s ease-in-out infinite;
 }
 
+.app-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
+.app-logo-lg {
+  width: 80px;
+  height: 80px;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
 @media (min-width: 768px) {
-  .shape-1 { width: 400px; height: 400px; }
-  .shape-2 { width: 300px; height: 300px; }
-  .shape-3 { width: 250px; height: 250px; }
+  .shape-1 {
+    width: 400px;
+    height: 400px;
+  }
+  .shape-2 {
+    width: 300px;
+    height: 300px;
+  }
+  .shape-3 {
+    width: 250px;
+    height: 250px;
+  }
 }
 
 @keyframes float1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(-30px, 40px) scale(1.05); }
-  66% { transform: translate(20px, -20px) scale(0.95); }
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-30px, 40px) scale(1.05);
+  }
+  66% {
+    transform: translate(20px, -20px) scale(0.95);
+  }
 }
 
 @keyframes float2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(40px, -30px) scale(1.1); }
-  66% { transform: translate(-20px, 30px) scale(0.9); }
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(40px, -30px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 30px) scale(0.9);
+  }
 }
 
 @keyframes float3 {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); }
-  50% { transform: translate(-40%, -60%) scale(1.15); }
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-40%, -60%) scale(1.15);
+  }
 }
 
 // ─── Glassmorphism Card ────────────────────────────
@@ -139,7 +193,9 @@ $input-bg: rgba(255, 255, 255, 0.06);
 .chat-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;  position: relative;  padding: 10px 12px;
+  justify-content: space-between;
+  position: relative;
+  padding: 10px 12px;
   margin-bottom: 8px;
   flex-shrink: 0;
 
@@ -167,17 +223,9 @@ $input-bg: rgba(255, 255, 255, 0.06);
       width: 34px;
       height: 34px;
       border-radius: 10px;
-      background: linear-gradient(135deg, $primary, $secondary);
       display: flex;
       align-items: center;
       justify-content: center;
-
-      mat-icon {
-        color: $text-primary;
-        font-size: 18px;
-        width: 18px;
-        height: 18px;
-      }
     }
 
     h1 {
@@ -753,18 +801,32 @@ $input-bg: rgba(255, 255, 255, 0.06);
     background: $primary;
     animation: typingBounce 1.4s ease-in-out infinite;
 
-    &:nth-child(2) { animation-delay: 0.2s; }
-    &:nth-child(3) { animation-delay: 0.4s; }
+    &:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    &:nth-child(3) {
+      animation-delay: 0.4s;
+    }
   }
 }
 
 @keyframes typingBounce {
-  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-  30% { transform: translateY(-6px); opacity: 1; }
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
 }
 
 @keyframes borderRotate {
-  to { --border-angle: 360deg; }
+  to {
+    --border-angle: 360deg;
+  }
 }
 
 .typing-label {
@@ -790,7 +852,9 @@ $input-bg: rgba(255, 255, 255, 0.06);
   padding: 10px 10px;
   gap: 6px;
   position: relative;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
 
   @media (min-width: 768px) {
     padding: 12px 14px;
@@ -823,9 +887,13 @@ $input-bg: rgba(255, 255, 255, 0.06);
       $secondary 56%,
       transparent 70%
     );
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
     mask-composite: exclude;
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     animation: borderRotate 2.5s linear infinite;
     pointer-events: none;
@@ -999,5 +1067,3 @@ $input-bg: rgba(255, 255, 255, 0.06);
     }
   }
 }
-
-

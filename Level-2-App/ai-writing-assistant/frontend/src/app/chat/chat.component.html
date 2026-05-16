@@ -11,7 +11,8 @@
   <header class="chat-header glass-card">
     <div class="header-left">
       <div class="logo-wrapper">
-        <mat-icon>edit_note</mat-icon>
+        <!-- <mat-icon>edit_note</mat-icon> -->
+        <img src="favicon.png" alt="Logo" class="app-logo" />
       </div>
       <h1>AI Writing Assistant</h1>
     </div>
@@ -27,7 +28,8 @@
     @if (messages().length === 0) {
       <div class="empty-state">
         <div class="empty-icon-wrapper">
-          <mat-icon>auto_awesome</mat-icon>
+          <!-- <mat-icon>auto_awesome</mat-icon> -->
+          <img src="favicon.png" alt="Logo" class="app-logo-lg" />
         </div>
         <h2>Start Writing</h2>
         <p>Choose a writing mode and describe what you'd like me to write.</p>
@@ -98,24 +100,20 @@
               >
                 <mat-icon>edit</mat-icon>
               </button>
-              <button
-                class="action-btn"
-                (click)="copyMessage($index)"
-                matTooltip="Copy"
-              >
+              <button class="action-btn" (click)="copyMessage($index)" matTooltip="Copy">
                 <mat-icon>{{ copiedIndex() === $index ? 'check' : 'content_copy' }}</mat-icon>
               </button>
             </div>
           }
 
           <!-- Assistant message actions (visible after streaming) -->
-          @if (msg.role === 'assistant' && msg.content && !(isStreaming() && $index === messages().length - 1)) {
+          @if (
+            msg.role === 'assistant' &&
+            msg.content &&
+            !(isStreaming() && $index === messages().length - 1)
+          ) {
             <div class="message-actions assistant-actions">
-              <button
-                class="action-btn"
-                (click)="copyMessage($index)"
-                matTooltip="Copy"
-              >
+              <button class="action-btn" (click)="copyMessage($index)" matTooltip="Copy">
                 <mat-icon>{{ copiedIndex() === $index ? 'check' : 'content_copy' }}</mat-icon>
               </button>
               <button
@@ -187,11 +185,7 @@
           </div>
         </div>
         @if (isStreaming()) {
-          <button
-            class="send-btn stop"
-            (click)="cancelStream()"
-            matTooltip="Stop generating"
-          >
+          <button class="send-btn stop" (click)="cancelStream()" matTooltip="Stop generating">
             <mat-icon>stop</mat-icon>
           </button>
         } @else {

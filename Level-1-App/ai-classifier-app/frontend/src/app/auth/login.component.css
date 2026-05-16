@@ -149,6 +149,13 @@
   margin-bottom: 1.5rem;
   display: inline-block;
   animation: pulse 3s ease-in-out infinite;
+
+  .app-logo {
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+    object-fit: contain;
+  }
 }
 
 @keyframes pulse {
