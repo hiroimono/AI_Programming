@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -55,12 +55,25 @@ import { environment } from '../../environments/environment';
     ]),
   ],
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent implements OnInit, OnDestroy {
   private auth = inject(AuthService);
   private router = inject(Router);
+  private pageshowHandler = this.onPageShow.bind(this);
 
   ngOnInit() {
     if (this.auth.isAuthenticated()) {
+      this.router.navigate(['/']);
+    }
+    // Catch bfcache restore: browser back/forward without re-running JS
+    window.addEventListener('pageshow', this.pageshowHandler);
+  }
+
+  ngOnDestroy() {
+    window.removeEventListener('pageshow', this.pageshowHandler);
+  }
+
+  private onPageShow(event: PageTransitionEvent) {
+    if (event.persisted && this.auth.isAuthenticated()) {
       this.router.navigate(['/']);
     }
   }
