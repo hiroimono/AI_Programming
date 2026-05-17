@@ -64,13 +64,11 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
-  /** Save auth response to memory and localStorage */
   setSession(response: AuthResponse) {
     this.currentUserSignal.set(response);
     localStorage.setItem('auth', JSON.stringify(response));
   }
 
-  /** Get the current JWT token */
   getToken(): string | null {
     return this.currentUserSignal()?.token ?? null;
   }
@@ -84,7 +82,6 @@ export class AuthService {
     const stored = localStorage.getItem('auth');
     if (!stored) return null;
     const user = JSON.parse(stored) as AuthResponse;
-    // Check if token is expired
     if (new Date(user.expiresAt) < new Date()) {
       localStorage.removeItem('auth');
       return null;

@@ -23,12 +23,12 @@ import { environment } from '../../environments/environment';
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      background: #0f0f1a;
+      background: #0d0d1a;
     }
     .callback-card {
-      color: var(--text-primary, #e2e8f0);
+      color: #e2e8f0;
       text-align: center;
-      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-family: 'Inter', sans-serif;
     }
     .error {
       color: #ff6b6b;
@@ -54,7 +54,6 @@ export class GitHubCallbackComponent implements OnInit {
       return;
     }
 
-    // Verify OAuth state to prevent CSRF attacks
     const savedState = sessionStorage.getItem('oauth_state_github');
     sessionStorage.removeItem('oauth_state_github');
 

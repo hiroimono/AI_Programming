@@ -317,15 +317,19 @@ public class AuthService
   /// </summary>
   public async Task<AuthResponse?> GitHubLoginAsync(GitHubLoginRequest request)
   {
-    var clientId = _config["GitHub:ClientId"]!;
-    var clientSecret = _config["GitHub:ClientSecret"]!;
+    // Look up the matching client secret for the given client ID
+    var clientSecret = _config.GetSection("GitHub:Apps").GetChildren()
+      .FirstOrDefault(app => app["ClientId"] == request.ClientId)?["ClientSecret"];
+
+    if (string.IsNullOrEmpty(clientSecret))
+      return null;
 
     // Step 1: Exchange authorization code for access_token
     var httpClient = _httpClientFactory.CreateClient("GitHub");
 
     var tokenResponse = await httpClient.PostAsJsonAsync(
       "https://github.com/login/oauth/access_token",
-      new { client_id = clientId, client_secret = clientSecret, code = request.Code }
+      new { client_id = request.ClientId, client_secret = clientSecret, code = request.Code }
     );
 
     if (!tokenResponse.IsSuccessStatusCode)

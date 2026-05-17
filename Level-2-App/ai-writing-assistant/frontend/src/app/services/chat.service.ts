@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { AuthService } from './auth.service';
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -16,6 +17,7 @@ export type WritingMode = 'general' | 'blog' | 'email' | 'report' | 'creative';
 })
 export class ChatService {
   private http = inject(HttpClient);
+  private auth = inject(AuthService);
   private apiUrl = environment.gatewayUrl
     ? `${environment.gatewayUrl}/apps/writer/api`
     : environment.apiUrl;
@@ -34,7 +36,10 @@ export class ChatService {
 
       fetch(`${this.apiUrl}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(this.auth.getToken() ? { Authorization: `Bearer ${this.auth.getToken()}` } : {}),
+        },
         body: JSON.stringify({ messages, writing_mode: writingMode }),
         signal: abortController.signal,
       })

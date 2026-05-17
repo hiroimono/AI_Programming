@@ -14,6 +14,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subscription } from 'rxjs';
 import { ChatService, ChatMessage, WritingMode } from '../services/chat.service';
+import { AuthService } from '../services/auth.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-chat',
@@ -27,6 +29,8 @@ export class ChatComponent implements OnInit, OnDestroy {
 
   private chatService = inject(ChatService);
   private ngZone = inject(NgZone);
+  private router = inject(Router);
+  auth = inject(AuthService);
   private userScrolledUp = false;
   private wheelListener: ((e: WheelEvent) => void) | null = null;
   private touchStartY = 0;
@@ -125,6 +129,11 @@ export class ChatComponent implements OnInit, OnDestroy {
 
   clearChat() {
     this.messages.set([]);
+  }
+
+  logout() {
+    this.auth.logout();
+    this.router.navigate(['/login']);
   }
 
   cancelStream() {

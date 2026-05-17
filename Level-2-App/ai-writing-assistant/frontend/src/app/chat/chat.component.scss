@@ -99,6 +99,13 @@ $input-bg: rgba(255, 255, 255, 0.06);
   object-fit: contain;
 }
 
+.app-logo-sm {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
 @media (min-width: 768px) {
   .shape-1 {
     width: 400px;
@@ -154,6 +161,19 @@ $input-bg: rgba(255, 255, 255, 0.06);
 .glass-card {
   background: $bg-surface;
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid $border;
+  border-radius: 12px 12px 0 0 !important;
+
+  @media (min-width: 768px) {
+    border-radius: 16px;
+  }
+}
+
+.glass-card-chat {
+  background: $bg-surface;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid $border;
   border-radius: 12px;
 
@@ -196,18 +216,29 @@ $input-bg: rgba(255, 255, 255, 0.06);
   justify-content: space-between;
   position: relative;
   padding: 10px 12px;
-  margin-bottom: 8px;
+  margin-bottom: 0;
   flex-shrink: 0;
 
   .header-right {
     display: flex;
     align-items: center;
     gap: 8px;
+
+    .user-name {
+      color: $text-muted;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      display: none;
+
+      @media (min-width: 768px) {
+        display: inline;
+      }
+    }
   }
 
   @media (min-width: 768px) {
     padding: 14px 20px;
-    margin-bottom: 12px;
+    margin-bottom: 0;
 
     .header-right {
       gap: 12px;
@@ -235,10 +266,15 @@ $input-bg: rgba(255, 255, 255, 0.06);
       color: $text-primary;
       margin: 0;
       letter-spacing: -0.01em;
+      white-space: nowrap;
       position: absolute;
       left: 50%;
       transform: translateX(-50%);
       pointer-events: none;
+
+      @media (min-width: 768px) {
+        font-size: 1.15rem;
+      }
     }
 
     @media (min-width: 768px) {
@@ -257,12 +293,52 @@ $input-bg: rgba(255, 255, 255, 0.06);
       }
 
       h1 {
-        position: static;
-        transform: none;
-        pointer-events: auto;
         font-size: 1.15rem;
       }
     }
+  }
+}
+
+// ─── Chat Toolbar ──────────────────────────────────
+.chat-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 4px 8px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+  background: $bg-surface;
+  border: 1px solid $border;
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+
+  @media (min-width: 768px) {
+    margin-bottom: 12px;
+    border-radius: 0 0 16px 16px;
+  }
+}
+
+.icon-btn-sm {
+  background: none;
+  border: none;
+  color: $text-muted;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    color: $text-primary;
+    background: $bg-surface;
   }
 }
 
@@ -506,7 +582,7 @@ $input-bg: rgba(255, 255, 255, 0.06);
     font-weight: 700;
     font-size: 1.1rem;
     color: $text-primary;
-    margin: 0 0 6px;
+    margin: 6px;
   }
 
   p {

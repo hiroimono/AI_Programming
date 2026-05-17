@@ -10,4 +10,7 @@ public class GitHubLoginRequest
 {
   [Required]
   public string Code { get; set; } = string.Empty;
+
+  [Required]
+  public string ClientId { get; set; } = string.Empty;
 }

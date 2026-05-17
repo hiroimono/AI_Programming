@@ -1,0 +1,312 @@
+<div class="auth-container">
+  <div class="bg-gradient"></div>
+  <div class="bg-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+  </div>
+
+  <div class="auth-card" [@shake]="shakeState()">
+    <!-- Left Panel: Branding -->
+    <div class="auth-brand">
+      <div class="brand-content">
+        <div class="brand-icon">
+          <!-- <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <rect width="48" height="48" rx="12" fill="url(#writerGrad)" />
+            <path d="M14 34V14h4l6 12 6-12h4v20h-4V22l-6 12-6-12v12h-4z" fill="white" />
+            <defs>
+              <linearGradient id="writerGrad" x1="0" y1="0" x2="48" y2="48">
+                <stop stop-color="#6c63ff" />
+                <stop offset="1" stop-color="#8b5cf6" />
+              </linearGradient>
+            </defs>
+          </svg> -->
+          <img src="favicon.png" alt="Logo" class="app-logo" />
+        </div>
+        <h1>AI Writing Assistant</h1>
+        <p>
+          Your intelligent writing companion powered by AI. Draft emails, blog posts, reports, and
+          creative content effortlessly.
+        </p>
+        <div class="brand-features">
+          <div class="feature">
+            <span class="material-symbols-rounded">edit_note</span>
+            <span>Multiple Writing Modes</span>
+          </div>
+          <div class="feature">
+            <span class="material-symbols-rounded">stream</span>
+            <span>Real-time Streaming</span>
+          </div>
+          <div class="feature">
+            <span class="material-symbols-rounded">auto_awesome</span>
+            <span>AI-Powered Content</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Forms -->
+    <div class="auth-forms">
+      <mat-tab-group [(selectedIndex)]="activeTab" animationDuration="300ms" class="auth-tabs">
+        <!-- LOGIN TAB -->
+        <mat-tab label="Sign In">
+          <div class="tab-content" @fadeSlideIn>
+            <h2>Welcome back</h2>
+            <p class="tab-subtitle">Sign in to your account to continue</p>
+
+            @if (error() && activeTab() === 0) {
+              <div class="error-banner">
+                <span class="material-symbols-rounded">error</span>
+                {{ error() }}
+              </div>
+            }
+
+            <div class="oauth-buttons">
+              <button class="oauth-btn google" (click)="onGoogleLogin()">
+                <svg width="18" height="18" viewBox="0 0 18 18">
+                  <path
+                    fill="#4285F4"
+                    d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.581-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"
+                  />
+                </svg>
+                Continue with Google
+              </button>
+              <button class="oauth-btn github" (click)="onGithubLogin()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                  <path
+                    d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
+                  />
+                </svg>
+                Continue with GitHub
+              </button>
+            </div>
+
+            <div class="divider"><span>or</span></div>
+
+            <form (ngSubmit)="onLogin()" class="auth-form">
+              <mat-form-field appearance="outline" class="form-field-animate">
+                <mat-label>Email</mat-label>
+                <mat-icon matPrefix>email</mat-icon>
+                <input matInput type="email" [(ngModel)]="loginEmail" name="email" required />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field-animate">
+                <mat-label>Password</mat-label>
+                <mat-icon matPrefix>lock</mat-icon>
+                <input
+                  matInput
+                  [type]="showLoginPassword ? 'text' : 'password'"
+                  [(ngModel)]="loginPassword"
+                  name="password"
+                  required
+                />
+                <button
+                  mat-icon-button
+                  matSuffix
+                  type="button"
+                  (click)="showLoginPassword = !showLoginPassword"
+                >
+                  <mat-icon>{{ showLoginPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
+              </mat-form-field>
+
+              <div class="form-options form-field-animate">
+                <mat-checkbox [(ngModel)]="rememberMe" name="remember">Remember me</mat-checkbox>
+                <a href="#" class="forgot-link">Forgot password?</a>
+              </div>
+
+              <button
+                mat-flat-button
+                class="submit-btn form-field-animate"
+                type="submit"
+                [disabled]="loading() || !loginEmail || !loginPassword"
+              >
+                @if (loading()) {
+                  <mat-spinner diameter="20"></mat-spinner>
+                  Signing in...
+                } @else {
+                  Sign In
+                }
+              </button>
+            </form>
+          </div>
+        </mat-tab>
+
+        <!-- REGISTER TAB -->
+        <mat-tab label="Create Account">
+          <div class="tab-content" @fadeSlideIn>
+            <h2>Get started</h2>
+            <p class="tab-subtitle">Create your account in seconds</p>
+
+            @if (error() && activeTab() === 1) {
+              <div class="error-banner">
+                <span class="material-symbols-rounded">error</span>
+                {{ error() }}
+              </div>
+            }
+
+            <div class="oauth-buttons">
+              <button class="oauth-btn google" (click)="onGoogleLogin()">
+                <svg width="18" height="18" viewBox="0 0 18 18">
+                  <path
+                    fill="#4285F4"
+                    d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.581-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"
+                  />
+                </svg>
+                Sign up with Google
+              </button>
+              <button class="oauth-btn github" (click)="onGithubLogin()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                  <path
+                    d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
+                  />
+                </svg>
+                Sign up with GitHub
+              </button>
+            </div>
+
+            <div class="divider"><span>or</span></div>
+
+            <form (ngSubmit)="onRegister()" class="auth-form">
+              <div class="name-row form-field-animate">
+                <mat-form-field appearance="outline">
+                  <mat-label>First Name</mat-label>
+                  <mat-icon matPrefix>person</mat-icon>
+                  <input matInput [(ngModel)]="firstName" name="firstName" required />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Last Name</mat-label>
+                  <mat-icon matPrefix>person</mat-icon>
+                  <input matInput [(ngModel)]="lastName" name="lastName" required />
+                </mat-form-field>
+              </div>
+
+              <mat-form-field appearance="outline" class="form-field-animate">
+                <mat-label>Email</mat-label>
+                <mat-icon matPrefix>email</mat-icon>
+                <input matInput type="email" [(ngModel)]="registerEmail" name="regEmail" required />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field-animate">
+                <mat-label>Password</mat-label>
+                <mat-icon matPrefix>lock</mat-icon>
+                <input
+                  matInput
+                  [type]="showRegisterPassword ? 'text' : 'password'"
+                  [(ngModel)]="registerPassword"
+                  name="regPassword"
+                  required
+                  minlength="8"
+                />
+                <button
+                  mat-icon-button
+                  matSuffix
+                  type="button"
+                  (click)="showRegisterPassword = !showRegisterPassword"
+                >
+                  <mat-icon>{{ showRegisterPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
+              </mat-form-field>
+
+              @if (registerPassword) {
+                <div class="strength-bar form-field-animate">
+                  <div class="strength-track">
+                    @for (i of [1, 2, 3, 4, 5]; track i) {
+                      <div
+                        class="strength-segment"
+                        [style.background]="
+                          i <= passwordStrength().score
+                            ? passwordStrength().color
+                            : 'rgba(255,255,255,0.1)'
+                        "
+                      ></div>
+                    }
+                  </div>
+                  <span class="strength-label" [style.color]="passwordStrength().color">{{
+                    passwordStrength().label
+                  }}</span>
+                </div>
+              }
+
+              <mat-form-field appearance="outline" class="form-field-animate">
+                <mat-label>Confirm Password</mat-label>
+                <mat-icon matPrefix>lock_reset</mat-icon>
+                <input
+                  matInput
+                  [type]="showConfirmPassword ? 'text' : 'password'"
+                  [(ngModel)]="confirmPassword"
+                  name="confirmPassword"
+                  required
+                />
+                <button
+                  mat-icon-button
+                  matSuffix
+                  type="button"
+                  (click)="showConfirmPassword = !showConfirmPassword"
+                >
+                  <mat-icon>{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
+                @if (!passwordsMatch() && confirmPassword) {
+                  <mat-error>Passwords do not match</mat-error>
+                }
+              </mat-form-field>
+
+              <div class="form-options form-field-animate">
+                <mat-checkbox [(ngModel)]="agreeTerms" name="terms">
+                  I agree to the <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a>
+                </mat-checkbox>
+              </div>
+
+              <button
+                mat-flat-button
+                class="submit-btn form-field-animate"
+                type="submit"
+                [disabled]="
+                  loading() ||
+                  !firstName ||
+                  !lastName ||
+                  !registerEmail ||
+                  !registerPassword ||
+                  !confirmPassword ||
+                  !agreeTerms ||
+                  !passwordsMatch()
+                "
+              >
+                @if (loading()) {
+                  <mat-spinner diameter="20"></mat-spinner>
+                  Creating account...
+                } @else {
+                  Create Account
+                }
+              </button>
+            </form>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </div>
+  </div>
+</div>

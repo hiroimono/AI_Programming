@@ -1,10 +1,9 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { environment } from '../../environments/environment';
 
 @Component({
-  selector: 'app-github-callback',
+  selector: 'app-google-callback',
   template: `
     <div class="callback-container">
       <div class="callback-card">
@@ -12,7 +11,7 @@ import { environment } from '../../environments/environment';
           <p class="error">{{ error }}</p>
           <a routerLink="/login">Back to Login</a>
         } @else {
-          <p>Authenticating with GitHub...</p>
+          <p>Authenticating with Google...</p>
         }
       </div>
     </div>
@@ -23,12 +22,12 @@ import { environment } from '../../environments/environment';
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      background: #0f0f1a;
+      background: #0d0d1a;
     }
     .callback-card {
-      color: var(--text-primary, #e2e8f0);
+      color: #e2e8f0;
       text-align: center;
-      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-family: 'Inter', sans-serif;
     }
     .error {
       color: #ff6b6b;
@@ -38,7 +37,7 @@ import { environment } from '../../environments/environment';
     }
   `,
 })
-export class GitHubCallbackComponent implements OnInit {
+export class GoogleCallbackComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private auth = inject(AuthService);
@@ -50,26 +49,27 @@ export class GitHubCallbackComponent implements OnInit {
     const returnedState = this.route.snapshot.queryParamMap.get('state');
 
     if (!code) {
-      this.error = 'No authorization code received from GitHub.';
+      this.error = 'No authorization code received from Google.';
       return;
     }
 
-    // Verify OAuth state to prevent CSRF attacks
-    const savedState = sessionStorage.getItem('oauth_state_github');
-    sessionStorage.removeItem('oauth_state_github');
+    const savedState = sessionStorage.getItem('oauth_state_google');
+    sessionStorage.removeItem('oauth_state_google');
 
     if (!savedState || savedState !== returnedState) {
       this.error = 'Invalid OAuth state. Please try logging in again.';
       return;
     }
 
-    this.auth.githubLogin(code, environment.githubClientId).subscribe({
+    const redirectUri = `${window.location.origin}/auth/google/callback`;
+
+    this.auth.googleLogin(code, redirectUri).subscribe({
       next: (response) => {
         this.auth.setSession(response);
         this.router.navigate(['/']);
       },
       error: (err) => {
-        this.error = err.error?.message ?? 'GitHub authentication failed.';
+        this.error = err.error?.message ?? 'Google authentication failed.';
       },
     });
   }
