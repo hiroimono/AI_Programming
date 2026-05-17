@@ -48,11 +48,7 @@
       "label": "App 1: Start Al-Classifier-App",
       "dependsOn": ["App 1: Backend (FastAPI)", "App 1: Frontend (Angular)", "Gateway (.NET)"],
       "dependsOrder": "parallel",
-      "problemMatcher": [],
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      }
+      "problemMatcher": []
     },
 
     // ─── App 2: AI Writing Assistant (Level-2) ─────────
@@ -101,6 +97,20 @@
     {
       "label": "App 2: Start AI-Writing-Assistant-App",
       "dependsOn": ["App 2: Backend (FastAPI)", "App 2: Frontend (Angular)", "Gateway (.NET)"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+
+    // ─── Start All Apps ────────────────────────────────
+    {
+      "label": "Start All Apps",
+      "dependsOn": [
+        "App 1: Backend (FastAPI)",
+        "App 1: Frontend (Angular)",
+        "App 2: Backend (FastAPI)",
+        "App 2: Frontend (Angular)",
+        "Gateway (.NET)"
+      ],
       "dependsOrder": "parallel",
       "problemMatcher": [],
       "group": {
