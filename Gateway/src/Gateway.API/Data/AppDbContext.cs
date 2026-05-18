@@ -17,6 +17,8 @@ public class AppDbContext : DbContext
   public DbSet<Organization> Organizations => Set<Organization>();
   public DbSet<Membership> Memberships => Set<Membership>();
   public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+  public DbSet<WriterConversation> WriterConversations => Set<WriterConversation>();
+  public DbSet<WriterMessage> WriterMessages => Set<WriterMessage>();
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
@@ -68,6 +70,30 @@ public class AppDbContext : DbContext
       e.HasOne(rt => rt.User)
         .WithMany()
         .HasForeignKey(rt => rt.UserId)
+        .OnDelete(DeleteBehavior.Cascade);
+    });
+
+    // WriterConversation configuration
+    modelBuilder.Entity<WriterConversation>(e =>
+    {
+      e.Property(c => c.Title).HasMaxLength(200);
+      e.HasIndex(c => new { c.UserId, c.UpdatedAt });
+
+      e.HasOne(c => c.User)
+        .WithMany()
+        .HasForeignKey(c => c.UserId)
+        .OnDelete(DeleteBehavior.Cascade);
+    });
+
+    // WriterMessage configuration
+    modelBuilder.Entity<WriterMessage>(e =>
+    {
+      e.Property(m => m.Role).HasMaxLength(20);
+      e.HasIndex(m => m.ConversationId);
+
+      e.HasOne(m => m.Conversation)
+        .WithMany(c => c.Messages)
+        .HasForeignKey(m => m.ConversationId)
         .OnDelete(DeleteBehavior.Cascade);
     });
   }

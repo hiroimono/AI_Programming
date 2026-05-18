@@ -1,0 +1,202 @@
+@if (activeModal()) {
+  <div class="modal-overlay" (click)="close()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <!-- Close button -->
+      <button class="modal-close" (click)="close()">
+        <mat-icon>close</mat-icon>
+      </button>
+
+      <!-- ─── Upgrade Plan ─────────────────────────── -->
+      @if (activeModal() === 'upgrade') {
+        <div class="modal-content upgrade">
+          <div class="modal-header">
+            <mat-icon class="header-icon gradient-icon">rocket_launch</mat-icon>
+            <h2>Upgrade Your Plan</h2>
+            <p class="subtitle">Unlock the full power of AI Writing Assistant</p>
+          </div>
+
+          <div class="pricing-grid">
+            <!-- Free Plan -->
+            <div class="plan-card">
+              <div class="plan-badge">Current</div>
+              <h3>Free</h3>
+              <div class="plan-price">
+                <span class="price">$0</span>
+                <span class="period">/month</span>
+              </div>
+              <ul class="plan-features">
+                <li><mat-icon>check</mat-icon> 50 messages per day</li>
+                <li><mat-icon>check</mat-icon> 5 writing modes</li>
+                <li><mat-icon>check</mat-icon> Chat history</li>
+                <li class="disabled"><mat-icon>close</mat-icon> Priority processing</li>
+                <li class="disabled"><mat-icon>close</mat-icon> Custom instructions</li>
+                <li class="disabled"><mat-icon>close</mat-icon> API access</li>
+              </ul>
+              <button class="plan-btn current" disabled>Current Plan</button>
+            </div>
+
+            <!-- Pro Plan -->
+            <div class="plan-card featured">
+              <div class="plan-badge popular">Most Popular</div>
+              <h3>Pro</h3>
+              <div class="plan-price">
+                <span class="price">$19</span>
+                <span class="period">/month</span>
+              </div>
+              <ul class="plan-features">
+                <li><mat-icon>check</mat-icon> Unlimited messages</li>
+                <li><mat-icon>check</mat-icon> All writing modes</li>
+                <li><mat-icon>check</mat-icon> Chat history</li>
+                <li><mat-icon>check</mat-icon> Priority processing</li>
+                <li><mat-icon>check</mat-icon> Custom instructions</li>
+                <li class="disabled"><mat-icon>close</mat-icon> API access</li>
+              </ul>
+              <button class="plan-btn upgrade">Upgrade to Pro</button>
+            </div>
+
+            <!-- Enterprise Plan -->
+            <div class="plan-card">
+              <h3>Enterprise</h3>
+              <div class="plan-price">
+                <span class="price">$49</span>
+                <span class="period">/month</span>
+              </div>
+              <ul class="plan-features">
+                <li><mat-icon>check</mat-icon> Everything in Pro</li>
+                <li><mat-icon>check</mat-icon> Team collaboration</li>
+                <li><mat-icon>check</mat-icon> Custom AI models</li>
+                <li><mat-icon>check</mat-icon> API access</li>
+                <li><mat-icon>check</mat-icon> Dedicated support</li>
+                <li><mat-icon>check</mat-icon> SSO & SAML</li>
+              </ul>
+              <button class="plan-btn upgrade">Contact Sales</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ─── Learn More ───────────────────────────── -->
+      @if (activeModal() === 'learn') {
+        <div class="modal-content learn">
+          <div class="modal-header">
+            <mat-icon class="header-icon gradient-icon">school</mat-icon>
+            <h2>About AI Writing Assistant</h2>
+            <p class="subtitle">Your intelligent companion for professional writing</p>
+          </div>
+
+          <div class="info-sections">
+            <div class="info-card">
+              <div class="info-icon-wrapper">
+                <mat-icon>auto_awesome</mat-icon>
+              </div>
+              <h4>Powered by Advanced AI</h4>
+              <p>Built on state-of-the-art language models, our assistant understands context, nuance, and style to produce human-quality writing across multiple formats and tones.</p>
+            </div>
+
+            <div class="info-card">
+              <div class="info-icon-wrapper">
+                <mat-icon>tune</mat-icon>
+              </div>
+              <h4>Multiple Writing Modes</h4>
+              <p>Switch between General, Blog Post, Email, Report, and Creative modes. Each mode fine-tunes the AI's output to match the conventions and expectations of that format.</p>
+            </div>
+
+            <div class="info-card">
+              <div class="info-icon-wrapper">
+                <mat-icon>history</mat-icon>
+              </div>
+              <h4>Smart Chat History</h4>
+              <p>Your conversations are automatically saved and organized. AI-generated titles help you find past chats quickly. Search across all your conversations by title or content.</p>
+            </div>
+
+            <div class="info-card">
+              <div class="info-icon-wrapper">
+                <mat-icon>security</mat-icon>
+              </div>
+              <h4>Privacy First</h4>
+              <p>End-to-end encryption protects your data. We never use your conversations to train models. Delete your history anytime — your data, your control.</p>
+            </div>
+
+            <div class="info-card">
+              <div class="info-icon-wrapper">
+                <mat-icon>speed</mat-icon>
+              </div>
+              <h4>Real-time Streaming</h4>
+              <p>Watch your content appear in real-time as the AI writes. Edit, regenerate, or refine any response instantly. No waiting for batch processing.</p>
+            </div>
+
+            <div class="info-card">
+              <div class="info-icon-wrapper">
+                <mat-icon>devices</mat-icon>
+              </div>
+              <h4>Works Everywhere</h4>
+              <p>Fully responsive design works seamlessly on desktop, tablet, and mobile. Access your writing assistant from any device with a modern browser.</p>
+            </div>
+          </div>
+
+          <div class="version-info">
+            <span>AI Writing Assistant v1.0</span>
+            <span class="separator">•</span>
+            <span>Built with Angular & FastAPI</span>
+            <span class="separator">•</span>
+            <span>© 2026 All rights reserved</span>
+          </div>
+        </div>
+      }
+
+      <!-- ─── Get Help ─────────────────────────────── -->
+      @if (activeModal() === 'help') {
+        <div class="modal-content help">
+          <div class="modal-header">
+            <mat-icon class="header-icon gradient-icon">help_outline</mat-icon>
+            <h2>Help & Support</h2>
+            <p class="subtitle">Find answers or reach out to our team</p>
+          </div>
+
+          <!-- FAQ Accordion -->
+          <div class="faq-section">
+            <h3 class="section-title">Frequently Asked Questions</h3>
+            @for (item of faqItems; track $index) {
+              <div class="faq-item" [class.expanded]="expandedFaq() === $index">
+                <button class="faq-question" (click)="toggleFaq($index)">
+                  <span>{{ item.q }}</span>
+                  <mat-icon>{{ expandedFaq() === $index ? 'expand_less' : 'expand_more' }}</mat-icon>
+                </button>
+                @if (expandedFaq() === $index) {
+                  <div class="faq-answer">
+                    <p>{{ item.a }}</p>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Contact Section -->
+          <div class="contact-section">
+            <h3 class="section-title">Still need help?</h3>
+            <div class="contact-grid">
+              <div class="contact-card">
+                <mat-icon>email</mat-icon>
+                <h4>Email Support</h4>
+                <p>Get a response within 24 hours</p>
+                <button class="contact-btn">support&#64;aiwriter.app</button>
+              </div>
+              <div class="contact-card">
+                <mat-icon>forum</mat-icon>
+                <h4>Community Forum</h4>
+                <p>Join discussions and share tips</p>
+                <button class="contact-btn">Visit Forum</button>
+              </div>
+              <div class="contact-card">
+                <mat-icon>description</mat-icon>
+                <h4>Documentation</h4>
+                <p>Detailed guides and tutorials</p>
+                <button class="contact-btn">Read Docs</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}

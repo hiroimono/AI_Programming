@@ -1,0 +1,200 @@
+<aside class="sidebar" [class.collapsed]="!expanded()">
+  <!-- Brand header + toggle -->
+  @if (expanded()) {
+    <div class="sidebar-brand">
+      <img src="favicon.png" alt="Logo" class="brand-logo" />
+      <span class="brand-title">AI Writing Assistant</span>
+      <button class="icon-btn sidebar-toggle" (click)="toggleSidebar()" matTooltip="Toggle sidebar">
+        <mat-icon>view_sidebar</mat-icon>
+      </button>
+    </div>
+  } @else {
+    <div class="sidebar-brand collapsed-brand">
+      <img src="favicon.png" alt="Logo" class="brand-logo" />
+    </div>
+    <div class="collapsed-toggle">
+      <button class="icon-btn" (click)="toggleSidebar()" matTooltip="Toggle sidebar">
+        <mat-icon>view_sidebar</mat-icon>
+      </button>
+    </div>
+  }
+
+  <div class="brand-divider"></div>
+
+  <!-- New Chat button -->
+  @if (expanded()) {
+    <div class="new-chat-row">
+      <button class="new-chat-btn" (click)="createNewChat()">
+        <mat-icon>add</mat-icon>
+        <span>New Chat</span>
+      </button>
+    </div>
+  } @else {
+    <div class="collapsed-icons">
+      <button class="icon-btn" (click)="createNewChat()" matTooltip="New chat">
+        <mat-icon>add</mat-icon>
+      </button>
+      <button class="icon-btn" (click)="toggleSidebar()" matTooltip="Search">
+        <mat-icon>search</mat-icon>
+      </button>
+    </div>
+  }
+
+  @if (expanded()) {
+    <!-- Search -->
+    <div class="search-wrapper">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Search chats..."
+        [ngModel]="searchQuery()"
+        (ngModelChange)="onSearch($event)"
+      />
+    </div>
+
+    <!-- Select mode toolbar -->
+    @if (selectMode()) {
+      <div class="select-toolbar">
+        <span class="select-count">{{ selectedCount() }} selected</span>
+        <button
+          class="icon-btn-sm danger"
+          [disabled]="selectedCount() === 0"
+          (click)="deleteSelected()"
+          matTooltip="Delete selected"
+        >
+          <mat-icon>delete_outline</mat-icon>
+        </button>
+        <button class="icon-btn-sm" (click)="toggleSelectMode()" matTooltip="Cancel">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    }
+
+    <!-- Chat list header -->
+    <div class="section-header">
+      <span class="section-label">Recents</span>
+      <button
+        class="icon-btn-sm"
+        (click)="toggleSelectMode()"
+        [matTooltip]="selectMode() ? 'Cancel selection' : 'Select chats'"
+      >
+        <mat-icon>{{ selectMode() ? 'close' : 'checklist' }}</mat-icon>
+      </button>
+    </div>
+
+    <!-- Chat list -->
+    <div class="chat-list">
+      @for (conv of conversations(); track conv.id) {
+        <div
+          class="chat-item"
+          [class.active]="activeConversationId() === conv.id"
+          (click)="selectConversation(conv.id)"
+        >
+          @if (selectMode()) {
+            <div class="checkbox" [class.checked]="selectedIds().has(conv.id)">
+              @if (selectedIds().has(conv.id)) {
+                <mat-icon>check</mat-icon>
+              }
+            </div>
+          }
+
+          <div class="chat-item-content">
+            @if (renamingId() === conv.id) {
+              <input
+                type="text"
+                class="rename-input"
+                [ngModel]="renameValue()"
+                (ngModelChange)="renameValue.set($event)"
+                (keydown.enter)="confirmRename(conv.id)"
+                (keydown.escape)="cancelRename()"
+                (blur)="confirmRename(conv.id)"
+                (click)="$event.stopPropagation()"
+                autofocus
+              />
+            } @else {
+              <span class="chat-title">{{ conv.title }}</span>
+              <span class="chat-date">{{ formatDate(conv.updatedAt) }}</span>
+            }
+          </div>
+
+          @if (!selectMode() && renamingId() !== conv.id) {
+            <button
+              class="delete-trigger"
+              (click)="deleteConversation(conv.id); $event.stopPropagation()"
+              matTooltip="Delete"
+            >
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+            <button
+              class="menu-trigger"
+              (click)="toggleMenu($event, conv.id)"
+              matTooltip="More"
+            >
+              <mat-icon>more_vert</mat-icon>
+            </button>
+          }
+
+          <!-- Context menu -->
+          @if (menuOpenId() === conv.id) {
+            <div class="context-menu">
+              <button class="context-menu-item" (click)="startRename(conv.id)">
+                <mat-icon>edit</mat-icon>
+                <span>Rename</span>
+              </button>
+            </div>
+          }
+        </div>
+      } @empty {
+        <div class="empty-list">
+          <mat-icon>chat_bubble_outline</mat-icon>
+          <span>No conversations yet</span>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Bottom: Settings + User -->
+  <div class="sidebar-bottom">
+    @if (expanded()) {
+      <div class="settings-area">
+        @if (settingsOpen()) {
+          <div class="settings-panel">
+            <button class="settings-item" (click)="openSettingsModal('upgrade')">
+              <mat-icon>rocket_launch</mat-icon>
+              <span>Upgrade Plan</span>
+            </button>
+            <button class="settings-item" (click)="openSettingsModal('learn')">
+              <mat-icon>school</mat-icon>
+              <span>Learn More</span>
+            </button>
+            <button class="settings-item" (click)="openSettingsModal('help')">
+              <mat-icon>help_outline</mat-icon>
+              <span>Get Help</span>
+            </button>
+          </div>
+        }
+        <div class="bottom-row">
+          <button class="icon-btn settings-trigger" (click)="toggleSettings()" matTooltip="Settings">
+            <mat-icon>settings</mat-icon>
+          </button>
+          <div class="user-info">
+            <span class="user-name">{{ auth.currentUser()?.fullName }}</span>
+            <button class="icon-btn" (click)="logoutRequested.emit()" matTooltip="Logout">
+              <mat-icon>logout</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div class="collapsed-bottom">
+        <button class="icon-btn" (click)="logoutRequested.emit()" matTooltip="Logout">
+          <mat-icon>logout</mat-icon>
+        </button>
+        <button class="icon-btn" (click)="toggleSidebar(); toggleSettings()" matTooltip="Settings">
+          <mat-icon>settings</mat-icon>
+        </button>
+      </div>
+    }
+  </div>
+</aside>

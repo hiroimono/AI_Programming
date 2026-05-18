@@ -24,8 +24,8 @@ from config import settings
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from models import ChatRequest, HealthResponse
-from writer import stream_chat
+from models import ChatRequest, GenerateTitleRequest, GenerateTitleResponse, HealthResponse
+from writer import generate_title, stream_chat
 
 app = FastAPI(
     title="AI Writing Assistant",
@@ -88,3 +88,17 @@ async def chat_stream(request: ChatRequest):
             "X-Accel-Buffering": "no",  # Disable nginx buffering if proxied
         },
     )
+
+
+@app.post("/api/generate-title", response_model=GenerateTitleResponse)
+async def generate_chat_title(request: GenerateTitleRequest):
+    """
+    Generates a concise conversation title from the message history.
+    Returns the title along with relevance scores for the new and current titles.
+    """
+    if not settings.validate():
+        raise HTTPException(status_code=500, detail="OpenAI API key not configured")
+
+    messages = [{"role": m.role, "content": m.content} for m in request.messages]
+    result = await generate_title(messages, request.current_title)
+    return GenerateTitleResponse(**result)

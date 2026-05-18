@@ -1,0 +1,642 @@
+// ─── Design Tokens ─────────────────────────────────
+$bg-deep: #0d0d1a;
+$bg-surface: rgba(255, 255, 255, 0.04);
+$bg-hover: rgba(255, 255, 255, 0.06);
+$bg-active: rgba(108, 99, 255, 0.1);
+$primary: #6c63ff;
+$secondary: #8b5cf6;
+$text-primary: #ffffff;
+$text-muted: rgba(255, 255, 255, 0.45);
+$text-secondary: rgba(255, 255, 255, 0.65);
+$border: rgba(255, 255, 255, 0.08);
+$border-hover: rgba(255, 255, 255, 0.12);
+$danger: #ef4444;
+
+$sidebar-width: 300px;
+$sidebar-collapsed: 56px;
+$transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+// ─── Sidebar Container ────────────────────────────
+:host {
+  display: block;
+  height: 100%;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: $sidebar-width;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid $border;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: width $transition, border-radius $transition;
+  overflow: visible;
+  position: relative;
+  z-index: 10;
+
+  &.collapsed {
+    width: $sidebar-collapsed;
+    border-radius: 16px;
+  }
+}
+
+// ─── Brand Header ──────────────────────────────────
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px 10px;
+  flex-shrink: 0;
+
+  .brand-title {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .sidebar-toggle {
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  &.collapsed-brand {
+    justify-content: center;
+    padding: 14px 0 6px;
+  }
+}
+
+.collapsed-toggle {
+  display: flex;
+  justify-content: center;
+  padding: 0 0 6px;
+}
+
+.brand-divider {
+  height: 1px;
+  background: $border;
+  margin: 0 12px 8px;
+  flex-shrink: 0;
+}
+
+.brand-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.brand-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: $text-primary;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// ─── New Chat Button ───────────────────────────────
+.new-chat-row {
+  padding: 0 12px 8px;
+  flex-shrink: 0;
+}
+
+.new-chat-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px dashed rgba($primary, 0.4);
+  background: rgba($primary, 0.06);
+  color: $text-secondary;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    background: rgba($primary, 0.12);
+    border-color: rgba($primary, 0.6);
+    color: $text-primary;
+  }
+}
+
+// ─── Top Controls ──────────────────────────────────
+.sidebar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  gap: 8px;
+  flex-shrink: 0;
+
+  .collapsed & {
+    justify-content: center;
+    padding: 12px 0;
+  }
+}
+
+.collapsed-icons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+// ─── Search ────────────────────────────────────────
+.search-wrapper {
+  position: relative;
+  margin: 0 12px 8px;
+  flex-shrink: 0;
+
+  .search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: $text-muted;
+    pointer-events: none;
+  }
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 12px 8px 34px;
+  border-radius: 8px;
+  border: 1px solid $border;
+  background: rgba(255, 255, 255, 0.03);
+  color: $text-primary;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  outline: none;
+  transition: border-color 0.2s;
+
+  &::placeholder {
+    color: $text-muted;
+  }
+
+  &:focus {
+    border-color: rgba($primary, 0.5);
+  }
+}
+
+// ─── Select Toolbar ────────────────────────────────
+.select-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  margin: 0 0 4px;
+  flex-shrink: 0;
+
+  .select-count {
+    font-size: 0.75rem;
+    color: $text-muted;
+    flex: 1;
+  }
+}
+
+// ─── Section Header ────────────────────────────────
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 12px;
+  flex-shrink: 0;
+
+  .section-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: $text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+// ─── Chat List ─────────────────────────────────────
+.chat-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 8px;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba($primary, 0.2);
+    border-radius: 2px;
+
+    &:hover {
+      background: rgba($primary, 0.35);
+    }
+  }
+}
+
+.chat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+
+  &:hover {
+    background: $bg-hover;
+
+    .menu-trigger,
+    .delete-trigger {
+      opacity: 1;
+    }
+  }
+
+  &.active {
+    background: $bg-active;
+
+    .chat-title {
+      color: $text-primary;
+    }
+  }
+}
+
+.chat-item-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chat-title {
+  font-size: 0.82rem;
+  color: $text-secondary;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.chat-date {
+  font-size: 0.68rem;
+  color: $text-muted;
+}
+
+.menu-trigger {
+  background: none;
+  border: none;
+  color: $text-muted;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  flex-shrink: 0;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    color: $text-primary;
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.delete-trigger {
+  background: none;
+  border: none;
+  color: $text-muted;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  flex-shrink: 0;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    color: $danger;
+    background: rgba($danger, 0.1);
+  }
+}
+
+// ─── Rename Input ──────────────────────────────────
+.rename-input {
+  width: 100%;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba($primary, 0.5);
+  background: rgba(255, 255, 255, 0.05);
+  color: $text-primary;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  outline: none;
+}
+
+// ─── Checkbox ──────────────────────────────────────
+.checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1.5px solid $border-hover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    color: $primary;
+  }
+
+  &.checked {
+    border-color: $primary;
+    background: rgba($primary, 0.15);
+  }
+}
+
+// ─── Context Menu ──────────────────────────────────
+.context-menu {
+  position: absolute;
+  right: 8px;
+  top: 100%;
+  z-index: 20;
+  background: #1a1a2e;
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  min-width: 140px;
+  animation: menuIn 0.12s ease;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: $text-secondary;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.12s;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: $text-primary;
+  }
+
+  &.danger:hover {
+    background: rgba($danger, 0.1);
+    color: $danger;
+  }
+}
+
+@keyframes menuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ─── Empty State ───────────────────────────────────
+.empty-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: $text-muted;
+
+  mat-icon {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+    opacity: 0.4;
+  }
+
+  span {
+    font-size: 0.78rem;
+  }
+}
+
+// ─── Bottom / Settings ─────────────────────────────
+.sidebar-bottom {
+  flex-shrink: 0;
+  margin-top: auto;
+  border-top: 1px solid $border;
+  padding: 8px;
+}
+
+.collapsed-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.settings-area {
+  position: relative;
+  overflow: visible;
+}
+
+.settings-panel {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  margin-bottom: 6px;
+  background: #1a1a2e;
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
+  animation: menuIn 0.12s ease;
+}
+
+.bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+
+  .user-name {
+    font-size: 0.78rem;
+    color: $text-muted;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+}
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: $text-secondary;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.12s;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    background: $bg-hover;
+    color: $text-primary;
+  }
+}
+
+// ─── Shared Button Styles ──────────────────────────
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid $border;
+  background: transparent;
+  color: $text-muted;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    background: $bg-hover;
+    color: $text-primary;
+    border-color: $border-hover;
+  }
+}
+
+.icon-btn-sm {
+  background: none;
+  border: none;
+  color: $text-muted;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    color: $text-primary;
+    background: $bg-hover;
+  }
+
+  &.danger:hover {
+    color: $danger;
+    background: rgba($danger, 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+}
+
+// ─── Mobile ────────────────────────────────────────
+@media (max-width: 767px) {
+  .sidebar {
+    position: fixed;
+    left: 10px;
+    top: 10px;
+    height: calc(100dvh - 20px);
+    z-index: 100;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+    &.collapsed {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+  }
+}

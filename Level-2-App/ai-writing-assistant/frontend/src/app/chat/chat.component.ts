@@ -14,12 +14,25 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subscription } from 'rxjs';
 import { ChatService, ChatMessage, WritingMode } from '../services/chat.service';
+import { ConversationService } from '../services/conversation.service';
 import { AuthService } from '../services/auth.service';
+import { SidebarComponent } from '../sidebar/sidebar.component';
+import { ToastComponent } from '../toast/toast.component';
+import { SettingsModalComponent, SettingsModal } from '../settings-modal/settings-modal.component';
 import { Router } from '@angular/router';
+import { MarkdownPipe } from '../pipes/markdown.pipe';
 
 @Component({
   selector: 'app-chat',
-  imports: [FormsModule, MatIconModule, MatTooltipModule],
+  imports: [
+    FormsModule,
+    MatIconModule,
+    MatTooltipModule,
+    SidebarComponent,
+    ToastComponent,
+    SettingsModalComponent,
+    MarkdownPipe,
+  ],
   templateUrl: './chat.component.html',
   styleUrl: './chat.component.scss',
 })
@@ -28,6 +41,7 @@ export class ChatComponent implements OnInit, OnDestroy {
   @ViewChild('chatTextarea') private chatTextarea!: ElementRef<HTMLTextAreaElement>;
 
   private chatService = inject(ChatService);
+  private conversationService = inject(ConversationService);
   private ngZone = inject(NgZone);
   private router = inject(Router);
   auth = inject(AuthService);
@@ -44,6 +58,10 @@ export class ChatComponent implements OnInit, OnDestroy {
   writingMode = signal<WritingMode>('general');
   copiedIndex = signal<number | null>(null);
   modeDropdownOpen = signal(false);
+  activeConversationId = signal<string | null>(null);
+  @ViewChild('sidebarRef') sidebarRef!: SidebarComponent;
+  @ViewChild('toastRef') toastRef!: ToastComponent;
+  @ViewChild('settingsModalRef') settingsModalRef!: SettingsModalComponent;
 
   writingModes: { value: WritingMode; label: string; icon: string }[] = [
     { value: 'general', label: 'General', icon: 'chat' },
@@ -62,9 +80,11 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.streamSub?.unsubscribe();
   }
 
-  sendMessage() {
+  async sendMessage() {
     const content = this.userInput.trim();
     if (!content || this.isStreaming()) return;
+
+    const conversationId = await this.ensureConversation();
 
     const userMessage: ChatMessage = { role: 'user', content, timestamp: new Date() };
     this.messages.update((msgs) => [...msgs, userMessage]);
@@ -72,6 +92,9 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.resetTextarea();
     this.userScrolledUp = false;
     this.scheduleScroll();
+
+    // Save user message to server
+    this.saveMessageToServer(conversationId, 'user', content);
 
     const assistantMessage: ChatMessage = { role: 'assistant', content: '', timestamp: new Date() };
     this.messages.update((msgs) => [...msgs, assistantMessage]);
@@ -103,12 +126,17 @@ export class ChatComponent implements OnInit, OnDestroy {
         },
         complete: () => {
           this.isStreaming.set(false);
-          this.messages.update((msgs) => {
-            const updated = [...msgs];
-            const last = updated[updated.length - 1];
-            updated[updated.length - 1] = { ...last, timestamp: new Date() };
+          const msgs = this.messages();
+          const lastMsg = msgs[msgs.length - 1];
+          this.messages.update((m) => {
+            const updated = [...m];
+            updated[updated.length - 1] = { ...lastMsg, timestamp: new Date() };
             return updated;
           });
+
+          // Save assistant message and trigger title generation
+          this.saveMessageToServer(conversationId, 'assistant', lastMsg.content);
+          this.triggerTitleGeneration(conversationId);
         },
       });
   }
@@ -129,6 +157,75 @@ export class ChatComponent implements OnInit, OnDestroy {
 
   clearChat() {
     this.messages.set([]);
+    this.activeConversationId.set(null);
+  }
+
+  // ─── Conversation Management ─────────────────────
+
+  onConversationSelected(id: string) {
+    if (id === this.activeConversationId()) return;
+    this.activeConversationId.set(id);
+    this.conversationService.getConversation(id).subscribe((detail) => {
+      this.messages.set(
+        detail.messages.map((m) => ({
+          role: m.role as 'user' | 'assistant' | 'system',
+          content: m.content,
+          timestamp: new Date(m.createdAt),
+        })),
+      );
+      this.scheduleScroll();
+    });
+  }
+
+  onNewChatRequested() {
+    this.messages.set([]);
+    this.activeConversationId.set(null);
+    this.userInput = '';
+  }
+
+  onSettingsModal(modal: SettingsModal) {
+    this.settingsModalRef?.open(modal);
+  }
+
+  private ensureConversation(): Promise<string> {
+    return new Promise((resolve) => {
+      const id = this.activeConversationId();
+      if (id) {
+        resolve(id);
+        return;
+      }
+      this.conversationService.createConversation().subscribe((conv) => {
+        this.activeConversationId.set(conv.id);
+        this.sidebarRef?.loadConversations();
+        resolve(conv.id);
+      });
+    });
+  }
+
+  private saveMessageToServer(conversationId: string, role: string, content: string) {
+    this.conversationService.saveMessage(conversationId, role, content).subscribe();
+  }
+
+  private triggerTitleGeneration(conversationId: string) {
+    const conv = this.sidebarRef?.conversations().find((c) => c.id === conversationId);
+    if (conv?.isTitleManual) return;
+
+    const msgs = this.messages().map((m) => ({ role: m.role, content: m.content }));
+    const currentTitle = conv?.title ?? '';
+
+    this.conversationService.generateTitle(msgs, currentTitle).subscribe((result) => {
+      const shouldUpdate =
+        !conv?.titleGenCount || result.new_score > result.old_score;
+
+      if (shouldUpdate) {
+        this.conversationService
+          .updateTitle(conversationId, result.title, true)
+          .subscribe(() => {
+            this.sidebarRef?.loadConversations();
+            this.toastRef?.show(`Chat renamed: "${result.title}"`, 'info');
+          });
+      }
+    });
   }
 
   logout() {

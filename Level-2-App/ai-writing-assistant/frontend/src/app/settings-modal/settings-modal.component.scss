@@ -1,0 +1,439 @@
+$bg-deep: #0d0d1a;
+$bg-surface: rgba(255, 255, 255, 0.04);
+$primary: #6c63ff;
+$secondary: #8b5cf6;
+$text-primary: #ffffff;
+$text-muted: rgba(255, 255, 255, 0.45);
+$text-secondary: rgba(255, 255, 255, 0.65);
+$border: rgba(255, 255, 255, 0.08);
+$danger: #ef4444;
+$success: #22c55e;
+
+// ─── Overlay ──────────────────────────────────────
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-container {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: linear-gradient(145deg, rgba(22, 22, 42, 0.98), rgba(13, 13, 26, 0.98));
+  border: 1px solid $border;
+  border-radius: 20px;
+  padding: 40px;
+  animation: scaleIn 0.25s ease-out;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+  }
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid $border;
+  border-radius: 10px;
+  color: $text-muted;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: $text-primary;
+  }
+}
+
+// ─── Header ──────────────────────────────────────
+.modal-header {
+  text-align: center;
+  margin-bottom: 32px;
+
+  h2 {
+    font-size: 28px;
+    font-weight: 700;
+    color: $text-primary;
+    margin: 12px 0 8px;
+  }
+
+  .subtitle {
+    color: $text-muted;
+    font-size: 15px;
+    margin: 0;
+  }
+}
+
+.gradient-icon {
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, $primary, $secondary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+// ─── Upgrade: Pricing Grid ──────────────────────
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.plan-card {
+  position: relative;
+  background: $bg-surface;
+  border: 1px solid $border;
+  border-radius: 16px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  &.featured {
+    border-color: rgba($primary, 0.4);
+    background: rgba($primary, 0.06);
+    transform: scale(1.03);
+
+    @media (max-width: 768px) {
+      transform: none;
+    }
+  }
+
+  h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: $text-primary;
+    margin: 0 0 12px;
+  }
+}
+
+.plan-badge {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: $bg-surface;
+  border: 1px solid $border;
+  color: $text-muted;
+
+  &.popular {
+    background: linear-gradient(135deg, $primary, $secondary);
+    border: none;
+    color: #fff;
+  }
+}
+
+.plan-price {
+  margin-bottom: 20px;
+
+  .price {
+    font-size: 42px;
+    font-weight: 700;
+    color: $text-primary;
+  }
+  .period {
+    font-size: 14px;
+    color: $text-muted;
+  }
+}
+
+.plan-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px;
+  flex: 1;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 14px;
+    color: $text-secondary;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: $success;
+    }
+
+    &.disabled {
+      color: $text-muted;
+      mat-icon {
+        color: rgba(255, 255, 255, 0.15);
+      }
+    }
+  }
+}
+
+.plan-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &.current {
+    background: rgba(255, 255, 255, 0.06);
+    color: $text-muted;
+    cursor: default;
+  }
+
+  &.upgrade {
+    background: linear-gradient(135deg, $primary, $secondary);
+    color: #fff;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba($primary, 0.4);
+    }
+  }
+}
+
+// ─── Learn More: Info Cards ─────────────────────
+.info-sections {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.info-card {
+  background: $bg-surface;
+  border: 1px solid $border;
+  border-radius: 14px;
+  padding: 24px 20px;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: $text-primary;
+    margin: 14px 0 8px;
+  }
+  p {
+    font-size: 13px;
+    color: $text-muted;
+    line-height: 1.6;
+    margin: 0;
+  }
+}
+
+.info-icon-wrapper {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba($primary, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  mat-icon {
+    color: $primary;
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.version-info {
+  text-align: center;
+  padding-top: 20px;
+  border-top: 1px solid $border;
+  font-size: 12px;
+  color: $text-muted;
+
+  .separator {
+    margin: 0 8px;
+    opacity: 0.4;
+  }
+}
+
+// ─── Help: FAQ Accordion ────────────────────────
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: $text-primary;
+  margin: 0 0 16px;
+}
+
+.faq-section {
+  margin-bottom: 32px;
+}
+
+.faq-item {
+  border: 1px solid $border;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+
+  &.expanded {
+    border-color: rgba($primary, 0.3);
+  }
+}
+
+.faq-question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  background: transparent;
+  border: none;
+  color: $text-primary;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  mat-icon {
+    color: $text-muted;
+    flex-shrink: 0;
+  }
+}
+
+.faq-answer {
+  padding: 0 20px 16px;
+  animation: fadeDown 0.2s ease-out;
+
+  p {
+    margin: 0;
+    font-size: 13px;
+    color: $text-muted;
+    line-height: 1.7;
+  }
+}
+
+// ─── Help: Contact Cards ────────────────────────
+.contact-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.contact-card {
+  background: $bg-surface;
+  border: 1px solid $border;
+  border-radius: 14px;
+  padding: 24px 20px;
+  text-align: center;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  mat-icon {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+    color: $primary;
+  }
+
+  h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: $text-primary;
+    margin: 12px 0 6px;
+  }
+
+  p {
+    font-size: 13px;
+    color: $text-muted;
+    margin: 0 0 16px;
+  }
+}
+
+.contact-btn {
+  background: rgba($primary, 0.1);
+  border: 1px solid rgba($primary, 0.2);
+  border-radius: 10px;
+  color: $primary;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba($primary, 0.18);
+  }
+}
+
+// ─── Animations ─────────────────────────────────
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
