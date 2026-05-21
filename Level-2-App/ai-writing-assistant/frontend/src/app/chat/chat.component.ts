@@ -214,16 +214,13 @@ export class ChatComponent implements OnInit, OnDestroy {
     const currentTitle = conv?.title ?? '';
 
     this.conversationService.generateTitle(msgs, currentTitle).subscribe((result) => {
-      const shouldUpdate =
-        !conv?.titleGenCount || result.new_score > result.old_score;
+      const shouldUpdate = !conv?.titleGenCount || result.new_score > result.old_score;
 
       if (shouldUpdate) {
-        this.conversationService
-          .updateTitle(conversationId, result.title, true)
-          .subscribe(() => {
-            this.sidebarRef?.loadConversations();
-            this.toastRef?.show(`Chat renamed: "${result.title}"`, 'info');
-          });
+        this.conversationService.updateTitle(conversationId, result.title, true).subscribe(() => {
+          this.sidebarRef?.loadConversations();
+          this.toastRef?.show(`Chat renamed: "${result.title}"`, 'info');
+        });
       }
     });
   }

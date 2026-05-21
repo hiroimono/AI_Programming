@@ -36,7 +36,11 @@ export interface ToastMessage {
       border: 1px solid rgba(255, 255, 255, 0.1);
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 
-      mat-icon { font-size: 20px; width: 20px; height: 20px; }
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
     }
 
     .toast-success {
@@ -53,8 +57,14 @@ export interface ToastMessage {
     }
 
     @keyframes slideIn {
-      from { transform: translateX(100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
     }
   `,
 })

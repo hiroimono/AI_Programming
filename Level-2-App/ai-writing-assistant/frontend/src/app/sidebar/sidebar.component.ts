@@ -158,9 +158,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
         this.conversations.update((list) =>
-          list.map((c) =>
-            c.id === id ? { ...c, title: newTitle, isTitleManual: true } : c,
-          ),
+          list.map((c) => (c.id === id ? { ...c, title: newTitle, isTitleManual: true } : c)),
         );
         this.renamingId.set(null);
       });

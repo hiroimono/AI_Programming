@@ -90,7 +90,11 @@
                 <mat-icon>auto_awesome</mat-icon>
               </div>
               <h4>Powered by Advanced AI</h4>
-              <p>Built on state-of-the-art language models, our assistant understands context, nuance, and style to produce human-quality writing across multiple formats and tones.</p>
+              <p>
+                Built on state-of-the-art language models, our assistant understands context,
+                nuance, and style to produce human-quality writing across multiple formats and
+                tones.
+              </p>
             </div>
 
             <div class="info-card">
@@ -98,7 +102,10 @@
                 <mat-icon>tune</mat-icon>
               </div>
               <h4>Multiple Writing Modes</h4>
-              <p>Switch between General, Blog Post, Email, Report, and Creative modes. Each mode fine-tunes the AI's output to match the conventions and expectations of that format.</p>
+              <p>
+                Switch between General, Blog Post, Email, Report, and Creative modes. Each mode
+                fine-tunes the AI's output to match the conventions and expectations of that format.
+              </p>
             </div>
 
             <div class="info-card">
@@ -106,7 +113,11 @@
                 <mat-icon>history</mat-icon>
               </div>
               <h4>Smart Chat History</h4>
-              <p>Your conversations are automatically saved and organized. AI-generated titles help you find past chats quickly. Search across all your conversations by title or content.</p>
+              <p>
+                Your conversations are automatically saved and organized. AI-generated titles help
+                you find past chats quickly. Search across all your conversations by title or
+                content.
+              </p>
             </div>
 
             <div class="info-card">
@@ -114,7 +125,10 @@
                 <mat-icon>security</mat-icon>
               </div>
               <h4>Privacy First</h4>
-              <p>End-to-end encryption protects your data. We never use your conversations to train models. Delete your history anytime — your data, your control.</p>
+              <p>
+                End-to-end encryption protects your data. We never use your conversations to train
+                models. Delete your history anytime — your data, your control.
+              </p>
             </div>
 
             <div class="info-card">
@@ -122,7 +136,10 @@
                 <mat-icon>speed</mat-icon>
               </div>
               <h4>Real-time Streaming</h4>
-              <p>Watch your content appear in real-time as the AI writes. Edit, regenerate, or refine any response instantly. No waiting for batch processing.</p>
+              <p>
+                Watch your content appear in real-time as the AI writes. Edit, regenerate, or refine
+                any response instantly. No waiting for batch processing.
+              </p>
             </div>
 
             <div class="info-card">
@@ -130,7 +147,10 @@
                 <mat-icon>devices</mat-icon>
               </div>
               <h4>Works Everywhere</h4>
-              <p>Fully responsive design works seamlessly on desktop, tablet, and mobile. Access your writing assistant from any device with a modern browser.</p>
+              <p>
+                Fully responsive design works seamlessly on desktop, tablet, and mobile. Access your
+                writing assistant from any device with a modern browser.
+              </p>
             </div>
           </div>
 
@@ -160,7 +180,9 @@
               <div class="faq-item" [class.expanded]="expandedFaq() === $index">
                 <button class="faq-question" (click)="toggleFaq($index)">
                   <span>{{ item.q }}</span>
-                  <mat-icon>{{ expandedFaq() === $index ? 'expand_less' : 'expand_more' }}</mat-icon>
+                  <mat-icon>{{
+                    expandedFaq() === $index ? 'expand_less' : 'expand_more'
+                  }}</mat-icon>
                 </button>
                 @if (expandedFaq() === $index) {
                   <div class="faq-answer">

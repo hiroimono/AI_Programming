@@ -6,8 +6,8 @@
 #   This is like a service class that uses HttpClient to call
 #   OpenAI's API with streaming enabled, yielding chunks as they arrive.
 
-from collections.abc import AsyncGenerator
 import json
+from collections.abc import AsyncGenerator
 
 from config import settings
 from openai import AsyncOpenAI

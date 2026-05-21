@@ -631,6 +631,7 @@ $input-bg: rgba(255, 255, 255, 0.06);
 
   &.user {
     align-items: flex-end;
+    padding-right: 8px;
 
     .message-bubble {
       background: linear-gradient(135deg, $primary, $secondary);

@@ -30,7 +30,7 @@ export class SettingsModalComponent {
     },
     {
       q: 'What writing modes are available?',
-      a: 'Currently we offer General, Blog Post, Email, Report, and Creative writing modes. Each mode adjusts the AI\'s tone, structure, and vocabulary to match the specific writing context.',
+      a: 'Currently we offer General, Blog Post, Email, Report, and Creative writing modes. Each mode adjusts the AI's tone, structure, and vocabulary to match the specific writing context.',
     },
     {
       q: 'How do I get the best results?',

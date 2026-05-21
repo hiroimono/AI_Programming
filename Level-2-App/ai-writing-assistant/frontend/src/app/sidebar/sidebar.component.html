@@ -126,11 +126,7 @@
             >
               <mat-icon>delete_outline</mat-icon>
             </button>
-            <button
-              class="menu-trigger"
-              (click)="toggleMenu($event, conv.id)"
-              matTooltip="More"
-            >
+            <button class="menu-trigger" (click)="toggleMenu($event, conv.id)" matTooltip="More">
               <mat-icon>more_vert</mat-icon>
             </button>
           }
@@ -175,7 +171,11 @@
           </div>
         }
         <div class="bottom-row">
-          <button class="icon-btn settings-trigger" (click)="toggleSettings()" matTooltip="Settings">
+          <button
+            class="icon-btn settings-trigger"
+            (click)="toggleSettings()"
+            matTooltip="Settings"
+          >
             <mat-icon>settings</mat-icon>
           </button>
           <div class="user-info">

@@ -18,7 +18,6 @@
 
   <!-- Main Content -->
   <div class="chat-container">
-
     @if (messages().length === 0) {
       <!-- ─── Welcome / Empty State (centered with inline input) ─── -->
       <div class="welcome-screen">
@@ -134,7 +133,11 @@
               }
             </div>
             <div class="message-content">
-              <div class="message-bubble" [class.markdown-body]="msg.role === 'assistant'" [innerHTML]="msg.role === 'assistant' ? (msg.content | markdown) : msg.content"></div>
+              <div
+                class="message-bubble"
+                [class.markdown-body]="msg.role === 'assistant'"
+                [innerHTML]="msg.role === 'assistant' ? (msg.content | markdown) : msg.content"
+              ></div>
 
               @if (msg.role === 'user') {
                 <div class="message-actions user-actions">

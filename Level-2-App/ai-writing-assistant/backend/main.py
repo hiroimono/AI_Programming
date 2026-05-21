@@ -24,7 +24,12 @@ from config import settings
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from models import ChatRequest, GenerateTitleRequest, GenerateTitleResponse, HealthResponse
+from models import (
+    ChatRequest,
+    GenerateTitleRequest,
+    GenerateTitleResponse,
+    HealthResponse,
+)
 from writer import generate_title, stream_chat
 
 app = FastAPI(

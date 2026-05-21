@@ -26,9 +26,7 @@ export class ConversationService {
   }
 
   getConversation(id: string): Observable<ConversationDetail> {
-    return this.http.get<ConversationDetail>(
-      `${this.gatewayUrl}/api/writer/conversations/${id}`,
-    );
+    return this.http.get<ConversationDetail>(`${this.gatewayUrl}/api/writer/conversations/${id}`);
   }
 
   createConversation(title?: string): Observable<Conversation> {
@@ -69,10 +67,9 @@ export class ConversationService {
   }
 
   searchConversations(query: string): Observable<Conversation[]> {
-    return this.http.get<Conversation[]>(
-      `${this.gatewayUrl}/api/writer/conversations/search`,
-      { params: { q: query } },
-    );
+    return this.http.get<Conversation[]>(`${this.gatewayUrl}/api/writer/conversations/search`, {
+      params: { q: query },
+    });
   }
 
   // ─── Writer Backend (AI) ─────────────────────────
