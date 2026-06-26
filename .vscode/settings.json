@@ -1,10 +1,19 @@
 {
   "powershell.enableProfileLoading": false,
+  // We have 3 Python projects (Level-1, Level-2, RAG-Service) but VS Code
+  // keeps a single interpreter per workspace. Auto-activating that one in
+  // every terminal is misleading — disable it and activate manually per
+  // folder. (Each project's tasks.json already activates the right venv.)
+  "python.terminal.activateEnvironment": false,
   "python.analysis.extraPaths": [
     "${workspaceFolder}/Level-1-App/ai-classifier-app/backend",
-    "${workspaceFolder}/Level-2-App/ai-writing-assistant/backend"
+    "${workspaceFolder}/Level-2-App/ai-writing-assistant/backend",
+    "${workspaceFolder}/RAG-Service"
   ],
-  "pylint.args": ["--disable=C0114,C0115,C0116"],
+  "pylint.args": [
+    "--disable=C0114,C0115,C0116",
+    "--init-hook=import sys; sys.path.insert(0, 'RAG-Service'); sys.path.insert(0, 'RAG-Service/venv/Lib/site-packages')"
+  ],
   "search.exclude": {
     "**/node_modules": true,
     "**/venv": true

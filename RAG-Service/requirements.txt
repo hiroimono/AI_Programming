@@ -1,0 +1,13 @@
+# ─── Phase 0: minimal FastAPI stack ─────────────────────────────
+# Web framework & ASGI server
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# Typed settings from .env
+pydantic-settings==2.7.1
+
+# ─── Phase 1+ will append: ──────────────────────────────────────
+# asyncpg, sqlmodel, alembic, pgvector
+# pypdf, python-docx, openpyxl, pandas, pillow, pytesseract
+# openai, tiktoken
+# PyJWT, httpx, python-multipart

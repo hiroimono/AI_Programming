@@ -140,6 +140,29 @@
         "group": "gateway",
         "reveal": "always"
       }
+    },
+
+    // ─── Shared: RAG Service (FastAPI, port 8100) ──────
+    {
+      "label": "RAG Service: Start",
+      "type": "shell",
+      "command": "& ./venv/Scripts/Activate.ps1; uvicorn rag_service.main:app --reload --port 8100",
+      "options": {
+        "cwd": "${workspaceFolder}/RAG-Service"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": { "regexp": "." },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "Application startup complete"
+        }
+      },
+      "presentation": {
+        "group": "rag",
+        "reveal": "always"
+      }
     }
   ]
 }

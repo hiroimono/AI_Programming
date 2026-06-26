@@ -1,0 +1,12 @@
+# Service-local ignores (root .gitignore also covers most of these).
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local raw-document storage (Phase 3+)
+storage/
