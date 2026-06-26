@@ -8,7 +8,13 @@
   "python.analysis.extraPaths": [
     "${workspaceFolder}/Level-1-App/ai-classifier-app/backend",
     "${workspaceFolder}/Level-2-App/ai-writing-assistant/backend",
-    "${workspaceFolder}/RAG-Service"
+    "${workspaceFolder}/RAG-Service",
+    // venv site-packages — Pylance needs these to resolve third-party
+    // imports (fastapi, pydantic_settings, ...) without us forcing a
+    // single workspace-wide interpreter.
+    "${workspaceFolder}/Level-1-App/ai-classifier-app/backend/venv/Lib/site-packages",
+    "${workspaceFolder}/Level-2-App/ai-writing-assistant/backend/venv/Lib/site-packages",
+    "${workspaceFolder}/RAG-Service/venv/Lib/site-packages"
   ],
   "pylint.args": [
     "--disable=C0114,C0115,C0116",
