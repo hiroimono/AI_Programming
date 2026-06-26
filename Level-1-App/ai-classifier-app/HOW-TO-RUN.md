@@ -36,10 +36,10 @@ Ready when: `Application bundle generation complete` and `http://localhost:4200`
 
 ## Verify
 
-| Service | URL |
-|---|---|
+| Service         | URL                          |
+| --------------- | ---------------------------- |
 | Backend Swagger | <http://localhost:8000/docs> |
-| Frontend | <http://localhost:4200> |
+| Frontend        | <http://localhost:4200>      |
 
 ## Stop
 

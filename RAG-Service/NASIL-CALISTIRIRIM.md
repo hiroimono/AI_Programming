@@ -21,11 +21,11 @@ Hazır olduğunda terminalde: `Application startup complete`.
 
 ## Doğrulama
 
-| Servis | URL |
-|---|---|
-| Health | <http://localhost:8100/api/health> |
-| Swagger UI | <http://localhost:8100/docs> |
-| ReDoc | <http://localhost:8100/redoc> |
+| Servis     | URL                                |
+| ---------- | ---------------------------------- |
+| Health     | <http://localhost:8100/api/health> |
+| Swagger UI | <http://localhost:8100/docs>       |
+| ReDoc      | <http://localhost:8100/redoc>      |
 
 `/api/health` cevabı: `{"status":"ok","service":"rag-service","version":"0.1.0"}`
 
@@ -45,13 +45,13 @@ Hazır olduğunda terminalde: `Application startup complete`.
 
 ## Hangi fazda neyi yapıyor?
 
-| Faz | RAG Service yetenekleri |
-|---|---|
-| 0 (şu an) | Sadece `/api/health`. |
-| 1-2 | Neon bağlantısı + Alembic tablolar. |
-| 3 | Parser/chunker/embedder/retriever modülleri (henüz endpoint yok). |
-| 4 | `/api/rag/documents`, `/api/rag/search` aktif. |
-| 5+ | Level-2 BE bu servise istek atıyor. |
+| Faz       | RAG Service yetenekleri                                           |
+| --------- | ----------------------------------------------------------------- |
+| 0 (şu an) | Sadece `/api/health`.                                             |
+| 1-2       | Neon bağlantısı + Alembic tablolar.                               |
+| 3         | Parser/chunker/embedder/retriever modülleri (henüz endpoint yok). |
+| 4         | `/api/rag/documents`, `/api/rag/search` aktif.                    |
+| 5+        | Level-2 BE bu servise istek atıyor.                               |
 
 ## Mimari referansları
 

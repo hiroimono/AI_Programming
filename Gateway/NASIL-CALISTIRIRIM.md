@@ -26,10 +26,10 @@ Application started. Press Ctrl+C to shut down.
 
 ## Doğrulama
 
-| Servis | URL |
-|---|---|
-| Swagger UI | <https://localhost:5001/swagger> |
-| Health (varsa) | <https://localhost:5001/health> |
+| Servis         | URL                              |
+| -------------- | -------------------------------- |
+| Swagger UI     | <https://localhost:5001/swagger> |
+| Health (varsa) | <https://localhost:5001/health>  |
 
 İlk açılışta tarayıcı sertifika uyarısı verebilir — kabul et (dev cert).
 

@@ -21,11 +21,11 @@ Ready when the terminal shows: `Application startup complete`.
 
 ## Verify
 
-| Service | URL |
-|---|---|
-| Health | <http://localhost:8100/api/health> |
-| Swagger UI | <http://localhost:8100/docs> |
-| ReDoc | <http://localhost:8100/redoc> |
+| Service    | URL                                |
+| ---------- | ---------------------------------- |
+| Health     | <http://localhost:8100/api/health> |
+| Swagger UI | <http://localhost:8100/docs>       |
+| ReDoc      | <http://localhost:8100/redoc>      |
 
 `/api/health` response: `{"status":"ok","service":"rag-service","version":"0.1.0"}`
 
@@ -45,13 +45,13 @@ Ready when the terminal shows: `Application startup complete`.
 
 ## What does it do per phase?
 
-| Phase | RAG Service capability |
-|---|---|
-| 0 (now) | `/api/health` only. |
-| 1-2 | Neon connection + Alembic tables. |
-| 3 | Parser / chunker / embedder / retriever modules (no endpoints yet). |
-| 4 | `/api/rag/documents` and `/api/rag/search` live. |
-| 5+ | Level-2 BE calls this service. |
+| Phase   | RAG Service capability                                              |
+| ------- | ------------------------------------------------------------------- |
+| 0 (now) | `/api/health` only.                                                 |
+| 1-2     | Neon connection + Alembic tables.                                   |
+| 3       | Parser / chunker / embedder / retriever modules (no endpoints yet). |
+| 4       | `/api/rag/documents` and `/api/rag/search` live.                    |
+| 5+      | Level-2 BE calls this service.                                      |
 
 ## Architecture references
 

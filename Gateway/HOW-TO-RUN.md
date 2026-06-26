@@ -26,10 +26,10 @@ Application started. Press Ctrl+C to shut down.
 
 ## Verify
 
-| Service | URL |
-|---|---|
-| Swagger UI | <https://localhost:5001/swagger> |
-| Health (if defined) | <https://localhost:5001/health> |
+| Service             | URL                              |
+| ------------------- | -------------------------------- |
+| Swagger UI          | <https://localhost:5001/swagger> |
+| Health (if defined) | <https://localhost:5001/health>  |
 
 On first open the browser may warn about the cert — accept it (dev cert).
 

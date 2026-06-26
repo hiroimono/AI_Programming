@@ -36,10 +36,10 @@ Hazır olduğunda: `Application bundle generation complete` ve `http://localhost
 
 ## Doğrulama
 
-| Servis | URL |
-|---|---|
+| Servis          | URL                          |
+| --------------- | ---------------------------- |
 | Backend Swagger | <http://localhost:8000/docs> |
-| Frontend | <http://localhost:4200> |
+| Frontend        | <http://localhost:4200>      |
 
 ## Durdurma
 

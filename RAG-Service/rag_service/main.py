@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
 from rag_service.config import get_settings
 
 settings = get_settings()

@@ -48,11 +48,11 @@ Hazır olduğunda: `Application bundle generation complete`.
 
 ## Doğrulama
 
-| Servis | URL |
-|---|---|
+| Servis          | URL                              |
+| --------------- | -------------------------------- |
 | Gateway Swagger | <https://localhost:5001/swagger> |
-| Backend Swagger | <http://localhost:8001/docs> |
-| Frontend | <http://localhost:4201> |
+| Backend Swagger | <http://localhost:8001/docs>     |
+| Frontend        | <http://localhost:4201>          |
 
 ## Durdurma
 
