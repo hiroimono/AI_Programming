@@ -1,0 +1,18 @@
+﻿sequenceDiagram
+    autonumber
+    participant FE as Angular
+    participant GW as Gateway YARP
+    participant BE as Writer BE
+    participant RC as rag_client
+    participant RAG as rag-service
+
+    FE->>GW: POST multipart file and conversation_id with Bearer JWT
+    GW->>BE: forwards request
+    BE->>BE: require_user returns 401 if no token
+    BE->>RC: upload_document user_id conv_id bytes
+    RC->>RC: mint internal JWT with conv_id claim
+    RC->>RAG: POST multipart with Bearer
+    RAG->>RAG: parse and chunk and embed and store
+    RAG-->>RC: document_id status chunk_count
+    RC-->>BE: dict
+    BE-->>FE: 201 with document_id status chunk_count

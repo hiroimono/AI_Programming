@@ -1,0 +1,20 @@
+﻿sequenceDiagram
+    autonumber
+    participant FE as Angular
+    participant GW as Gateway
+    participant BE as Writer BE
+    participant DB as Postgres
+
+    FE->>GW: POST /api/writer/conversations auth ile
+    GW->>DB: INSERT conversation
+    DB-->>GW: id
+    GW-->>FE: Conversation id
+    FE->>GW: POST /apps/writer/api/chat messages ve conversation_id
+    GW->>BE: iletir
+    Note over BE: RAG retrieval bu konusmaya scope-lu calisir
+    BE-->>FE: SSE stream
+    FE->>GW: POST /apps/writer/api/generate-title
+    GW->>BE: iletir
+    BE-->>FE: title string
+    FE->>GW: PATCH /api/writer/conversations by id title
+    GW->>DB: UPDATE title

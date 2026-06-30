@@ -1,0 +1,26 @@
+﻿sequenceDiagram
+    autonumber
+    participant FE as Angular
+    participant GW as Gateway YARP
+    participant BE as Writer BE
+    participant RC as rag_client
+    participant RAG as rag-service
+    participant OAI as OpenAI
+
+    FE->>GW: POST /apps/writer/api/chat Bearer JWT ve conversation_id
+    GW->>BE: Bearer iletir
+    BE->>BE: optional_user JWT decode user_id cikarir
+    BE->>RC: retrieve user_id conv_id son user mesaji
+    RC->>RC: internal JWT uret 60s TTL
+    RC->>RAG: POST /api/retrieve Bearer ile
+    RAG->>RAG: query embed top-k cosine arama
+    RAG-->>RC: chunks listesi
+    RC-->>BE: chunks
+    BE->>BE: context formatla citation listesi kur
+    BE->>OAI: stream system prompt ve context ile
+    loop tokenlar
+        OAI-->>BE: chunk
+        BE-->>FE: data satiri token ile
+    end
+    BE-->>FE: sources event citations dizisi ile
+    BE-->>FE: data DONE isareti

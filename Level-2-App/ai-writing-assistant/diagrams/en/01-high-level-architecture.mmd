@@ -1,0 +1,50 @@
+﻿flowchart LR
+    subgraph FE[Angular FE - port 4201]
+        UI[chat + sidebar + composer]
+        DOC[document tray]
+    end
+
+    subgraph GW[Gateway dotNET - port 5000]
+        AUTH[JWT bearer auth<br/>HS256]
+        SUB[SubscriptionMiddleware]
+        CONV[ConversationsController<br/>EF Core]
+        YARP[YARP reverse proxy<br/>strips /apps/writer]
+    end
+
+    subgraph BE[Writer BE FastAPI - port 8001]
+        DEC[auth.py<br/>Gateway JWT decode]
+        CHAT[POST /api/chat<br/>SSE]
+        TITLE[POST /api/generate-title]
+        DOCS["/api/documents proxy"]
+        RC[rag_client<br/>mint internal JWT]
+        WR[writer.py<br/>OpenAI stream]
+    end
+
+    subgraph RAG[rag-service - port 8100]
+        RAUTH[internal JWT verify]
+        RAPI["/api/documents<br/>/api/retrieve"]
+    end
+
+    subgraph Ext[External services]
+        NEON[(Neon Postgres<br/>conversations + RAG)]
+        OAI[(OpenAI<br/>gpt-4o-mini + embeddings)]
+    end
+
+    UI -- Bearer JWT --> AUTH
+    DOC -- Bearer JWT --> AUTH
+    AUTH --> SUB
+    SUB --> CONV
+    SUB --> YARP
+    CONV --> NEON
+    YARP -- forwards Bearer JWT --> DEC
+    DEC --> CHAT
+    DEC --> TITLE
+    DEC --> DOCS
+    CHAT --> WR
+    TITLE --> WR
+    WR --> OAI
+    CHAT --> RC
+    DOCS --> RC
+    RC -- mints internal JWT --> RAUTH
+    RAUTH --> RAPI
+    RAPI --> NEON

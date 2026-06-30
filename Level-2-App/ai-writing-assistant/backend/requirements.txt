@@ -3,3 +3,8 @@ uvicorn[standard]==0.34.*
 openai==1.82.*
 pydantic==2.11.*
 python-dotenv==1.1.*
+
+# Phase 5 - RAG integration
+PyJWT==2.10.*
+httpx==0.28.*
+python-multipart==0.0.20

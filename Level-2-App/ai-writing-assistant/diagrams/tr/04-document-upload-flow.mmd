@@ -1,0 +1,18 @@
+﻿sequenceDiagram
+    autonumber
+    participant FE as Angular
+    participant GW as Gateway YARP
+    participant BE as Writer BE
+    participant RC as rag_client
+    participant RAG as rag-service
+
+    FE->>GW: POST multipart file ve conversation_id Bearer JWT ile
+    GW->>BE: iletir
+    BE->>BE: require_user token yoksa 401
+    BE->>RC: upload_document user_id conv_id bytes
+    RC->>RC: internal JWT uret conv_id claim ile
+    RC->>RAG: POST multipart Bearer ile
+    RAG->>RAG: parse chunk embed sakla
+    RAG-->>RC: document_id status chunk_count
+    RC-->>BE: dict
+    BE-->>FE: 201 document_id status chunk_count

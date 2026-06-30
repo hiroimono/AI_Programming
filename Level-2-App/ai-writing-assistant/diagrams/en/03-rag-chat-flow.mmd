@@ -1,0 +1,26 @@
+﻿sequenceDiagram
+    autonumber
+    participant FE as Angular
+    participant GW as Gateway YARP
+    participant BE as Writer BE
+    participant RC as rag_client
+    participant RAG as rag-service
+    participant OAI as OpenAI
+
+    FE->>GW: POST /apps/writer/api/chat with Bearer JWT and conversation_id
+    GW->>BE: forwards Bearer
+    BE->>BE: optional_user decodes JWT and extracts user_id
+    BE->>RC: retrieve user_id conv_id last_user_msg
+    RC->>RC: mint internal JWT with 60s TTL
+    RC->>RAG: POST /api/retrieve with Bearer
+    RAG->>RAG: embed query and run top-k cosine search
+    RAG-->>RC: chunks list
+    RC-->>BE: chunks
+    BE->>BE: format context and build citations
+    BE->>OAI: stream with system prompt plus context
+    loop tokens
+        OAI-->>BE: chunk
+        BE-->>FE: data line with token
+    end
+    BE-->>FE: sources event with citations array
+    BE-->>FE: data DONE marker

@@ -1,0 +1,18 @@
+﻿sequenceDiagram
+    autonumber
+    participant FE as Angular
+    participant GW as Gateway YARP
+    participant BE as Writer BE
+    participant OAI as OpenAI
+
+    FE->>GW: POST /apps/writer/api/chat with messages and writing_mode
+    GW->>GW: SubscriptionMiddleware allows anonymous
+    GW->>BE: POST /api/chat after prefix stripped
+    BE->>BE: optional_user returns None
+    BE->>OAI: chat.completions.create stream=true
+    loop tokens
+        OAI-->>BE: chunk
+        BE-->>FE: data line with token
+    end
+    BE-->>FE: sources event with empty array
+    BE-->>FE: data DONE marker

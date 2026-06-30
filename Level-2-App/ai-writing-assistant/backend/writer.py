@@ -37,7 +37,9 @@ WRITING_PROMPTS: dict[str, str] = {
 
 
 async def stream_chat(
-    messages: list[dict[str, str]], writing_mode: str = "general"
+    messages: list[dict[str, str]],
+    writing_mode: str = "general",
+    rag_context: str | None = None,
 ) -> AsyncGenerator[str, None]:
     """
     Streams AI response token-by-token using SSE format.
@@ -45,10 +47,31 @@ async def stream_chat(
     .NET comparison:
       Like using IAsyncEnumerable<string> with yield return
       in a streaming endpoint.
+
+    When `rag_context` is provided, it is injected as an additional
+    system message right after the writing-mode system prompt. The model
+    is told to ground answers in that context and to refuse when it
+    isn't enough — this is the hallucination guard.
     """
     system_prompt = WRITING_PROMPTS.get(writing_mode, WRITING_PROMPTS["general"])
 
-    full_messages = [{"role": "system", "content": system_prompt}] + messages
+    full_messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
+    if rag_context:
+        full_messages.append(
+            {
+                "role": "system",
+                "content": (
+                    "You have access to the following excerpts from the "
+                    "user's uploaded documents. Ground your answer in them. "
+                    "If the excerpts do not contain the answer, say so "
+                    "explicitly instead of guessing. When you use a fact "
+                    "from an excerpt, cite the source filename inline.\n\n"
+                    f"--- BEGIN DOCUMENT CONTEXT ---\n{rag_context}\n"
+                    "--- END DOCUMENT CONTEXT ---"
+                ),
+            }
+        )
+    full_messages.extend(messages)
 
     stream = await client.chat.completions.create(
         model=settings.openai_model,

@@ -1,0 +1,18 @@
+﻿sequenceDiagram
+    autonumber
+    participant FE as Angular
+    participant GW as Gateway YARP
+    participant BE as Writer BE
+    participant OAI as OpenAI
+
+    FE->>GW: POST /apps/writer/api/chat ile messages ve writing_mode
+    GW->>GW: SubscriptionMiddleware anonim izinli
+    GW->>BE: POST /api/chat prefix soyuldu
+    BE->>BE: optional_user None doner
+    BE->>OAI: chat.completions.create stream=true
+    loop tokenlar
+        OAI-->>BE: chunk
+        BE-->>FE: data satiri token ile
+    end
+    BE-->>FE: sources event bos dizi ile
+    BE-->>FE: data DONE isareti

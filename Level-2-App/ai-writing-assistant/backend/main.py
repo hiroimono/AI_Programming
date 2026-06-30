@@ -19,23 +19,49 @@
 #   });
 
 import json
+from contextlib import asynccontextmanager
+from typing import Annotated, AsyncIterator
+from uuid import UUID
 
+from auth import GatewayUser, optional_user, require_user
 from config import settings
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 from models import (
     ChatRequest,
+    DocumentItem,
+    DocumentListResponse,
+    DocumentUploadResponse,
     GenerateTitleRequest,
     GenerateTitleResponse,
     HealthResponse,
+    SourceCitation,
+)
+from rag_client import (
+    RetrievedChunk,
+    get_rag_client,
+    shutdown_rag_client,
+    startup_rag_client,
 )
 from writer import generate_title, stream_chat
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    """Initialize / dispose the rag-service HTTP client pool."""
+    await startup_rag_client()
+    try:
+        yield
+    finally:
+        await shutdown_rag_client()
+
 
 app = FastAPI(
     title="AI Writing Assistant",
     description="SSE Streaming AI Writing Service",
-    version="1.0.0",
+    version="1.1.0",
+    lifespan=lifespan,
 )
 
 # CORS — Allow Gateway and local Angular dev server
@@ -55,22 +81,73 @@ app.add_middleware(
 )
 
 
+# Top-k chunks to pull from rag-service for each chat turn. 4 is the
+# rag-service default and keeps the prompt small enough to leave room
+# for the conversation history.
+_RAG_K = 4
+# Cosine distance ceiling. Below this we trust the chunk is "actually
+# relevant"; above this rag-service drops it and the hallucination
+# guard kicks in. Empirically with text-embedding-3-small even tightly
+# relevant chunks sit around 0.30 – 0.45, so 0.4 (rag-service default)
+# is too strict for real questions. 0.6 keeps obvious recall while
+# still cutting off unrelated noise (typical "totally unrelated"
+# distances sit > 0.8).
+_RAG_MAX_DISTANCE = 0.6
+# How many leading characters of each chunk we send back to the FE in
+# the `sources` SSE event. Enough for a tooltip, small enough to keep
+# the wire payload tiny.
+_SOURCE_PREVIEW_CHARS = 200
+
+
+def _format_rag_context(chunks: list[RetrievedChunk]) -> str:
+    """Inline-format retrieved chunks for injection into the system prompt."""
+    parts: list[str] = []
+    for i, c in enumerate(chunks, start=1):
+        parts.append(f"[Source {i} | file: {c.document_filename}]\n{c.content}")
+    return "\n\n".join(parts)
+
+
+def _build_citations(chunks: list[RetrievedChunk]) -> list[SourceCitation]:
+    """Trim chunk content to a short preview for the FE accordion."""
+    return [
+        SourceCitation(
+            document_id=UUID(c.document_id),
+            document_filename=c.document_filename,
+            chunk_index=c.chunk_index,
+            distance=c.distance,
+            preview=c.content[:_SOURCE_PREVIEW_CHARS],
+        )
+        for c in chunks
+    ]
+
+
 @app.get("/api/health", response_model=HealthResponse)
 async def health_check():
     return HealthResponse(status="healthy", service="ai-writing-assistant")
 
 
 @app.post("/api/chat")
-async def chat_stream(request: ChatRequest):
+async def chat_stream(
+    request: ChatRequest,
+    user: Annotated[GatewayUser | None, Depends(optional_user)] = None,
+):
     """
     SSE streaming chat endpoint.
 
     The client sends conversation history + writing mode,
     and receives tokens streamed back in real-time.
 
+    When a Bearer JWT is present AND `conversation_id` is set, the
+    last user message is used to retrieve top-k document chunks from
+    rag-service. Those chunks are injected into the system prompt and
+    a `sources` event is emitted before `[DONE]` so the FE can render
+    citations.
+
     Response format: text/event-stream
       data: {"content": "Hello"}
       data: {"content": " world"}
+      event: sources
+      data: [{"document_id": "...", "document_filename": "...", ...}]
       data: [DONE]
     """
     if not settings.validate():
@@ -78,10 +155,41 @@ async def chat_stream(request: ChatRequest):
 
     messages = [{"role": m.role, "content": m.content} for m in request.messages]
 
+    # Retrieve RAG context up-front (before the stream opens) so we can
+    # both inject it into the prompt and emit citations on the stream.
+    rag_context: str | None = None
+    citations: list[SourceCitation] = []
+    if (
+        user is not None
+        and request.conversation_id is not None
+        and settings.rag_enabled()
+        and messages
+    ):
+        # Use the most recent user message as the retrieval query.
+        last_user = next(
+            (m["content"] for m in reversed(messages) if m["role"] == "user"),
+            None,
+        )
+        if last_user:
+            client = get_rag_client()
+            chunks = await client.retrieve(
+                user_id=user.user_id,
+                conversation_id=request.conversation_id,
+                query=last_user,
+                k=_RAG_K,
+                max_distance=_RAG_MAX_DISTANCE,
+            )
+            if chunks:
+                rag_context = _format_rag_context(chunks)
+                citations = _build_citations(chunks)
+
     async def event_generator():
-        async for token in stream_chat(messages, request.writing_mode):
+        async for token in stream_chat(messages, request.writing_mode, rag_context):
             # SSE format: "data: <json>\n\n"
             yield f"data: {json.dumps({'content': token})}\n\n"
+        # Emit citations (may be empty) so the FE can clear stale ones.
+        sources_payload = [c.model_dump(mode="json") for c in citations]
+        yield f"event: sources\ndata: {json.dumps(sources_payload)}\n\n"
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(
@@ -107,3 +215,63 @@ async def generate_chat_title(request: GenerateTitleRequest):
     messages = [{"role": m.role, "content": m.content} for m in request.messages]
     result = await generate_title(messages, request.current_title)
     return GenerateTitleResponse(**result)
+
+
+# ── Phase 5: document management endpoints ─────────────────────────
+#
+# These proxy to rag-service. The Gateway JWT is required; user_id
+# from the token is forwarded so rag-service scopes everything to
+# the right tenant. The Level-2 BE never reads or stores document
+# content itself — it only routes.
+
+
+@app.post(
+    "/api/documents",
+    response_model=DocumentUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_document(
+    user: Annotated[GatewayUser, Depends(require_user)],
+    file: UploadFile = File(...),
+    conversation_id: UUID | None = Form(default=None),
+):
+    """Upload a document and ingest it into the user's RAG index."""
+    content = await file.read()
+    client = get_rag_client()
+    result = await client.upload_document(
+        user_id=user.user_id,
+        conversation_id=conversation_id,
+        filename=file.filename or "unnamed",
+        content=content,
+        mime_type=file.content_type,
+    )
+    return DocumentUploadResponse(**result)
+
+
+@app.get("/api/documents", response_model=DocumentListResponse)
+async def list_documents(
+    user: Annotated[GatewayUser, Depends(require_user)],
+    conversation_id: UUID | None = None,
+):
+    """List the caller's documents, optionally filtered by conversation."""
+    client = get_rag_client()
+    docs = await client.list_documents(
+        user_id=user.user_id,
+        conversation_id=conversation_id,
+    )
+    return DocumentListResponse(documents=[DocumentItem(**d.__dict__) for d in docs])
+
+
+@app.delete(
+    "/api/documents/{document_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+)
+async def delete_document(
+    document_id: UUID,
+    user: Annotated[GatewayUser, Depends(require_user)],
+) -> Response:
+    """Soft-delete one of the caller's documents."""
+    client = get_rag_client()
+    await client.delete_document(user_id=user.user_id, document_id=document_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
