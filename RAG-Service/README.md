@@ -23,10 +23,19 @@ SaaS portfolio.
 
 ## Current status
 
-**Phase 0 — scaffold.** FastAPI app with a single `/api/health` endpoint.
-No database, no RAG logic yet. Later phases bring Neon + Alembic, the
-RAG pipeline (parsers / chunker / embedder / retriever), the document
-and search endpoints, and security middleware.
+## Current status
+
+**Phases 0–4 complete.** Service is feature-complete and end-to-end
+verified in-process. JWT-protected endpoints expose document ingest
+(`POST/GET/DELETE /api/documents`) and semantic retrieval
+(`POST /api/retrieve`). Not yet integrated with Level-2 BE — that's
+Phase 5.
+
+For the full architecture, request flows, design decisions, and the
+public HTTP contract, read:
+
+- **EN:** [`ARCHITECTURE-AND-DECISIONS-EN.md`](./ARCHITECTURE-AND-DECISIONS-EN.md)
+- **TR:** [`MIMARI-VE-KARARLAR-TR.md`](./MIMARI-VE-KARARLAR-TR.md)
 
 ## Local development
 
@@ -36,7 +45,7 @@ python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 
-# Copy the env template and edit if needed:
+# Copy the env template and edit (DATABASE_URL, OPENAI_API_KEY, INTERNAL_JWT_SECRET):
 Copy-Item .env.example .env
 
 # Run on port 8100:
@@ -47,7 +56,7 @@ Verify:
 
 ```powershell
 curl http://localhost:8100/api/health
-# → {"status":"ok","service":"rag-service","version":"0.1.0"}
+# → {"status":"ok","service":"rag-service","version":"0.2.0"}
 ```
 
 Or use the VS Code task: **RAG Service: Start**.
@@ -56,14 +65,25 @@ Or use the VS Code task: **RAG Service: Start**.
 
 ```text
 RAG-Service/
-├─ rag_service/        # Python package
-│  ├─ __init__.py
-│  ├─ main.py          # FastAPI app (Phase 0: /api/health)
-│  └─ config.py        # pydantic-settings loader
+├─ rag_service/
+│  ├─ main.py                # FastAPI app + lifespan + router mount
+│  ├─ config.py              # pydantic-settings
+│  ├─ db.py                  # async SQLAlchemy engine
+│  ├─ auth.py                # internal JWT verify dependency
+│  ├─ storage.py             # filesystem blob storage
+│  ├─ chunker.py             # tiktoken sliding window
+│  ├─ embedder.py            # OpenAI embeddings
+│  ├─ retriever.py           # pgvector cosine top-k
+│  ├─ pipeline.py            # ingest + retrieve orchestrator
+│  ├─ schemas.py             # Pydantic request/response models
+│  ├─ parsers/               # pdf/docx/xlsx/txt
+│  ├─ models/                # SQLAlchemy ORM (level2, level3)
+│  └─ routers/               # documents + retrieve endpoints
+├─ alembic/                  # schema-aware migrations
 ├─ requirements.txt
 ├─ .env.example
-└─ README.md
+├─ README.md
+├─ ARCHITECTURE-AND-DECISIONS-EN.md
+└─ MIMARI-VE-KARARLAR-TR.md
 ```
 
-Folders that appear in later phases: `alembic/`, `rag_service/routers/`,
-`rag_service/models/`, `rag_service/rag/`, `tests/`, `storage/` (gitignored).
