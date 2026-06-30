@@ -7,6 +7,15 @@
 </div>
 
 <div class="app-layout">
+  <!-- Hidden file input shared by both welcome and chat composers -->
+  <input
+    #fileInput
+    type="file"
+    hidden
+    accept=".pdf,.docx,.txt,.md,.xlsx,.csv"
+    (change)="onFilePicked($event)"
+  />
+
   <!-- Sidebar -->
   <app-sidebar
     #sidebarRef
@@ -31,6 +40,26 @@
           <!-- Inline input card -->
           <div class="welcome-input">
             <div class="input-card glass-card-chat">
+              @if (uploadedDocs().length > 0) {
+                <div class="doc-chips">
+                  @for (doc of uploadedDocs(); track doc.id) {
+                    <div class="doc-chip" [class.pending]="doc.status === 'pending'" [class.failed]="doc.status === 'failed'">
+                      <mat-icon class="doc-icon">description</mat-icon>
+                      <span class="doc-name" [matTooltip]="doc.file_name">{{ doc.file_name }}</span>
+                      @if (doc.status === 'pending') {
+                        <mat-icon class="doc-status pending">hourglass_top</mat-icon>
+                      } @else if (doc.status === 'failed') {
+                        <mat-icon class="doc-status failed" [matTooltip]="doc.error_message || 'Failed'">error</mat-icon>
+                      } @else {
+                        <span class="doc-chunks">{{ doc.chunk_count }}</span>
+                      }
+                      <button class="doc-remove" matTooltip="Remove" (click)="removeDocument(doc.id)">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
               <textarea
                 #chatTextarea
                 [(ngModel)]="userInput"
@@ -41,8 +70,13 @@
               ></textarea>
               <div class="input-actions">
                 <div class="input-actions-left">
-                  <button class="action-icon-btn" matTooltip="Attach file" disabled>
-                    <mat-icon>add</mat-icon>
+                  <button
+                    class="action-icon-btn"
+                    matTooltip="Attach file"
+                    [disabled]="!auth.isAuthenticated() || uploadingFile()"
+                    (click)="openFilePicker()"
+                  >
+                    <mat-icon>{{ uploadingFile() ? 'hourglass_top' : 'add' }}</mat-icon>
                   </button>
                   <div class="mode-dropdown-wrapper">
                     <button class="mode-trigger" (click)="toggleModeDropdown()">
@@ -166,6 +200,36 @@
 
               @if (
                 msg.role === 'assistant' &&
+                msg.sources &&
+                msg.sources.length > 0
+              ) {
+                <div class="sources-accordion" [class.expanded]="expandedSourcesIndex() === $index">
+                  <button class="sources-toggle" (click)="toggleSources($index)">
+                    <mat-icon class="src-icon">menu_book</mat-icon>
+                    <span>{{ msg.sources.length }} {{ msg.sources.length === 1 ? 'source' : 'sources' }}</span>
+                    <mat-icon class="src-chevron">{{ expandedSourcesIndex() === $index ? 'expand_less' : 'expand_more' }}</mat-icon>
+                  </button>
+                  @if (expandedSourcesIndex() === $index) {
+                    <div class="sources-list">
+                      @for (src of msg.sources; track src.document_id + '-' + src.chunk_index) {
+                        <div class="source-item">
+                          <div class="source-header">
+                            <mat-icon>description</mat-icon>
+                            <span class="source-name">{{ src.document_filename }}</span>
+                            <span class="source-distance" matTooltip="Cosine distance (lower = closer match)">
+                              dist {{ formatDistance(src.distance) }}
+                            </span>
+                          </div>
+                          <div class="source-preview">{{ src.preview }}</div>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+
+              @if (
+                msg.role === 'assistant' &&
                 msg.content &&
                 !(isStreaming() && $index === messages().length - 1)
               ) {
@@ -202,6 +266,26 @@
       <!-- Footer input (only when in chat mode) -->
       <footer class="chat-input">
         <div class="input-card glass-card-chat" [class.streaming]="isStreaming()">
+          @if (uploadedDocs().length > 0) {
+            <div class="doc-chips">
+              @for (doc of uploadedDocs(); track doc.id) {
+                <div class="doc-chip" [class.pending]="doc.status === 'pending'" [class.failed]="doc.status === 'failed'">
+                  <mat-icon class="doc-icon">description</mat-icon>
+                  <span class="doc-name" [matTooltip]="doc.file_name">{{ doc.file_name }}</span>
+                  @if (doc.status === 'pending') {
+                    <mat-icon class="doc-status pending">hourglass_top</mat-icon>
+                  } @else if (doc.status === 'failed') {
+                    <mat-icon class="doc-status failed" [matTooltip]="doc.error_message || 'Failed'">error</mat-icon>
+                  } @else {
+                    <span class="doc-chunks">{{ doc.chunk_count }}</span>
+                  }
+                  <button class="doc-remove" matTooltip="Remove" (click)="removeDocument(doc.id)">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+              }
+            </div>
+          }
           <textarea
             #chatTextarea
             [(ngModel)]="userInput"
@@ -213,8 +297,13 @@
           ></textarea>
           <div class="input-actions">
             <div class="input-actions-left">
-              <button class="action-icon-btn" matTooltip="Attach file" disabled>
-                <mat-icon>add</mat-icon>
+              <button
+                class="action-icon-btn"
+                matTooltip="Attach file"
+                [disabled]="!auth.isAuthenticated() || uploadingFile() || isStreaming()"
+                (click)="openFilePicker()"
+              >
+                <mat-icon>{{ uploadingFile() ? 'hourglass_top' : 'add' }}</mat-icon>
               </button>
               <div class="mode-dropdown-wrapper">
                 <button class="mode-trigger" (click)="toggleModeDropdown()">

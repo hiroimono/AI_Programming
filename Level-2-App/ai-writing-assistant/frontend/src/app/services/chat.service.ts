@@ -3,14 +3,25 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
+import { SourceCitation } from '../models/document.model';
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp?: Date;
+  sources?: SourceCitation[];
 }
 
 export type WritingMode = 'general' | 'blog' | 'email' | 'report' | 'creative';
+
+/**
+ * Stream events emitted by streamChat(). Discriminated union so the
+ * caller can render tokens incrementally and attach citations once they
+ * arrive (typically right before the [DONE] marker).
+ */
+export type StreamEvent =
+  | { type: 'token'; content: string }
+  | { type: 'sources'; sources: SourceCitation[] };
 
 @Injectable({
   providedIn: 'root',
@@ -23,16 +34,25 @@ export class ChatService {
     : environment.apiUrl;
 
   /**
-   * Sends chat messages to backend and returns an Observable that emits
-   * streamed tokens via SSE (Server-Sent Events).
+   * Sends chat messages and streams responses as SSE.
    *
-   * RxJS concept: We create a custom Observable that reads from an SSE stream.
-   * Unlike a normal HTTP call that returns one response, this keeps emitting
-   * values until the stream closes — similar to a WebSocket but one-directional.
+   * Emits a `token` event for each content chunk and (optionally) a
+   * single `sources` event when RAG retrieval ran on the backend. Empty
+   * sources array is also emitted on MISS so the UI can clear stale
+   * citations from previous turns.
    */
-  streamChat(messages: ChatMessage[], writingMode: WritingMode): Observable<string> {
-    return new Observable<string>((subscriber) => {
+  streamChat(
+    messages: ChatMessage[],
+    writingMode: WritingMode,
+    conversationId?: string,
+  ): Observable<StreamEvent> {
+    return new Observable<StreamEvent>((subscriber) => {
       const abortController = new AbortController();
+
+      const body: Record<string, unknown> = { messages, writing_mode: writingMode };
+      if (conversationId) {
+        body['conversation_id'] = conversationId;
+      }
 
       fetch(`${this.apiUrl}/chat`, {
         method: 'POST',
@@ -40,7 +60,7 @@ export class ChatService {
           'Content-Type': 'application/json',
           ...(this.auth.getToken() ? { Authorization: `Bearer ${this.auth.getToken()}` } : {}),
         },
-        body: JSON.stringify({ messages, writing_mode: writingMode }),
+        body: JSON.stringify(body),
         signal: abortController.signal,
       })
         .then(async (response) => {
@@ -53,6 +73,8 @@ export class ChatService {
           const reader = response.body!.getReader();
           const decoder = new TextDecoder();
           let buffer = '';
+          // Track the SSE event name across chunks. Resets on blank lines.
+          let currentEvent: string | null = null;
 
           while (true) {
             const { done, value } = await reader.read();
@@ -63,6 +85,15 @@ export class ChatService {
             buffer = lines.pop() ?? '';
 
             for (const line of lines) {
+              if (line === '') {
+                // End of SSE message — reset the pending event name.
+                currentEvent = null;
+                continue;
+              }
+              if (line.startsWith('event: ')) {
+                currentEvent = line.slice(7).trim();
+                continue;
+              }
               if (line.startsWith('data: ')) {
                 const data = line.slice(6);
                 if (data === '[DONE]') {
@@ -71,8 +102,13 @@ export class ChatService {
                 }
                 try {
                   const parsed = JSON.parse(data);
-                  if (parsed.content) {
-                    subscriber.next(parsed.content);
+                  if (currentEvent === 'sources' && Array.isArray(parsed)) {
+                    subscriber.next({
+                      type: 'sources',
+                      sources: parsed as SourceCitation[],
+                    });
+                  } else if (parsed && typeof parsed.content === 'string') {
+                    subscriber.next({ type: 'token', content: parsed.content });
                   }
                 } catch {
                   // Skip malformed JSON

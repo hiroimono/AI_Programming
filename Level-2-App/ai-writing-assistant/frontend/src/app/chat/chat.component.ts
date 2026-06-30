@@ -15,12 +15,14 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subscription } from 'rxjs';
 import { ChatService, ChatMessage, WritingMode } from '../services/chat.service';
 import { ConversationService } from '../services/conversation.service';
+import { DocumentService } from '../services/document.service';
 import { AuthService } from '../services/auth.service';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { ToastComponent } from '../toast/toast.component';
 import { SettingsModalComponent, SettingsModal } from '../settings-modal/settings-modal.component';
 import { Router } from '@angular/router';
 import { MarkdownPipe } from '../pipes/markdown.pipe';
+import { DocumentItem } from '../models/document.model';
 
 @Component({
   selector: 'app-chat',
@@ -42,6 +44,7 @@ export class ChatComponent implements OnInit, OnDestroy {
 
   private chatService = inject(ChatService);
   private conversationService = inject(ConversationService);
+  private documentService = inject(DocumentService);
   private ngZone = inject(NgZone);
   private router = inject(Router);
   auth = inject(AuthService);
@@ -59,9 +62,16 @@ export class ChatComponent implements OnInit, OnDestroy {
   copiedIndex = signal<number | null>(null);
   modeDropdownOpen = signal(false);
   activeConversationId = signal<string | null>(null);
+
+  // Documents attached to the current conversation (RAG sources).
+  uploadedDocs = signal<DocumentItem[]>([]);
+  uploadingFile = signal(false);
+  expandedSourcesIndex = signal<number | null>(null);
+
   @ViewChild('sidebarRef') sidebarRef!: SidebarComponent;
   @ViewChild('toastRef') toastRef!: ToastComponent;
   @ViewChild('settingsModalRef') settingsModalRef!: SettingsModalComponent;
+  @ViewChild('fileInput') fileInputRef!: ElementRef<HTMLInputElement>;
 
   writingModes: { value: WritingMode; label: string; icon: string }[] = [
     { value: 'general', label: 'General', icon: 'chat' },
@@ -101,16 +111,25 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.isStreaming.set(true);
 
     this.streamSub = this.chatService
-      .streamChat(this.messages().slice(0, -1), this.writingMode())
+      .streamChat(this.messages().slice(0, -1), this.writingMode(), conversationId)
       .subscribe({
-        next: (token) => {
-          this.messages.update((msgs) => {
-            const updated = [...msgs];
-            const last = updated[updated.length - 1];
-            updated[updated.length - 1] = { ...last, content: last.content + token };
-            return updated;
-          });
-          this.scheduleScroll();
+        next: (ev) => {
+          if (ev.type === 'token') {
+            this.messages.update((msgs) => {
+              const updated = [...msgs];
+              const last = updated[updated.length - 1];
+              updated[updated.length - 1] = { ...last, content: last.content + ev.content };
+              return updated;
+            });
+            this.scheduleScroll();
+          } else if (ev.type === 'sources') {
+            this.messages.update((msgs) => {
+              const updated = [...msgs];
+              const last = updated[updated.length - 1];
+              updated[updated.length - 1] = { ...last, sources: ev.sources };
+              return updated;
+            });
+          }
         },
         error: (err) => {
           this.messages.update((msgs) => {
@@ -165,6 +184,7 @@ export class ChatComponent implements OnInit, OnDestroy {
   onConversationSelected(id: string) {
     if (id === this.activeConversationId()) return;
     this.activeConversationId.set(id);
+    this.expandedSourcesIndex.set(null);
     this.conversationService.getConversation(id).subscribe((detail) => {
       this.messages.set(
         detail.messages.map((m) => ({
@@ -175,12 +195,15 @@ export class ChatComponent implements OnInit, OnDestroy {
       );
       this.scheduleScroll();
     });
+    this.loadDocumentsForActiveConversation();
   }
 
   onNewChatRequested() {
     this.messages.set([]);
     this.activeConversationId.set(null);
     this.userInput = '';
+    this.uploadedDocs.set([]);
+    this.expandedSourcesIndex.set(null);
   }
 
   onSettingsModal(modal: SettingsModal) {
@@ -301,38 +324,50 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.messages.update((m) => [...m, assistantMessage]);
     this.isStreaming.set(true);
 
-    this.streamSub = this.chatService.streamChat(kept, this.writingMode()).subscribe({
-      next: (token) => {
-        this.messages.update((m) => {
-          const updated = [...m];
-          const last = updated[updated.length - 1];
-          updated[updated.length - 1] = { ...last, content: last.content + token };
-          return updated;
-        });
-        this.scheduleScroll();
-      },
-      error: (err) => {
-        this.messages.update((m) => {
-          const updated = [...m];
-          updated[updated.length - 1] = {
-            role: 'assistant',
-            content: `⚠️ Error: ${err.message}`,
-            timestamp: new Date(),
-          };
-          return updated;
-        });
-        this.isStreaming.set(false);
-      },
-      complete: () => {
-        this.isStreaming.set(false);
-        this.messages.update((m) => {
-          const updated = [...m];
-          const last = updated[updated.length - 1];
-          updated[updated.length - 1] = { ...last, timestamp: new Date() };
-          return updated;
-        });
-      },
-    });
+    const conversationId = this.activeConversationId() ?? undefined;
+    this.streamSub = this.chatService
+      .streamChat(kept, this.writingMode(), conversationId)
+      .subscribe({
+        next: (ev) => {
+          if (ev.type === 'token') {
+            this.messages.update((m) => {
+              const updated = [...m];
+              const last = updated[updated.length - 1];
+              updated[updated.length - 1] = { ...last, content: last.content + ev.content };
+              return updated;
+            });
+            this.scheduleScroll();
+          } else if (ev.type === 'sources') {
+            this.messages.update((m) => {
+              const updated = [...m];
+              const last = updated[updated.length - 1];
+              updated[updated.length - 1] = { ...last, sources: ev.sources };
+              return updated;
+            });
+          }
+        },
+        error: (err) => {
+          this.messages.update((m) => {
+            const updated = [...m];
+            updated[updated.length - 1] = {
+              role: 'assistant',
+              content: `⚠️ Error: ${err.message}`,
+              timestamp: new Date(),
+            };
+            return updated;
+          });
+          this.isStreaming.set(false);
+        },
+        complete: () => {
+          this.isStreaming.set(false);
+          this.messages.update((m) => {
+            const updated = [...m];
+            const last = updated[updated.length - 1];
+            updated[updated.length - 1] = { ...last, timestamp: new Date() };
+            return updated;
+          });
+        },
+      });
   }
 
   editMessage(index: number) {
@@ -348,6 +383,86 @@ export class ChatComponent implements OnInit, OnDestroy {
 
     // Focus the textarea
     setTimeout(() => this.chatTextarea?.nativeElement?.focus());
+  }
+
+  // ─── Document Management (RAG) ────────────────────
+
+  /** Trigger native file picker via hidden input. */
+  openFilePicker() {
+    if (!this.auth.isAuthenticated()) {
+      this.toastRef?.show('Please log in to attach documents.', 'error');
+      return;
+    }
+    this.fileInputRef?.nativeElement?.click();
+  }
+
+  /** Handle file selection from the hidden input. */
+  async onFilePicked(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+
+    const conversationId = await this.ensureConversation();
+    this.uploadingFile.set(true);
+
+    this.documentService.upload(conversationId, file).subscribe({
+      next: (res) => {
+        const optimistic: DocumentItem = {
+          id: res.document_id,
+          file_name: file.name,
+          file_type: file.name.split('.').pop() ?? '',
+          mime_type: file.type || 'application/octet-stream',
+          file_size_bytes: file.size,
+          status: res.status,
+          chunk_count: res.chunk_count,
+          created_at: new Date().toISOString(),
+        };
+        this.uploadedDocs.update((docs) => [...docs, optimistic]);
+        this.toastRef?.show(`Attached "${file.name}" (${res.chunk_count} chunks).`, 'info');
+      },
+      error: (err) => {
+        const detail = err?.error?.detail ?? err?.message ?? 'Upload failed';
+        this.toastRef?.show(`Upload failed: ${detail}`, 'error');
+        this.uploadingFile.set(false);
+      },
+      complete: () => this.uploadingFile.set(false),
+    });
+  }
+
+  /** Remove a previously attached document for this conversation. */
+  removeDocument(documentId: string) {
+    this.documentService.delete(documentId).subscribe({
+      next: () => {
+        this.uploadedDocs.update((docs) => docs.filter((d) => d.id !== documentId));
+      },
+      error: (err) => {
+        const detail = err?.error?.detail ?? err?.message ?? 'Delete failed';
+        this.toastRef?.show(`Delete failed: ${detail}`, 'error');
+      },
+    });
+  }
+
+  /** Toggle the Sources accordion under an assistant message. */
+  toggleSources(index: number) {
+    this.expandedSourcesIndex.update((curr) => (curr === index ? null : index));
+  }
+
+  /** Format a chunk distance score for display (lower = closer). */
+  formatDistance(distance: number): string {
+    return distance.toFixed(3);
+  }
+
+  private loadDocumentsForActiveConversation() {
+    const id = this.activeConversationId();
+    if (!id || !this.auth.isAuthenticated()) {
+      this.uploadedDocs.set([]);
+      return;
+    }
+    this.documentService.list(id).subscribe({
+      next: (docs) => this.uploadedDocs.set(docs),
+      error: () => this.uploadedDocs.set([]),
+    });
   }
 
   private resetTextarea() {
