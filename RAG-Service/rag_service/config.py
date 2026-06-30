@@ -88,6 +88,18 @@ class Settings(BaseSettings):
     storage_backend: str = Field(default="local")
     storage_local_path: str = Field(default="./storage")
 
+    # ─── Internal service-to-service auth (JWT) ───────────────
+    # Shared HMAC secret between rag-service and consuming app backends
+    # (Level-2 writer backend, Level-3 chatbot backend). Tokens are
+    # short-lived (~5 min); rag-service does not mint tokens, only verifies.
+    # In production this should be 32+ random bytes; generate with
+    #   python -c "import secrets; print(secrets.token_urlsafe(32))"
+    internal_jwt_secret: SecretStr = Field(
+        default=SecretStr(""),
+        description="HMAC secret for verifying internal JWT bearer tokens.",
+    )
+    internal_jwt_algorithm: str = Field(default="HS256")
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

@@ -49,6 +49,27 @@ _MODELS: dict[str, tuple[type, type]] = {
     "level3": (Level3Document, Level3Chunk),
 }
 
+# Per-app schema dispatch. Adding a Level-4 app means: new schema in
+# models/, register the (Document, Chunk) pair in _MODELS above + here.
+_APP_TO_SCHEMA: dict[str, str] = {
+    "level-2-writer": "level2",
+    "level-3-chatbot": "level3",
+}
+
+
+def schema_for_app(app_id: str) -> str:
+    """Map an app_id (from JWT) to the RAG schema key it owns.
+
+    Routers call this to translate identity.app_id into the schema
+    parameter that ingest_document / retrieve_context expect. Raises
+    ValueError for unknown apps so the endpoint layer can return 403.
+    """
+    try:
+        return _APP_TO_SCHEMA[app_id]
+    except KeyError as exc:
+        raise ValueError(f"Unknown app_id: {app_id!r}") from exc
+
+
 # Truncate error messages stored in DB so a 50-line stack trace doesn't
 # blow up the documents.error_message column (defined as TEXT but UI
 # should never need to render an essay).

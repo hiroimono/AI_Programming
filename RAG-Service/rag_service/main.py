@@ -13,8 +13,10 @@ from typing import AsyncIterator
 from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+
 from rag_service.config import get_settings
 from rag_service.db import dispose_engine, ping_db
+from rag_service.routers import documents_router, retrieve_router
 
 settings = get_settings()
 
@@ -63,6 +65,11 @@ if settings.cors_origins:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+# Mount Phase 4 routers. All endpoints under these routers require a
+# valid internal JWT (verified by the AuthedIdentity dependency).
+app.include_router(documents_router)
+app.include_router(retrieve_router)
 
 
 @app.get("/api/health", tags=["meta"])
