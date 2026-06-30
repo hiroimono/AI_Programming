@@ -13,7 +13,6 @@ from __future__ import annotations
 from io import BytesIO
 
 from openpyxl import load_workbook
-
 from rag_service.parsers.types import ParsedDocument, ParsedPage
 
 
@@ -49,7 +48,9 @@ def parse_xlsx(content: bytes) -> ParsedDocument:
         )
     workbook.close()
 
-    full_text = "\n\n".join(f"### {p.extra['sheet_name']}\n{p.text}" for p in pages if p.text)
+    full_text = "\n\n".join(
+        f"### {p.extra['sheet_name']}\n{p.text}" for p in pages if p.text
+    )
     return ParsedDocument(
         full_text=full_text,
         pages=pages,

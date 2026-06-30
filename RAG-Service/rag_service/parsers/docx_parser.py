@@ -15,7 +15,6 @@ from __future__ import annotations
 from io import BytesIO
 
 import docx  # python-docx exposes itself as `docx`
-
 from rag_service.parsers.types import ParsedDocument, ParsedPage
 
 

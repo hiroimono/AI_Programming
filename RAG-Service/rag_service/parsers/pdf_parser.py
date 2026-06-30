@@ -10,7 +10,6 @@ from __future__ import annotations
 from io import BytesIO
 
 from pypdf import PdfReader
-
 from rag_service.parsers.types import ParsedDocument, ParsedPage
 
 # Inserted between concatenated page texts in `full_text`. The chunker

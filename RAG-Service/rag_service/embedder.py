@@ -18,7 +18,6 @@ constructing a new one per call leaks sockets and re-does TLS handshakes.
 from __future__ import annotations
 
 from openai import AsyncOpenAI
-
 from rag_service.config import get_settings
 
 # How many texts to send in one /embeddings call. OpenAI allows up to

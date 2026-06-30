@@ -56,7 +56,9 @@ _EXT_DISPATCH = {
 }
 
 
-def parse(content: bytes, mime_type: str | None, filename: str | None) -> ParsedDocument:
+def parse(
+    content: bytes, mime_type: str | None, filename: str | None
+) -> ParsedDocument:
     """Route to the correct parser. Returns a normalized ParsedDocument."""
     if mime_type:
         parser_fn = _MIME_DISPATCH.get(mime_type.lower())
