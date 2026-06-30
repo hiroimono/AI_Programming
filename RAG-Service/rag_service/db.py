@@ -22,6 +22,7 @@ from __future__ import annotations
 from typing import AsyncIterator
 from urllib.parse import urlparse, urlunparse
 
+from rag_service.config import get_settings
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -30,11 +31,12 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from rag_service.config import get_settings
 
-
-def _normalize_neon_url(raw_url: str) -> tuple[str, dict]:
+def normalize_neon_url(raw_url: str) -> tuple[str, dict]:
     """Convert a libpq-style Neon URL to asyncpg-compatible form.
+
+    Public because alembic/env.py also needs this transformation before it
+    can hand the URL to SQLAlchemy.
 
     Returns:
         (clean_url_without_query, connect_args_for_asyncpg)
@@ -70,7 +72,7 @@ def _build_engine() -> AsyncEngine:
     settings = get_settings()
     # pylint mis-infers pydantic v2 Field() defaults as FieldInfo; suppress it.
     raw = settings.database_url.get_secret_value()  # pylint: disable=no-member
-    url, connect_args = _normalize_neon_url(raw)
+    url, connect_args = normalize_neon_url(raw)
 
     return create_async_engine(
         url,

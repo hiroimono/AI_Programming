@@ -6,6 +6,7 @@ setting later is a one-liner here plus a line in .env.example.
 
 from __future__ import annotations
 
+import json
 from functools import lru_cache
 from typing import Annotated
 
@@ -48,7 +49,6 @@ class Settings(BaseSettings):
         if isinstance(raw, str):
             s = raw.strip()
             if s.startswith("["):
-                import json  # local import; rarely used
                 return json.loads(s)
             return [piece.strip() for piece in s.split(",") if piece.strip()]
         raise TypeError(f"Unsupported CORS_ORIGINS value: {raw!r}")
@@ -72,4 +72,3 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Cached settings singleton. Import-safe; reads .env once."""
     return Settings()
-

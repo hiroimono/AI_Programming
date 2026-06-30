@@ -13,7 +13,6 @@ from typing import AsyncIterator
 from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-
 from rag_service.config import get_settings
 from rag_service.db import dispose_engine, ping_db
 
@@ -110,4 +109,3 @@ async def health_ready() -> JSONResponse:
         return JSONResponse(
             content=body, status_code=status.HTTP_503_SERVICE_UNAVAILABLE
         )
-

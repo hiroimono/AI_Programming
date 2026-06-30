@@ -16,8 +16,16 @@ asyncpg==0.30.0
 # Required runtime dependency for sqlalchemy's async bridge
 greenlet==3.1.1
 
-# ─── Phase 2+ will append: ──────────────────────────────────────
-# alembic, pgvector
+# ─── Phase 2: Schema migrations + vector type ───────────────────
+# Alembic: DB migration tool (like EF Migrations for Python)
+alembic==1.14.0
+
+# pgvector Python client: SQLAlchemy Vector() column type that maps
+# to PostgreSQL's VECTOR(n). Required so autogenerate emits VECTOR
+# columns and HNSW index DDL correctly.
+pgvector==0.3.6
+
+# ─── Phase 3+ will append: ──────────────────────────────────────
 # pypdf, python-docx, openpyxl, pandas, pillow, pytesseract
 # openai, tiktoken
 # PyJWT, httpx, python-multipart
