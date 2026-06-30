@@ -1346,8 +1346,12 @@ $input-bg: rgba(255, 255, 255, 0.06);
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 // ─── Sources Accordion (RAG citations) ─────────────
@@ -1573,8 +1577,12 @@ $input-bg: rgba(255, 255, 255, 0.06);
 }
 
 @keyframes previewFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .doc-preview-modal {

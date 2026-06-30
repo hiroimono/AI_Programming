@@ -64,9 +64,7 @@ export class DocumentService {
    * or concatenate them as-is.
    */
   getChunks(documentId: string): Observable<DocumentChunksResponse> {
-    return this.http.get<DocumentChunksResponse>(
-      `${this.apiUrl}/documents/${documentId}/chunks`,
-    );
+    return this.http.get<DocumentChunksResponse>(`${this.apiUrl}/documents/${documentId}/chunks`);
   }
 
   /**

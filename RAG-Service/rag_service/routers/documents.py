@@ -248,7 +248,9 @@ async def get_document_file(
     # Non-ASCII filenames (e.g. "Risale-i Nur\u2019da\u2026.pdf") cannot go
     # directly into HTTP headers (latin-1 only).
     original = doc.file_name or "document"
-    ascii_fallback = original.encode("ascii", "replace").decode("ascii").replace('"', "")
+    ascii_fallback = (
+        original.encode("ascii", "replace").decode("ascii").replace('"', "")
+    )
     quoted_utf8 = quote(original, safe="")
     return Response(
         content=content,

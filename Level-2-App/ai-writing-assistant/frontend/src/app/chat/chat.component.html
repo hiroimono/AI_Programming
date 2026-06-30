@@ -43,17 +43,31 @@
               @if (pendingDocs().length > 0) {
                 <div class="doc-chips">
                   @for (doc of pendingDocs(); track doc.id) {
-                    <div class="doc-chip" [class.pending]="doc.status === 'pending'" [class.failed]="doc.status === 'failed'">
+                    <div
+                      class="doc-chip"
+                      [class.pending]="doc.status === 'pending'"
+                      [class.failed]="doc.status === 'failed'"
+                    >
                       <mat-icon class="doc-icon">description</mat-icon>
                       <span class="doc-name" [matTooltip]="doc.file_name">{{ doc.file_name }}</span>
                       @if (doc.status === 'pending') {
                         <mat-icon class="doc-status pending">hourglass_top</mat-icon>
                       } @else if (doc.status === 'failed') {
-                        <mat-icon class="doc-status failed" [matTooltip]="doc.error_message || 'Failed'">error</mat-icon>
+                        <mat-icon
+                          class="doc-status failed"
+                          [matTooltip]="doc.error_message || 'Failed'"
+                          >error</mat-icon
+                        >
                       } @else {
-                        <mat-icon class="doc-status ready" matTooltip="Ready">check_circle</mat-icon>
+                        <mat-icon class="doc-status ready" matTooltip="Ready"
+                          >check_circle</mat-icon
+                        >
                       }
-                      <button class="doc-remove" matTooltip="Remove" (click)="removePendingDocument(doc.id)">
+                      <button
+                        class="doc-remove"
+                        matTooltip="Remove"
+                        (click)="removePendingDocument(doc.id)"
+                      >
                         <mat-icon>close</mat-icon>
                       </button>
                     </div>
@@ -173,7 +187,12 @@
                     <button
                       type="button"
                       class="attachment-chip"
-                      [matTooltip]="doc.file_name + ' · ' + formatFileSize(doc.file_size_bytes) + ' · click to preview'"
+                      [matTooltip]="
+                        doc.file_name +
+                        ' · ' +
+                        formatFileSize(doc.file_size_bytes) +
+                        ' · click to preview'
+                      "
                       (click)="openPreview(doc)"
                     >
                       <mat-icon class="att-icon">description</mat-icon>
@@ -227,19 +246,24 @@
                       {{ getDistinctSources(msg).length }}
                       {{ getDistinctSources(msg).length === 1 ? 'source' : 'sources' }}
                     </span>
-                    <mat-icon class="src-chevron">{{ expandedSourcesIndex() === $index ? 'expand_less' : 'expand_more' }}</mat-icon>
+                    <mat-icon class="src-chevron">{{
+                      expandedSourcesIndex() === $index ? 'expand_less' : 'expand_more'
+                    }}</mat-icon>
                   </button>
                   @if (expandedSourcesIndex() === $index) {
                     <div class="sources-list">
                       @for (src of getDistinctSources(msg); track src.document_id) {
                         <div class="source-item source-item--compact">
                           <mat-icon class="source-doc-icon">description</mat-icon>
-                          <span class="source-name" [matTooltip]="src.filename">{{ src.filename }}</span>
+                          <span class="source-name" [matTooltip]="src.filename">{{
+                            src.filename
+                          }}</span>
                           @if (src.count > 1) {
                             <span
                               class="source-count"
                               matTooltip="Passages from this document used to ground the answer"
-                            >{{ src.count }} passages</span>
+                              >{{ src.count }} passages</span
+                            >
                           }
                         </div>
                       }
@@ -289,17 +313,27 @@
           @if (pendingDocs().length > 0) {
             <div class="doc-chips">
               @for (doc of pendingDocs(); track doc.id) {
-                <div class="doc-chip" [class.pending]="doc.status === 'pending'" [class.failed]="doc.status === 'failed'">
+                <div
+                  class="doc-chip"
+                  [class.pending]="doc.status === 'pending'"
+                  [class.failed]="doc.status === 'failed'"
+                >
                   <mat-icon class="doc-icon">description</mat-icon>
                   <span class="doc-name" [matTooltip]="doc.file_name">{{ doc.file_name }}</span>
                   @if (doc.status === 'pending') {
                     <mat-icon class="doc-status pending">hourglass_top</mat-icon>
                   } @else if (doc.status === 'failed') {
-                    <mat-icon class="doc-status failed" [matTooltip]="doc.error_message || 'Failed'">error</mat-icon>
+                    <mat-icon class="doc-status failed" [matTooltip]="doc.error_message || 'Failed'"
+                      >error</mat-icon
+                    >
                   } @else {
                     <mat-icon class="doc-status ready" matTooltip="Ready">check_circle</mat-icon>
                   }
-                  <button class="doc-remove" matTooltip="Remove" (click)="removePendingDocument(doc.id)">
+                  <button
+                    class="doc-remove"
+                    matTooltip="Remove"
+                    (click)="removePendingDocument(doc.id)"
+                  >
                     <mat-icon>close</mat-icon>
                   </button>
                 </div>
@@ -396,7 +430,10 @@
           <mat-icon>close</mat-icon>
         </button>
       </header>
-      <div class="doc-preview-body" [class.doc-preview-body--flush]="previewKind() === 'pdf' || previewKind() === 'image'">
+      <div
+        class="doc-preview-body"
+        [class.doc-preview-body--flush]="previewKind() === 'pdf' || previewKind() === 'image'"
+      >
         @if (previewLoading()) {
           <div class="doc-preview-loading">
             <mat-icon class="spin">progress_activity</mat-icon>
@@ -418,7 +455,10 @@
         } @else {
           <div class="doc-preview-unsupported">
             <mat-icon>insert_drive_file</mat-icon>
-            <p>Inline preview isn't supported for <strong>{{ doc.file_type.toUpperCase() }}</strong> files.</p>
+            <p>
+              Inline preview isn't supported for
+              <strong>{{ doc.file_type.toUpperCase() }}</strong> files.
+            </p>
             <button class="doc-preview-download-btn" (click)="downloadPreview()">
               <mat-icon>download</mat-icon>
               Download {{ doc.file_name }}

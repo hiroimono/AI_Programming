@@ -314,7 +314,9 @@ async def get_document_file(
         document_id=document_id,
     )
     # HTTP headers must be latin-1; encode unicode filenames per RFC 5987.
-    ascii_fallback = filename.encode("ascii", "replace").decode("ascii").replace('"', "")
+    ascii_fallback = (
+        filename.encode("ascii", "replace").decode("ascii").replace('"', "")
+    )
     quoted_utf8 = quote(filename, safe="")
     return Response(
         content=content,

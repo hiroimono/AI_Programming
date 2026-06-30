@@ -9,6 +9,7 @@ tablolarında `conversation_id` referansı boş bir konuşmayı işaret eder.
 Vektör verisi de Chroma'da kalır. Storage zamanla şişer.
 
 **Mevcut Davranış:**
+
 - Gateway `DELETE /api/writer/conversations/{id}` → sadece `WriterConversation`
   ve cascade ile `WriterMessages` siler.
 - `rag-service`'in haberi olmaz, dokümanlar kalır.
@@ -30,6 +31,7 @@ async def delete_by_conversation(
 ```
 
 `DocumentService.delete_by_conversation(conversation_id)`:
+
 - `documents` tablosundan ID listesini çek
 - Her doc için Chroma'dan vektörleri sil (`collection.delete(where=...)`)
 - `document_chunks` ve `documents` satırlarını sil
@@ -66,6 +68,7 @@ public async Task<bool> DeleteConversationAsync(Guid id)
 `batch-delete` için de aynı mantık — `Task.WhenAll` ile paralel.
 
 `RagServiceClient` yeni metot:
+
 ```csharp
 public async Task DeleteByConversationAsync(Guid conversationId)
 {
@@ -81,6 +84,7 @@ public async Task DeleteByConversationAsync(Guid conversationId)
 ### 3. Background Sweeper (güvenlik ağı)
 
 rag-service içinde günde 1 kez (APScheduler veya basit bir async task):
+
 - `documents.conversation_id`'leri al
 - Gateway'e `GET /api/writer/conversations/exists?ids=...` ile sor
 - Var olmayanları sil
