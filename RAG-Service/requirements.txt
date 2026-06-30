@@ -25,8 +25,24 @@ alembic==1.14.0
 # columns and HNSW index DDL correctly.
 pgvector==0.3.6
 
-# ─── Phase 3+ will append: ──────────────────────────────────────
-# pypdf, python-docx, openpyxl, pandas, pillow, pytesseract
-# openai, tiktoken
+# ─── Phase 3: Document parsing + chunking + embeddings ───────
+# PDF → text. Pure Python, lightweight (no native deps).
+pypdf==5.1.0
+
+# Word .docx → text (paragraphs, tables).
+python-docx==1.1.2
+
+# Excel .xlsx → text. Read-only mode keeps memory low for large sheets.
+openpyxl==3.1.5
+
+# OpenAI SDK (embeddings now, chat-completions in Phase 5 for Level-3).
+openai==1.59.6
+
+# Token counting / tokenizer for chunk size control. Same encoding used
+# by GPT-4o family, so chunk sizes match what the LLM will see.
+tiktoken==0.8.0
+
+# ─── Phase 4+ will append: ────────────────────────────────
 # PyJWT, httpx, python-multipart
+# (OCR skipped for MVP: pillow + pytesseract + Tesseract binary)
 

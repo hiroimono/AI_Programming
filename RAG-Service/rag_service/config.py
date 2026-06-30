@@ -67,6 +67,27 @@ class Settings(BaseSettings):
     db_pool_size: int = Field(default=5)
     db_max_overflow: int = Field(default=2)
 
+    # ─── OpenAI (embeddings + chat) ────────────────────────
+    # SecretStr keeps the key out of logs / pydantic reprs / error messages.
+    # Used by embedder.py for text-embedding-3-small (1536-dim vectors).
+    openai_api_key: SecretStr = Field(
+        default=SecretStr(""),
+        description="OpenAI API key (sk-proj-... or sk-...).",
+    )
+
+    # Embedding model and dimension are pinned here so chunker/embedder/
+    # DB schema stay in sync. Changing the model later means a migration
+    # (vector dim) and re-embedding all chunks.
+    openai_embedding_model: str = Field(default="text-embedding-3-small")
+    openai_embedding_dim: int = Field(default=1536)
+
+    # ─── Storage (uploaded files) ──────────────────────────
+    # Local FS backend for MVP. Stored relative to this directory.
+    # Cloud backends (R2, Hetzner Object Storage) plug in later via
+    # storage.py's backend abstraction without touching callers.
+    storage_backend: str = Field(default="local")
+    storage_local_path: str = Field(default="./storage")
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
