@@ -18,7 +18,7 @@
   ],
   "pylint.args": [
     "--disable=C0114,C0115,C0116",
-    "--init-hook=import sys; sys.path.insert(0, 'RAG-Service'); sys.path.insert(0, 'RAG-Service/venv/Lib/site-packages')"
+    "--init-hook=import sys; sys.path.insert(0, r'${workspaceFolder}/RAG-Service'); sys.path.insert(0, r'${workspaceFolder}/RAG-Service/venv/Lib/site-packages'); sys.path.insert(0, r'${workspaceFolder}/Level-2-App/ai-writing-assistant/backend/venv/Lib/site-packages')"
   ],
   "search.exclude": {
     "**/node_modules": true,
