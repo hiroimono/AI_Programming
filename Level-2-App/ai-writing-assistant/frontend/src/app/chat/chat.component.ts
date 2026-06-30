@@ -12,7 +12,8 @@ import {
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Subscription } from 'rxjs';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { Subscription, forkJoin } from 'rxjs';
 import { ChatService, ChatMessage, WritingMode } from '../services/chat.service';
 import { ConversationService } from '../services/conversation.service';
 import { DocumentService } from '../services/document.service';
@@ -47,6 +48,7 @@ export class ChatComponent implements OnInit, OnDestroy {
   private documentService = inject(DocumentService);
   private ngZone = inject(NgZone);
   private router = inject(Router);
+  private sanitizer = inject(DomSanitizer);
   auth = inject(AuthService);
   private userScrolledUp = false;
   private wheelListener: ((e: WheelEvent) => void) | null = null;
@@ -63,10 +65,25 @@ export class ChatComponent implements OnInit, OnDestroy {
   modeDropdownOpen = signal(false);
   activeConversationId = signal<string | null>(null);
 
-  // Documents attached to the current conversation (RAG sources).
-  uploadedDocs = signal<DocumentItem[]>([]);
+  // Documents the user has staged for the *next* message they send.
+  // After send, these are copied onto the user message's `attachments`
+  // field and cleared from this signal — so chips stay anchored to the
+  // question they were attached to, not to the conversation overall.
+  pendingDocs = signal<DocumentItem[]>([]);
   uploadingFile = signal(false);
   expandedSourcesIndex = signal<number | null>(null);
+
+  // Preview modal state. previewDoc is the chip the user clicked; the
+  // original file bytes are fetched as a blob and rendered inline based
+  // on mime-type (PDF → iframe, image → img, text → <pre>). The object
+  // URL is revoked on close to avoid memory leaks.
+  previewDoc = signal<DocumentItem | null>(null);
+  previewLoading = signal(false);
+  previewError = signal<string | null>(null);
+  previewKind = signal<'pdf' | 'image' | 'text' | 'unsupported' | null>(null);
+  previewSafeUrl = signal<SafeResourceUrl | null>(null);
+  previewText = signal<string | null>(null);
+  private previewObjectUrl: string | null = null;
 
   @ViewChild('sidebarRef') sidebarRef!: SidebarComponent;
   @ViewChild('toastRef') toastRef!: ToastComponent;
@@ -88,6 +105,7 @@ export class ChatComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.detachScrollListener();
     this.streamSub?.unsubscribe();
+    this.releasePreviewUrl();
   }
 
   async sendMessage() {
@@ -96,15 +114,30 @@ export class ChatComponent implements OnInit, OnDestroy {
 
     const conversationId = await this.ensureConversation();
 
-    const userMessage: ChatMessage = { role: 'user', content, timestamp: new Date() };
+    // Snapshot pending attachments onto the outgoing user message, then
+    // clear them from the composer so the next message starts blank.
+    const attachments = this.pendingDocs();
+    const userMessage: ChatMessage = {
+      role: 'user',
+      content,
+      timestamp: new Date(),
+      attachments: attachments.length > 0 ? attachments : undefined,
+    };
     this.messages.update((msgs) => [...msgs, userMessage]);
+    this.pendingDocs.set([]);
     this.userInput = '';
     this.resetTextarea();
     this.userScrolledUp = false;
     this.scheduleScroll();
 
-    // Save user message to server
-    this.saveMessageToServer(conversationId, 'user', content);
+    // Save user message to server (with attached doc IDs so the chips can be
+    // rehydrated when the conversation is reopened from the sidebar).
+    this.saveMessageToServer(
+      conversationId,
+      'user',
+      content,
+      attachments.map((a) => a.id),
+    );
 
     const assistantMessage: ChatMessage = { role: 'assistant', content: '', timestamp: new Date() };
     this.messages.update((msgs) => [...msgs, assistantMessage]);
@@ -185,24 +218,40 @@ export class ChatComponent implements OnInit, OnDestroy {
     if (id === this.activeConversationId()) return;
     this.activeConversationId.set(id);
     this.expandedSourcesIndex.set(null);
-    this.conversationService.getConversation(id).subscribe((detail) => {
+    // Clear staged uploads when switching conversations — attachments
+    // belong to the message they were sent with, not to the conversation.
+    this.pendingDocs.set([]);
+
+    // Load the conversation transcript *and* the conversation's known
+    // documents in parallel, then stitch attachment chips back onto each
+    // user message by joining `attachedDocumentIds` against the doc list.
+    forkJoin({
+      detail: this.conversationService.getConversation(id),
+      docs: this.documentService.list(id),
+    }).subscribe(({ detail, docs }) => {
+      const docMap = new Map(docs.map((d) => [d.id, d]));
       this.messages.set(
-        detail.messages.map((m) => ({
-          role: m.role as 'user' | 'assistant' | 'system',
-          content: m.content,
-          timestamp: new Date(m.createdAt),
-        })),
+        detail.messages.map((m) => {
+          const attachments = (m.attachedDocumentIds ?? [])
+            .map((docId) => docMap.get(docId))
+            .filter((d): d is NonNullable<typeof d> => !!d);
+          return {
+            role: m.role as 'user' | 'assistant' | 'system',
+            content: m.content,
+            timestamp: new Date(m.createdAt),
+            attachments: attachments.length > 0 ? attachments : undefined,
+          };
+        }),
       );
       this.scheduleScroll();
     });
-    this.loadDocumentsForActiveConversation();
   }
 
   onNewChatRequested() {
     this.messages.set([]);
     this.activeConversationId.set(null);
     this.userInput = '';
-    this.uploadedDocs.set([]);
+    this.pendingDocs.set([]);
     this.expandedSourcesIndex.set(null);
   }
 
@@ -225,8 +274,15 @@ export class ChatComponent implements OnInit, OnDestroy {
     });
   }
 
-  private saveMessageToServer(conversationId: string, role: string, content: string) {
-    this.conversationService.saveMessage(conversationId, role, content).subscribe();
+  private saveMessageToServer(
+    conversationId: string,
+    role: string,
+    content: string,
+    attachedDocumentIds?: string[],
+  ) {
+    this.conversationService
+      .saveMessage(conversationId, role, content, attachedDocumentIds)
+      .subscribe();
   }
 
   private triggerTitleGeneration(conversationId: string) {
@@ -376,13 +432,35 @@ export class ChatComponent implements OnInit, OnDestroy {
 
     // Put the message content back in the input
     this.userInput = msg.content;
-    this.autoResize();
+
+    // Restore the attachments that were originally sent with this message,
+    // so they ride along with the re-edited question. We dedupe against
+    // anything already pending (e.g. a fresh upload before clicking edit).
+    if (msg.attachments?.length) {
+      const existingIds = new Set(this.pendingDocs().map((d) => d.id));
+      const restored = msg.attachments.filter((d) => !existingIds.has(d.id));
+      if (restored.length) {
+        this.pendingDocs.update((curr) => [...curr, ...restored]);
+      }
+    }
 
     // Remove this message and everything after it
     this.messages.update((msgs) => msgs.slice(0, index));
 
-    // Focus the textarea
-    setTimeout(() => this.chatTextarea?.nativeElement?.focus());
+    // Defer resize + focus until after Angular flushes the new ngModel value
+    // into the textarea. Otherwise autoResize() runs against the stale empty
+    // value, leaves the textarea at min-height, and the long content scrolls —
+    // making the first line look like it's hidden behind the attachment chip.
+    setTimeout(() => {
+      const ta = this.chatTextarea?.nativeElement;
+      if (!ta) return;
+      this.autoResize();
+      ta.scrollTop = 0;
+      ta.focus();
+      // Place caret at end so user can keep typing
+      const len = ta.value.length;
+      ta.setSelectionRange(len, len);
+    });
   }
 
   // ─── Document Management (RAG) ────────────────────
@@ -418,7 +496,7 @@ export class ChatComponent implements OnInit, OnDestroy {
           chunk_count: res.chunk_count,
           created_at: new Date().toISOString(),
         };
-        this.uploadedDocs.update((docs) => [...docs, optimistic]);
+        this.pendingDocs.update((docs) => [...docs, optimistic]);
         this.toastRef?.show(`Attached "${file.name}" (${res.chunk_count} chunks).`, 'info');
       },
       error: (err) => {
@@ -430,11 +508,12 @@ export class ChatComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Remove a previously attached document for this conversation. */
-  removeDocument(documentId: string) {
+  /** Remove a staged (not-yet-sent) document, also deleting it from
+   *  rag-service so it can't be retrieved later by mistake. */
+  removePendingDocument(documentId: string) {
     this.documentService.delete(documentId).subscribe({
       next: () => {
-        this.uploadedDocs.update((docs) => docs.filter((d) => d.id !== documentId));
+        this.pendingDocs.update((docs) => docs.filter((d) => d.id !== documentId));
       },
       error: (err) => {
         const detail = err?.error?.detail ?? err?.message ?? 'Delete failed';
@@ -453,16 +532,164 @@ export class ChatComponent implements OnInit, OnDestroy {
     return distance.toFixed(3);
   }
 
-  private loadDocumentsForActiveConversation() {
-    const id = this.activeConversationId();
-    if (!id || !this.auth.isAuthenticated()) {
-      this.uploadedDocs.set([]);
-      return;
+  /**
+   * Collapse raw chunk-level citations down to one row per distinct document.
+   * The middle-of-document text excerpts the retriever returns are usually
+   * meaningless to a human reader, so we just expose the source documents
+   * with a count of how many passages were used.
+   */
+  getDistinctSources(msg: ChatMessage): {
+    document_id: string;
+    filename: string;
+    count: number;
+    bestDistance: number;
+  }[] {
+    if (!msg.sources?.length) return [];
+    const byDoc = new Map<
+      string,
+      { document_id: string; filename: string; count: number; bestDistance: number }
+    >();
+    for (const s of msg.sources) {
+      const existing = byDoc.get(s.document_id);
+      if (existing) {
+        existing.count++;
+        if (s.distance < existing.bestDistance) existing.bestDistance = s.distance;
+      } else {
+        byDoc.set(s.document_id, {
+          document_id: s.document_id,
+          filename: s.document_filename,
+          count: 1,
+          bestDistance: s.distance,
+        });
+      }
     }
-    this.documentService.list(id).subscribe({
-      next: (docs) => this.uploadedDocs.set(docs),
-      error: () => this.uploadedDocs.set([]),
+    return Array.from(byDoc.values()).sort((a, b) => a.bestDistance - b.bestDistance);
+  }
+
+  /**
+   * Decide whether the Sources panel is worth showing. We hide it when
+   * every cited document is one the user already attached to the
+   * immediately preceding user message — the user knows where the answer
+   * came from, no point in restating the obvious. We do show the panel
+   * when any cited document is *not* in that attachment set (e.g., an
+   * earlier conversation upload, or in future, a web result).
+   */
+  shouldShowSources(msgIndex: number): boolean {
+    const msg = this.messages()[msgIndex];
+    if (!msg?.sources?.length) return false;
+
+    // Walk backwards to find the user message this assistant message replies to.
+    let userMsg: ChatMessage | undefined;
+    for (let i = msgIndex - 1; i >= 0; i--) {
+      const m = this.messages()[i];
+      if (m.role === 'user') {
+        userMsg = m;
+        break;
+      }
+    }
+    const attachedIds = new Set((userMsg?.attachments ?? []).map((d) => d.id));
+    if (attachedIds.size === 0) return true; // No anchor info → be safe, show.
+
+    const distinct = this.getDistinctSources(msg);
+    // If every distinct source doc is one the user just attached, hide.
+    return distinct.some((d) => !attachedIds.has(d.document_id));
+  }
+
+  /** Format file size as KB/MB/GB for chip tooltip. */
+  formatFileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
+  }
+
+  /** Open the preview modal for a document chip. Streams the original
+   *  file bytes and decides how to render based on content-type. */
+  openPreview(doc: DocumentItem) {
+    // Wipe any prior preview state (including URL from a previous open).
+    this.releasePreviewUrl();
+    this.previewDoc.set(doc);
+    this.previewError.set(null);
+    this.previewKind.set(null);
+    this.previewSafeUrl.set(null);
+    this.previewText.set(null);
+    this.previewLoading.set(true);
+
+    this.documentService.getFileBlob(doc.id).subscribe({
+      next: ({ blob, contentType }) => {
+        const kind = this.classifyMime(contentType);
+        this.previewKind.set(kind);
+
+        if (kind === 'text') {
+          // Read as UTF-8; if decoding fails the user still sees a usable hex-ish
+          // fallback. Falls through to text branch in the template.
+          blob
+            .text()
+            .then((txt) => {
+              this.previewText.set(txt);
+              this.previewLoading.set(false);
+            })
+            .catch(() => {
+              this.previewError.set('Unable to decode file as text.');
+              this.previewLoading.set(false);
+            });
+          return;
+        }
+
+        // pdf / image / unsupported all use an object URL: iframe, img tag,
+        // or download anchor respectively.
+        const url = URL.createObjectURL(blob);
+        this.previewObjectUrl = url;
+        this.previewSafeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
+        this.previewLoading.set(false);
+      },
+      error: (err) => {
+        const detail = err?.error?.detail ?? err?.message ?? 'Failed to load preview';
+        this.previewError.set(detail);
+        this.previewLoading.set(false);
+      },
     });
+  }
+
+  closePreview() {
+    this.releasePreviewUrl();
+    this.previewDoc.set(null);
+    this.previewKind.set(null);
+    this.previewSafeUrl.set(null);
+    this.previewText.set(null);
+    this.previewError.set(null);
+    this.previewLoading.set(false);
+  }
+
+  /** Trigger a browser download of the currently-previewed document.
+   *  Used as the primary action for unsupported types and as a secondary
+   *  action in the header for any kind. */
+  downloadPreview() {
+    const doc = this.previewDoc();
+    if (!doc || !this.previewObjectUrl) return;
+    const a = document.createElement('a');
+    a.href = this.previewObjectUrl;
+    a.download = doc.file_name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  private classifyMime(contentType: string): 'pdf' | 'image' | 'text' | 'unsupported' {
+    const ct = (contentType || '').toLowerCase().split(';')[0].trim();
+    if (ct === 'application/pdf') return 'pdf';
+    if (ct.startsWith('image/')) return 'image';
+    if (ct.startsWith('text/') || ct === 'application/json' || ct === 'application/xml') {
+      return 'text';
+    }
+    return 'unsupported';
+  }
+
+  private releasePreviewUrl() {
+    if (this.previewObjectUrl) {
+      URL.revokeObjectURL(this.previewObjectUrl);
+      this.previewObjectUrl = null;
+    }
   }
 
   private resetTextarea() {

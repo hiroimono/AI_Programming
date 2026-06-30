@@ -31,7 +31,6 @@ from uuid import UUID
 import jwt as pyjwt
 from fastapi import Depends, Header, HTTPException, status
 from pydantic import BaseModel
-
 from rag_service.config import get_settings
 
 # Standard "Bearer " prefix; case-insensitive per RFC 6750.
@@ -65,7 +64,7 @@ def _extract_token(authorization: str | None) -> str:
             detail="Authorization header must start with 'Bearer '",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return authorization[len(_BEARER_PREFIX):].strip()
+    return authorization[len(_BEARER_PREFIX) :].strip()
 
 
 def verify_internal_jwt(

@@ -61,6 +61,20 @@ class DocumentListResponse(BaseModel):
     documents: list[DocumentItem]
 
 
+class DocumentChunkOut(BaseModel):
+    """One chunk of a document, returned by the chunks-preview endpoint."""
+
+    chunk_index: int
+    content: str
+    content_tokens: int
+
+
+class DocumentChunksResponse(BaseModel):
+    document_id: UUID
+    file_name: str
+    chunks: list[DocumentChunkOut]
+
+
 class SourceCitation(BaseModel):
     """One retrieved chunk's metadata, sent to the FE so it can show
     the "Sources" accordion next to the assistant's answer."""

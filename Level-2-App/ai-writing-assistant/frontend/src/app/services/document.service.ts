@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
+  DocumentChunksResponse,
   DocumentItem,
   DocumentUploadResponse,
 } from '../models/document.model';
@@ -55,5 +56,41 @@ export class DocumentService {
 
   delete(documentId: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/documents/${documentId}`);
+  }
+
+  /**
+   * Fetch the chunked parsed-text view of a document for the preview modal.
+   * Chunks come back in ascending chunk_index order so the FE can render
+   * or concatenate them as-is.
+   */
+  getChunks(documentId: string): Observable<DocumentChunksResponse> {
+    return this.http.get<DocumentChunksResponse>(
+      `${this.apiUrl}/documents/${documentId}/chunks`,
+    );
+  }
+
+  /**
+   * Stream the original uploaded file as a Blob. Component is responsible
+   * for creating + revoking the object URL. Uses observe:'response' so we
+   * can inspect content-type (browser preview decisions depend on it).
+   */
+  getFileBlob(documentId: string): Observable<{ blob: Blob; contentType: string }> {
+    return new Observable((subscriber) => {
+      const sub = this.http
+        .get(`${this.apiUrl}/documents/${documentId}/file`, {
+          responseType: 'blob',
+          observe: 'response',
+        })
+        .subscribe({
+          next: (res) => {
+            const contentType =
+              res.headers.get('content-type') ?? res.body?.type ?? 'application/octet-stream';
+            subscriber.next({ blob: res.body!, contentType });
+          },
+          error: (err) => subscriber.error(err),
+          complete: () => subscriber.complete(),
+        });
+      return () => sub.unsubscribe();
+    });
   }
 }

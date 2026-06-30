@@ -3,13 +3,17 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
-import { SourceCitation } from '../models/document.model';
+import { SourceCitation, DocumentItem } from '../models/document.model';
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp?: Date;
   sources?: SourceCitation[];
+  /** Documents the user attached to *this specific* user message.
+   *  Per-message (not per-conversation) so the chip stays anchored to
+   *  the question it was attached to. */
+  attachments?: DocumentItem[];
 }
 
 export type WritingMode = 'general' | 'blog' | 'email' | 'report' | 'creative';

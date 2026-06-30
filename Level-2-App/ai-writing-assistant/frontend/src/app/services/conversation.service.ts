@@ -59,10 +59,11 @@ export class ConversationService {
     conversationId: string,
     role: string,
     content: string,
+    attachedDocumentIds?: string[],
   ): Observable<ConversationMessage> {
     return this.http.post<ConversationMessage>(
       `${this.gatewayUrl}/api/writer/conversations/${conversationId}/messages`,
-      { role, content },
+      { role, content, attachedDocumentIds: attachedDocumentIds ?? [] },
     );
   }
 

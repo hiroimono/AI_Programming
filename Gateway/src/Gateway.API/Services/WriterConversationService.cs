@@ -61,6 +61,7 @@ public class WriterConversationService
             Content = m.Content,
             CreatedAt = m.CreatedAt,
             UpdatedAt = m.UpdatedAt,
+            AttachedDocumentIds = m.AttachedDocumentIds,
           })
           .ToList(),
       })
@@ -193,6 +194,7 @@ public class WriterConversationService
       ConversationId = conversationId,
       Role = request.Role,
       Content = request.Content,
+      AttachedDocumentIds = request.AttachedDocumentIds ?? [],
       CreatedAt = DateTime.UtcNow,
       UpdatedAt = DateTime.UtcNow,
     };
@@ -208,6 +210,7 @@ public class WriterConversationService
       Content = message.Content,
       CreatedAt = message.CreatedAt,
       UpdatedAt = message.UpdatedAt,
+      AttachedDocumentIds = message.AttachedDocumentIds,
     };
   }
 

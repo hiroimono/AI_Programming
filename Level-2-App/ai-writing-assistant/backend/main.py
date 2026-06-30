@@ -21,6 +21,7 @@
 import json
 from contextlib import asynccontextmanager
 from typing import Annotated, AsyncIterator
+from urllib.parse import quote
 from uuid import UUID
 
 from auth import GatewayUser, optional_user, require_user
@@ -30,6 +31,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
 from models import (
     ChatRequest,
+    DocumentChunksResponse,
     DocumentItem,
     DocumentListResponse,
     DocumentUploadResponse,
@@ -89,10 +91,12 @@ _RAG_K = 4
 # relevant"; above this rag-service drops it and the hallucination
 # guard kicks in. Empirically with text-embedding-3-small even tightly
 # relevant chunks sit around 0.30 – 0.45, so 0.4 (rag-service default)
-# is too strict for real questions. 0.6 keeps obvious recall while
-# still cutting off unrelated noise (typical "totally unrelated"
-# distances sit > 0.8).
-_RAG_MAX_DISTANCE = 0.6
+# is too strict for real questions. For generic intents like
+# "summarize this document" the query has little lexical overlap with
+# the doc text, so distances climb above 1.0 even for the right doc.
+# 1.5 keeps recall for that case while still rejecting genuinely
+# unrelated chunks (those land closer to the 2.0 ceiling).
+_RAG_MAX_DISTANCE = 1.5
 # How many leading characters of each chunk we send back to the FE in
 # the `sources` SSE event. Enough for a tooltip, small enough to keep
 # the wire payload tiny.
@@ -275,3 +279,51 @@ async def delete_document(
     client = get_rag_client()
     await client.delete_document(user_id=user.user_id, document_id=document_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@app.get(
+    "/api/documents/{document_id}/chunks",
+    response_model=DocumentChunksResponse,
+)
+async def get_document_chunks(
+    document_id: UUID,
+    user: Annotated[GatewayUser, Depends(require_user)],
+) -> DocumentChunksResponse:
+    """Returns the chunked parsed-text view of one of the caller's
+    documents, used by the FE preview modal. Tenant-scoped (404 if
+    the doc doesn't belong to the caller)."""
+    client = get_rag_client()
+    payload = await client.get_document_chunks(
+        user_id=user.user_id,
+        document_id=document_id,
+    )
+    return DocumentChunksResponse(**payload)
+
+
+@app.get("/api/documents/{document_id}/file")
+async def get_document_file(
+    document_id: UUID,
+    user: Annotated[GatewayUser, Depends(require_user)],
+) -> Response:
+    """Streams the original uploaded file back to the browser so the FE
+    can render PDFs / images / text inline. Tenant-scoped (404 if the
+    doc doesn't belong to the caller)."""
+    client = get_rag_client()
+    content, content_type, filename = await client.get_document_file(
+        user_id=user.user_id,
+        document_id=document_id,
+    )
+    # HTTP headers must be latin-1; encode unicode filenames per RFC 5987.
+    ascii_fallback = filename.encode("ascii", "replace").decode("ascii").replace('"', "")
+    quoted_utf8 = quote(filename, safe="")
+    return Response(
+        content=content,
+        media_type=content_type,
+        headers={
+            "Content-Disposition": (
+                f'inline; filename="{ascii_fallback}"; '
+                f"filename*=UTF-8''{quoted_utf8}"
+            ),
+            "Cache-Control": "private, max-age=300",
+        },
+    )

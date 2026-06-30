@@ -14,6 +14,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
+from urllib.parse import unquote
 from uuid import UUID
 
 import httpx
@@ -27,6 +28,27 @@ _TOKEN_TTL_SECONDS = 60
 # How long to wait for rag-service per call. Upload/embed can be slow
 # on big files; retrieve is fast. 60s is a generous cap.
 _HTTP_TIMEOUT_SECONDS = 60.0
+
+
+def _parse_disposition_filename(disposition: str) -> str:
+    """Extract a usable filename from a Content-Disposition header.
+
+    Prefers the RFC 5987 `filename*=UTF-8''...` form (unicode-safe) and
+    falls back to the legacy `filename="..."` quoted-ascii form.
+    """
+    if not disposition:
+        return "document"
+    # RFC 5987: filename*=UTF-8''<percent-encoded>
+    marker = "filename*=UTF-8''"
+    if marker in disposition:
+        encoded = disposition.split(marker, 1)[1].split(";", 1)[0].strip()
+        try:
+            return unquote(encoded)
+        except (ValueError, UnicodeDecodeError):
+            pass
+    if 'filename="' in disposition:
+        return disposition.split('filename="', 1)[1].split('"', 1)[0]
+    return "document"
 
 
 @dataclass
@@ -181,6 +203,45 @@ class RagClient:
             headers=self._headers(user_id, None),
         )
         self._bubble(response)
+
+    async def get_document_chunks(
+        self,
+        *,
+        user_id: str,
+        document_id: UUID,
+    ) -> dict:
+        """GET /api/documents/{id}/chunks. Returns the raw envelope
+        (document_id, file_name, chunks) for the BE to forward as-is."""
+        client = self._require_client()
+        response = await client.get(
+            f"/api/documents/{document_id}/chunks",
+            headers=self._headers(user_id, None),
+        )
+        self._bubble(response)
+        return response.json()
+
+    async def get_document_file(
+        self,
+        *,
+        user_id: str,
+        document_id: UUID,
+    ) -> tuple[bytes, str, str]:
+        """GET /api/documents/{id}/file. Returns (bytes, content_type, filename).
+
+        Used by the BE to stream the original upload back to the browser
+        without persisting it locally. Filename is parsed from
+        Content-Disposition (RFC 5987 utf-8 hint preferred over the
+        ASCII fallback when present)."""
+        client = self._require_client()
+        response = await client.get(
+            f"/api/documents/{document_id}/file",
+            headers=self._headers(user_id, None),
+        )
+        self._bubble(response)
+        content_type = response.headers.get("content-type", "application/octet-stream")
+        disposition = response.headers.get("content-disposition", "")
+        filename = _parse_disposition_filename(disposition)
+        return response.content, content_type, filename
 
     # ────────────────────────────────────────────────────────────────
     # Retrieval

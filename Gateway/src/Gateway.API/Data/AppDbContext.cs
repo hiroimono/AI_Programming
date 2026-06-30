@@ -91,6 +91,13 @@ public class AppDbContext : DbContext
       e.Property(m => m.Role).HasMaxLength(20);
       e.HasIndex(m => m.ConversationId);
 
+      // Persist per-message RAG attachments as a native uuid[] column. The
+      // FE rehydrates these on conversation load so chip rows stay anchored
+      // to the user message they were originally sent with.
+      e.Property(m => m.AttachedDocumentIds)
+        .HasColumnType("uuid[]")
+        .HasDefaultValueSql("'{}'::uuid[]");
+
       e.HasOne(m => m.Conversation)
         .WithMany(c => c.Messages)
         .HasForeignKey(m => m.ConversationId)

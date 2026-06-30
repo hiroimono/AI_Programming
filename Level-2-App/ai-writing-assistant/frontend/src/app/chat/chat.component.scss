@@ -1240,7 +1240,11 @@ $input-bg: rgba(255, 255, 255, 0.06);
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  padding: 8px 12px 0;
+  // Align chip row's left edge with the textarea content below it.
+  // .input-card already supplies the outer padding; textarea adds 2px
+  // of its own, so we mirror that here instead of 12px which made the
+  // chips look indented relative to the placeholder text.
+  padding: 4px 2px 0;
 }
 
 .doc-chip {
@@ -1291,9 +1295,16 @@ $input-bg: rgba(255, 255, 255, 0.06);
   }
 
   .doc-status {
-    font-size: 14px;
-    width: 14px;
-    height: 14px;
+    // mat-icon defaults to 24px box with overflow:hidden, which clips the
+    // glyph when we shrink the box below the glyph's footprint. Size the
+    // box to the glyph and let it overflow if needed so the green check
+    // doesn't get its right edge sliced off.
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    overflow: visible;
+    flex-shrink: 0;
 
     &.pending {
       color: $text-muted;
@@ -1302,6 +1313,10 @@ $input-bg: rgba(255, 255, 255, 0.06);
 
     &.failed {
       color: #ef4444;
+    }
+
+    &.ready {
+      color: #22c55e;
     }
   }
 
@@ -1398,6 +1413,46 @@ $input-bg: rgba(255, 255, 255, 0.06);
     font-size: 12px;
   }
 
+  // Compact single-line variant: just doc icon + filename + optional count.
+  // No chunk-preview blob underneath — those mid-document excerpts confuse
+  // readers more than they help. The original `.source-item` styles above
+  // are kept for backward compatibility / future variants.
+  .source-item--compact {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    color: $text-primary;
+    font-weight: 500;
+
+    .source-doc-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      color: $text-muted;
+      flex-shrink: 0;
+    }
+
+    .source-name {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .source-count {
+      font-size: 11px;
+      color: $text-muted;
+      font-weight: 400;
+      padding: 2px 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 999px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+  }
+
   .source-header {
     display: flex;
     align-items: center;
@@ -1442,5 +1497,370 @@ $input-bg: rgba(255, 255, 255, 0.06);
     display: -webkit-box;
     -webkit-line-clamp: 4;
     -webkit-box-orient: vertical;
+  }
+}
+
+// ─── Per-message attachment chips (above user bubble) ─────────────
+.message-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+  justify-content: flex-end;
+}
+
+.attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 5px 8px;
+  border: 1px solid $border;
+  border-radius: 999px;
+  background: $bg-surface;
+  color: $text-primary;
+  font-size: 12px;
+  cursor: pointer;
+  max-width: 260px;
+  transition: all 0.2s;
+
+  .att-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: $primary;
+    flex-shrink: 0;
+  }
+
+  .att-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 180px;
+  }
+
+  .att-chunks {
+    font-size: 11px;
+    color: $text-muted;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 1px 7px;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    border-color: $border-hover;
+    background: rgba(108, 99, 255, 0.1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: 2px;
+  }
+}
+
+// ─── Document preview modal ──────────────────────────────────────
+.doc-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: previewFadeIn 0.15s ease-out;
+}
+
+@keyframes previewFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.doc-preview-modal {
+  width: 100%;
+  max-width: 760px;
+  max-height: 85vh;
+  background: $bg-deep;
+  border: 1px solid $border;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.doc-preview-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid $border;
+  background: $bg-surface;
+
+  .header-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+    color: $primary;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .header-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .doc-preview-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: $text-primary;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .doc-preview-meta {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: $text-muted;
+  }
+
+  .doc-preview-close {
+    background: transparent;
+    border: none;
+    color: $text-muted;
+    cursor: pointer;
+    border-radius: 8px;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+
+    &:hover {
+      color: $text-primary;
+      background: rgba(255, 255, 255, 0.1);
+    }
+  }
+}
+
+.doc-preview-action {
+  background: transparent;
+  border: none;
+  color: $text-muted;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover {
+    color: $primary;
+    background: rgba(108, 99, 255, 0.12);
+  }
+}
+
+.doc-preview-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+
+  &--flush {
+    padding: 0;
+    overflow: hidden;
+  }
+}
+
+.doc-preview-loading,
+.doc-preview-error,
+.doc-preview-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 0;
+  color: $text-muted;
+  font-size: 13px;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+
+    &.spin {
+      animation: spin 1.5s linear infinite;
+    }
+  }
+}
+
+.doc-preview-error mat-icon {
+  color: #ef4444;
+}
+
+.doc-preview-chunk {
+  border: 1px solid $border;
+  border-radius: 10px;
+  overflow: hidden;
+  background: $bg-surface;
+
+  .chunk-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid $border;
+    font-size: 11px;
+  }
+
+  .chunk-label {
+    color: $text-primary;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .chunk-tokens {
+    color: $text-muted;
+    font-family: monospace;
+  }
+
+  .chunk-content {
+    margin: 0;
+    padding: 12px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: $text-primary;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: inherit;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+}
+
+// ─── Native preview renderers (PDF / image / text / unsupported) ──
+.doc-preview-frame {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 60vh;
+  border: 0;
+  background: #fff;
+}
+
+.doc-preview-image-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 16px;
+  overflow: auto;
+  min-height: 50vh;
+}
+
+.doc-preview-image {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+}
+
+.doc-preview-text {
+  margin: 0;
+  padding: 14px 16px;
+  background: $bg-surface;
+  border: 1px solid $border;
+  border-radius: 10px;
+  font-family: 'SF Mono', 'Cascadia Code', Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.55;
+  color: $text-primary;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-y: auto;
+  max-height: 70vh;
+}
+
+.doc-preview-unsupported {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 56px 24px;
+  color: $text-muted;
+  text-align: center;
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: $text-muted;
+    opacity: 0.6;
+  }
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+
+    strong {
+      color: $text-primary;
+    }
+  }
+}
+
+.doc-preview-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid $border;
+  background: $primary;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #fff;
+    opacity: 1;
+  }
+
+  &:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
   }
 }

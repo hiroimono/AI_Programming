@@ -7,13 +7,13 @@ Later phases: + routers, middleware (X-App-Id, internal JWT), background tasks.
 
 from __future__ import annotations
 
+import traceback
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
-from fastapi import FastAPI, status
+from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-
 from rag_service.config import get_settings
 from rag_service.db import dispose_engine, ping_db
 from rag_service.routers import documents_router, retrieve_router
@@ -70,6 +70,23 @@ if settings.cors_origins:
 # valid internal JWT (verified by the AuthedIdentity dependency).
 app.include_router(documents_router)
 app.include_router(retrieve_router)
+
+
+@app.exception_handler(Exception)
+async def _log_unhandled(request: Request, exc: Exception) -> JSONResponse:
+    """Print the traceback to stderr so it lands in our log files.
+    FastAPI's default handler returns 500 without printing for Exception
+    subclasses, which makes debugging through redirected stdio impossible.
+    """
+    tb = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+    print(
+        f"[rag-service] Unhandled exception on {request.method} {request.url.path}:\n{tb}",
+        flush=True,
+    )
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": f"{type(exc).__name__}: {exc}"},
+    )
 
 
 @app.get("/api/health", tags=["meta"])

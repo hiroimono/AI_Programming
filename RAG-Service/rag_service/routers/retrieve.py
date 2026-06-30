@@ -10,14 +10,9 @@ This keeps secrets, billing, and model choice owned by each app.
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, status
-
 from rag_service.auth import AuthedIdentity
 from rag_service.pipeline import retrieve_context, schema_for_app
-from rag_service.schemas import (
-    RetrievedChunkOut,
-    RetrieveRequest,
-    RetrieveResponse,
-)
+from rag_service.schemas import RetrievedChunkOut, RetrieveRequest, RetrieveResponse
 
 router = APIRouter(prefix="/api", tags=["retrieve"])
 

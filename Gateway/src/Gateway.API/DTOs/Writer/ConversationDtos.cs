@@ -30,6 +30,8 @@ public class MessageResponse
   public string Content { get; set; } = string.Empty;
   public DateTime CreatedAt { get; set; }
   public DateTime UpdatedAt { get; set; }
+  /// <summary>IDs of documents the user attached to this message (empty for assistant).</summary>
+  public List<Guid> AttachedDocumentIds { get; set; } = [];
 }
 
 public class CreateConversationRequest
@@ -53,6 +55,9 @@ public class SaveMessageRequest
 
   [Required]
   public string Content { get; set; } = string.Empty;
+
+  /// <summary>Optional: document IDs attached to this message. Persisted as-is.</summary>
+  public List<Guid>? AttachedDocumentIds { get; set; }
 }
 
 public class BatchDeleteRequest

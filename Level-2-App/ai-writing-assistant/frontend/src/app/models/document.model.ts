@@ -23,3 +23,15 @@ export interface SourceCitation {
   distance: number;
   preview: string;
 }
+
+export interface DocumentChunk {
+  chunk_index: number;
+  content: string;
+  content_tokens: number;
+}
+
+export interface DocumentChunksResponse {
+  document_id: string;
+  file_name: string;
+  chunks: DocumentChunk[];
+}

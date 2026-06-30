@@ -146,11 +146,11 @@ bilir.
 
 Üç katman, hepsi sunucu tarafında zorunlu:
 
-| Katman | Mekanizma |
-|--------|-----------|
-| Uygulama düzeyi | Her uygulama için ayrı Postgres **şeması**: `rag_level2_writer`, `rag_level3_chatbot`, ... Aynı tablo şekilleri, farklı şemalar. |
-| Kullanıcı düzeyi | Her satırda `app_id` + `user_id` kolonu var; her sorgu ikisiyle de filtreleniyor. |
-| Konuşma düzeyi (opsiyonel) | Dökümanlar bir `conversation_id` UUID'ye scope'lanabilir. Aynı kullanıcının birden fazla sohbeti olduğunda kullanışlı. |
+| Katman                     | Mekanizma                                                                                                                        |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Uygulama düzeyi            | Her uygulama için ayrı Postgres **şeması**: `rag_level2_writer`, `rag_level3_chatbot`, ... Aynı tablo şekilleri, farklı şemalar. |
+| Kullanıcı düzeyi           | Her satırda `app_id` + `user_id` kolonu var; her sorgu ikisiyle de filtreleniyor.                                                |
+| Konuşma düzeyi (opsiyonel) | Dökümanlar bir `conversation_id` UUID'ye scope'lanabilir. Aynı kullanıcının birden fazla sohbeti olduğunda kullanışlı.           |
 
 Tüketici backend kendi `app_id`/`user_id`'sini **belirleyemez** —
 her ikisi de kendi mint ettiği JWT'den gelir (gizli içeride paylaşılır,
@@ -203,46 +203,46 @@ düşürmek için, ileride doldurulacak).
 - `documents (conversation_id)` — konuşma scope'u
 - `chunks (document_id)` — cascade lookup
 - `chunks` üzerinde **HNSW** `embedding vector_cosine_ops` — `m=16,
-  ef_construction=64` — gerçek arama indeksi
+ef_construction=64` — gerçek arama indeksi
 
 ---
 
 ## 6. Anahtar tasarım kararları
 
-| Karar | Gerekçe |
-|-------|---------|
-| **Mikroservis, kütüphane değil** | Her uygulama kendi stack'inde kalır (Angular+.NET / Python / Node); rag-service sürümlenebilir HTTP kontratıdır. |
-| **Schema-per-app** (satır-bazlı multi-tenancy yerine) | Daha ucuz migration, güçlü izolasyon, tek tenant backup/restore edilebilir. |
-| **rag-service LLM çağırmaz** | Her uygulama kendi prompt stratejisi, model seçimi ve OpenAI faturasının sahibidir. Sadece embedding merkezi. |
-| **HS256 + ortak gizli** (OAuth değil) | Yalnızca servisten-servise. İç ağ. Rotasyonu basit. JWT `app_id` + `user_id` + opsiyonel `conversation_id` taşır. |
-| **Blob için yerel dosya sistemi** (Faz 1) | Şu an için S3'ten basit. `StorageBackend` bir Protocol — S3/Azure Blob'a geçiş tek sınıf değişikliği. |
-| **tiktoken `cl100k_base` chunker, 500/50** | `text-embedding-3-small`'un kullandığı OpenAI tokenizer ile uyumlu. 500 token ≈ 2-3 paragraf — kesin olacak kadar küçük, bağlam taşıyacak kadar büyük. |
-| **Cosine distance + max 0.4** | `text-embedding-3-small` için "gerçekten alakalı" ile "muğlak alakalı"yı ampirik olarak ayırıyor. Halüsinasyon kalkanı. |
-| **HNSW (IVFFlat yerine)** | Küçük-orta ölçekte daha iyi recall/latency dengesi, `LISTS` ayarı gerektirmez. |
-| **Soft delete** (`deleted_at`) | Geçmiş konuşmalardaki eski alıntılar hala dosya adına çözülür; retrieval bunları atlar. |
-| **Bağlantı: Neon pooler + `statement_cache_size=0`** | PgBouncer transaction mode, asyncpg'nin prepared statement cache'ini bozuyor. Zorunlu ayar. |
+| Karar                                                 | Gerekçe                                                                                                                                                |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Mikroservis, kütüphane değil**                      | Her uygulama kendi stack'inde kalır (Angular+.NET / Python / Node); rag-service sürümlenebilir HTTP kontratıdır.                                       |
+| **Schema-per-app** (satır-bazlı multi-tenancy yerine) | Daha ucuz migration, güçlü izolasyon, tek tenant backup/restore edilebilir.                                                                            |
+| **rag-service LLM çağırmaz**                          | Her uygulama kendi prompt stratejisi, model seçimi ve OpenAI faturasının sahibidir. Sadece embedding merkezi.                                          |
+| **HS256 + ortak gizli** (OAuth değil)                 | Yalnızca servisten-servise. İç ağ. Rotasyonu basit. JWT `app_id` + `user_id` + opsiyonel `conversation_id` taşır.                                      |
+| **Blob için yerel dosya sistemi** (Faz 1)             | Şu an için S3'ten basit. `StorageBackend` bir Protocol — S3/Azure Blob'a geçiş tek sınıf değişikliği.                                                  |
+| **tiktoken `cl100k_base` chunker, 500/50**            | `text-embedding-3-small`'un kullandığı OpenAI tokenizer ile uyumlu. 500 token ≈ 2-3 paragraf — kesin olacak kadar küçük, bağlam taşıyacak kadar büyük. |
+| **Cosine distance + max 0.4**                         | `text-embedding-3-small` için "gerçekten alakalı" ile "muğlak alakalı"yı ampirik olarak ayırıyor. Halüsinasyon kalkanı.                                |
+| **HNSW (IVFFlat yerine)**                             | Küçük-orta ölçekte daha iyi recall/latency dengesi, `LISTS` ayarı gerektirmez.                                                                         |
+| **Soft delete** (`deleted_at`)                        | Geçmiş konuşmalardaki eski alıntılar hala dosya adına çözülür; retrieval bunları atlar.                                                                |
+| **Bağlantı: Neon pooler + `statement_cache_size=0`**  | PgBouncer transaction mode, asyncpg'nin prepared statement cache'ini bozuyor. Zorunlu ayar.                                                            |
 
 ---
 
 ## 7. Modül haritası (`rag_service/`)
 
-| Dosya | Sorumluluk |
-|-------|------------|
-| `main.py` | FastAPI app, lifespan (boot'ta DB ping), CORS, router mount, `/api/health/{,live,ready}`. |
-| `config.py` | Pydantic-settings: `DATABASE_URL`, `OPENAI_API_KEY`, `INTERNAL_JWT_SECRET`, `CORS_ORIGINS`. `@lru_cache` ile singleton. |
-| `db.py` | Async SQLAlchemy engine + `session_factory`. Readiness için `ping_db()`. Shutdown'da `dispose_engine()`. |
-| `auth.py` | JWT doğrulama (`InternalIdentity` modeli + `AuthedIdentity` FastAPI dependency). |
-| `storage.py` | `StorageBackend` Protocol + `LocalStorageBackend`. Path-traversal koruması. Düzen: `{root}/{app_id}/{user_id}/{uuid}-{ad}`. |
-| `parsers/` | MIME dispatcher → `pdf_parser`, `docx_parser`, `xlsx_parser`, `txt_parser`. Ortak `ParsedDocument`/`ParsedPage` dataclass'ları. |
-| `chunker.py` | `tiktoken` sliding-window splitter. Varsayılan: 500 tok / 50 overlap / min 20. |
-| `embedder.py` | `AsyncOpenAI` singleton, `embed_one`, `embed_batch` (size 100, 3 retry, 30 s timeout). |
-| `retriever.py` | `embedding.cosine_distance(:q)` ifadesi WHERE + ORDER BY'da tekrar kullanılarak top-k vektör arama. |
-| `pipeline.py` | Orkestratör: `ingest_document()` + `retrieve_context()`. Ayrıca `schema_for_app()` + `_APP_TO_SCHEMA` map. |
-| `schemas.py` | Pydantic request/response modelleri. |
-| `routers/documents.py` | `POST /api/documents`, `GET /api/documents`, `DELETE /api/documents/{id}`. |
-| `routers/retrieve.py` | `POST /api/retrieve`. |
-| `models/level2.py`, `models/level3.py` | Şema başına SQLAlchemy ORM tabloları. |
-| `alembic/` | Şema-farkındalıklı migration: aynı migration her şema için bir kez `MetaData(schema=...)` ile çalışır. |
+| Dosya                                  | Sorumluluk                                                                                                                      |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `main.py`                              | FastAPI app, lifespan (boot'ta DB ping), CORS, router mount, `/api/health/{,live,ready}`.                                       |
+| `config.py`                            | Pydantic-settings: `DATABASE_URL`, `OPENAI_API_KEY`, `INTERNAL_JWT_SECRET`, `CORS_ORIGINS`. `@lru_cache` ile singleton.         |
+| `db.py`                                | Async SQLAlchemy engine + `session_factory`. Readiness için `ping_db()`. Shutdown'da `dispose_engine()`.                        |
+| `auth.py`                              | JWT doğrulama (`InternalIdentity` modeli + `AuthedIdentity` FastAPI dependency).                                                |
+| `storage.py`                           | `StorageBackend` Protocol + `LocalStorageBackend`. Path-traversal koruması. Düzen: `{root}/{app_id}/{user_id}/{uuid}-{ad}`.     |
+| `parsers/`                             | MIME dispatcher → `pdf_parser`, `docx_parser`, `xlsx_parser`, `txt_parser`. Ortak `ParsedDocument`/`ParsedPage` dataclass'ları. |
+| `chunker.py`                           | `tiktoken` sliding-window splitter. Varsayılan: 500 tok / 50 overlap / min 20.                                                  |
+| `embedder.py`                          | `AsyncOpenAI` singleton, `embed_one`, `embed_batch` (size 100, 3 retry, 30 s timeout).                                          |
+| `retriever.py`                         | `embedding.cosine_distance(:q)` ifadesi WHERE + ORDER BY'da tekrar kullanılarak top-k vektör arama.                             |
+| `pipeline.py`                          | Orkestratör: `ingest_document()` + `retrieve_context()`. Ayrıca `schema_for_app()` + `_APP_TO_SCHEMA` map.                      |
+| `schemas.py`                           | Pydantic request/response modelleri.                                                                                            |
+| `routers/documents.py`                 | `POST /api/documents`, `GET /api/documents`, `DELETE /api/documents/{id}`.                                                      |
+| `routers/retrieve.py`                  | `POST /api/retrieve`.                                                                                                           |
+| `models/level2.py`, `models/level3.py` | Şema başına SQLAlchemy ORM tabloları.                                                                                           |
+| `alembic/`                             | Şema-farkındalıklı migration: aynı migration her şema için bir kez `MetaData(schema=...)` ile çalışır.                          |
 
 ---
 
@@ -250,22 +250,22 @@ düşürmek için, ileride doldurulacak).
 
 Tüm endpoint'ler şu claim'lere sahip `Authorization: Bearer <HS256-JWT>` gerektirir:
 
-| Claim | Zorunlu | Notlar |
-|-------|---------|--------|
-| `sub` | evet | `user_id` olur |
-| `app_id` | evet | `_APP_TO_SCHEMA` üzerinden map'lenir |
-| `exp` | evet | kısa TTL (örn. 5 dk) |
-| `iat` | önerilir | |
-| `conversation_id` | hayır | UUID, dökümanları tek bir sohbete scope'lar |
+| Claim             | Zorunlu  | Notlar                                      |
+| ----------------- | -------- | ------------------------------------------- |
+| `sub`             | evet     | `user_id` olur                              |
+| `app_id`          | evet     | `_APP_TO_SCHEMA` üzerinden map'lenir        |
+| `exp`             | evet     | kısa TTL (örn. 5 dk)                        |
+| `iat`             | önerilir |                                             |
+| `conversation_id` | hayır    | UUID, dökümanları tek bir sohbete scope'lar |
 
-| Endpoint | Verb | Status | Body / Query | Döner |
-|----------|------|--------|--------------|-------|
-| `/api/health/live` | GET | 200 | — | `{status:"alive",...}` |
-| `/api/health/ready` | GET | 200 / 503 | — | DB erişilebilirliği |
-| `/api/documents` | POST | 201 / 401 / 415 | multipart `file`, opsiyonel `conversation_id` form | `{document_id, status, chunk_count}` |
-| `/api/documents` | GET | 200 / 401 | opsiyonel `?conversation_id=` | `{documents: [...]}` |
-| `/api/documents/{id}` | DELETE | 204 / 401 / 404 | — | boş body |
-| `/api/retrieve` | POST | 200 / 401 | `{query, k=4, max_distance=0.4}` | `{chunks: [...]}` |
+| Endpoint              | Verb   | Status          | Body / Query                                       | Döner                                |
+| --------------------- | ------ | --------------- | -------------------------------------------------- | ------------------------------------ |
+| `/api/health/live`    | GET    | 200             | —                                                  | `{status:"alive",...}`               |
+| `/api/health/ready`   | GET    | 200 / 503       | —                                                  | DB erişilebilirliği                  |
+| `/api/documents`      | POST   | 201 / 401 / 415 | multipart `file`, opsiyonel `conversation_id` form | `{document_id, status, chunk_count}` |
+| `/api/documents`      | GET    | 200 / 401       | opsiyonel `?conversation_id=`                      | `{documents: [...]}`                 |
+| `/api/documents/{id}` | DELETE | 204 / 401 / 404 | —                                                  | boş body                             |
+| `/api/retrieve`       | POST   | 200 / 401       | `{query, k=4, max_distance=0.4}`                   | `{chunks: [...]}`                    |
 
 Hata modeli: `{"detail": "..."}` (FastAPI varsayılanı).
 
@@ -296,15 +296,15 @@ Hata modeli: `{"detail": "..."}` (FastAPI varsayılanı).
 
 Uçtan uca ASGI smoke test (Faz 4 çıkış kapısı):
 
-| Senaryo | Sonuç |
-|---------|-------|
-| `Authorization` header'ı yok | 401 |
-| Yanlış JWT imzası | 401 |
-| 800-byte `.txt` yükleme | 201, `status=ready`, 1 chunk |
-| Kendi dökümanlarını listele | 200, yüklemeyi içeriyor |
-| Retrieve HIT ("Almanya'nın başkenti ne?") | 200, 1 chunk, distance 0.3689 |
-| Retrieve MISS ("PostgreSQL connection pooling tips") | 200, 0 chunk (kalkan çalışıyor) |
-| Soft delete | 204, sonraki list onu hariç tutuyor |
+| Senaryo                                              | Sonuç                               |
+| ---------------------------------------------------- | ----------------------------------- |
+| `Authorization` header'ı yok                         | 401                                 |
+| Yanlış JWT imzası                                    | 401                                 |
+| 800-byte `.txt` yükleme                              | 201, `status=ready`, 1 chunk        |
+| Kendi dökümanlarını listele                          | 200, yüklemeyi içeriyor             |
+| Retrieve HIT ("Almanya'nın başkenti ne?")            | 200, 1 chunk, distance 0.3689       |
+| Retrieve MISS ("PostgreSQL connection pooling tips") | 200, 0 chunk (kalkan çalışıyor)     |
+| Soft delete                                          | 204, sonraki list onu hariç tutuyor |
 
 Ayrıca Faz 3 bağımsız testi: 150-kelimelik metin → chunk → embed →
 gerçek OpenAI üzerinde semantik olarak doğru cosine distance'larla geri getirildi.
@@ -313,13 +313,13 @@ gerçek OpenAI üzerinde semantik olarak doğru cosine distance'larla geri getir
 
 ## 11. Bu servisin commit geçmişi
 
-| Commit | Faz |
-|--------|-----|
-| `1d16153 / 6402a9a / f8d8738` | Faz 0 — FastAPI iskelet |
-| `1801113` | Faz 1 — Neon DB bağlantısı |
-| `fc0db82` | Faz 2 — Alembic + ilk migration |
-| `15fb818` | Faz 3.1 — storage + parsers |
-| `475b483` | Faz 3.2 + 3.3 — chunker + embedder |
-| `1c53ed7` | Faz 3.4 + 3.5 — retriever + pipeline |
-| `eeee125` | chore — formatter düzeltmeleri |
-| `6ee5ec7` | **Faz 4 — JWT korumalı REST API** |
+| Commit                        | Faz                                  |
+| ----------------------------- | ------------------------------------ |
+| `1d16153 / 6402a9a / f8d8738` | Faz 0 — FastAPI iskelet              |
+| `1801113`                     | Faz 1 — Neon DB bağlantısı           |
+| `fc0db82`                     | Faz 2 — Alembic + ilk migration      |
+| `15fb818`                     | Faz 3.1 — storage + parsers          |
+| `475b483`                     | Faz 3.2 + 3.3 — chunker + embedder   |
+| `1c53ed7`                     | Faz 3.4 + 3.5 — retriever + pipeline |
+| `eeee125`                     | chore — formatter düzeltmeleri       |
+| `6ee5ec7`                     | **Faz 4 — JWT korumalı REST API**    |

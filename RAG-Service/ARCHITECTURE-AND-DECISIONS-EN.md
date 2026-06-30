@@ -145,11 +145,11 @@ it must refuse to answer instead of fabricating one.
 
 Three layers, all enforced server-side:
 
-| Layer | Mechanism |
-|------|-----------|
-| App-level | Separate Postgres **schema** per app: `rag_level2_writer`, `rag_level3_chatbot`, ... Same table shapes, different schemas. |
-| User-level | Every row has `app_id` + `user_id` columns; every query filters by both. |
-| Conversation-level (optional) | Documents can be scoped to a `conversation_id` UUID. Useful when the same user has multiple chats. |
+| Layer                         | Mechanism                                                                                                                  |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| App-level                     | Separate Postgres **schema** per app: `rag_level2_writer`, `rag_level3_chatbot`, ... Same table shapes, different schemas. |
+| User-level                    | Every row has `app_id` + `user_id` columns; every query filters by both.                                                   |
+| Conversation-level (optional) | Documents can be scoped to a `conversation_id` UUID. Useful when the same user has multiple chats.                         |
 
 A consuming backend **cannot** set its own `app_id`/`user_id` — both
 come from the JWT it minted (and the secret is shared internally,
@@ -201,46 +201,46 @@ identical chunks across apps to cut OpenAI cost — populated later).
 - `documents (conversation_id)` — conversation scope
 - `chunks (document_id)` — cascade lookup
 - `chunks` **HNSW** on `embedding vector_cosine_ops` — `m=16,
-  ef_construction=64` — the actual search index
+ef_construction=64` — the actual search index
 
 ---
 
 ## 6. Key design decisions
 
-| Decision | Rationale |
-|----------|-----------|
-| **Microservice, not library** | Each app stays in its own stack (Angular+.NET / Python / Node); rag-service is a versionable HTTP contract. |
-| **Schema-per-app** (not row-level multi-tenancy) | Cheaper migrations, hard isolation, can backup/restore one tenant. |
-| **rag-service does NOT call the LLM** | Each app owns its prompt strategy, model choice, and OpenAI billing. Only embeddings are centralized. |
-| **HS256 + shared secret** (not OAuth) | Service-to-service only. Internal network. Simple to rotate. JWT carries `app_id` + `user_id` + optional `conversation_id`. |
-| **Local filesystem for blobs** (Phase 1) | Simpler than S3 for now. `StorageBackend` is a Protocol, so swapping to S3/Azure Blob is a 1-class change. |
-| **tiktoken `cl100k_base` chunker, 500/50** | Matches OpenAI tokenizer used by `text-embedding-3-small`. 500 tokens ≈ 2-3 paragraphs — small enough to be precise, large enough for context. |
-| **Cosine distance + max 0.4** | Empirically separates "actually relevant" from "vaguely related" for `text-embedding-3-small`. The hallucination guard. |
-| **HNSW (not IVFFlat)** | Better recall/latency tradeoff at small-to-medium scale, no `LISTS` tuning. |
-| **Soft delete** (`deleted_at`) | Old citations in past conversations still resolve to a filename; retrieval simply skips them. |
-| **Connection: Neon pooler + `statement_cache_size=0`** | PgBouncer transaction mode breaks asyncpg's prepared statement cache. Mandatory setting. |
+| Decision                                               | Rationale                                                                                                                                      |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Microservice, not library**                          | Each app stays in its own stack (Angular+.NET / Python / Node); rag-service is a versionable HTTP contract.                                    |
+| **Schema-per-app** (not row-level multi-tenancy)       | Cheaper migrations, hard isolation, can backup/restore one tenant.                                                                             |
+| **rag-service does NOT call the LLM**                  | Each app owns its prompt strategy, model choice, and OpenAI billing. Only embeddings are centralized.                                          |
+| **HS256 + shared secret** (not OAuth)                  | Service-to-service only. Internal network. Simple to rotate. JWT carries `app_id` + `user_id` + optional `conversation_id`.                    |
+| **Local filesystem for blobs** (Phase 1)               | Simpler than S3 for now. `StorageBackend` is a Protocol, so swapping to S3/Azure Blob is a 1-class change.                                     |
+| **tiktoken `cl100k_base` chunker, 500/50**             | Matches OpenAI tokenizer used by `text-embedding-3-small`. 500 tokens ≈ 2-3 paragraphs — small enough to be precise, large enough for context. |
+| **Cosine distance + max 0.4**                          | Empirically separates "actually relevant" from "vaguely related" for `text-embedding-3-small`. The hallucination guard.                        |
+| **HNSW (not IVFFlat)**                                 | Better recall/latency tradeoff at small-to-medium scale, no `LISTS` tuning.                                                                    |
+| **Soft delete** (`deleted_at`)                         | Old citations in past conversations still resolve to a filename; retrieval simply skips them.                                                  |
+| **Connection: Neon pooler + `statement_cache_size=0`** | PgBouncer transaction mode breaks asyncpg's prepared statement cache. Mandatory setting.                                                       |
 
 ---
 
 ## 7. Module map (`rag_service/`)
 
-| File | Responsibility |
-|------|---------------|
-| `main.py` | FastAPI app, lifespan (DB ping at boot), CORS, router mounting, `/api/health/{,live,ready}`. |
-| `config.py` | Pydantic-settings: `DATABASE_URL`, `OPENAI_API_KEY`, `INTERNAL_JWT_SECRET`, `CORS_ORIGINS`. Singleton via `@lru_cache`. |
-| `db.py` | Async SQLAlchemy engine + `session_factory`. `ping_db()` for readiness. `dispose_engine()` on shutdown. |
-| `auth.py` | JWT verification (`InternalIdentity` model + `AuthedIdentity` FastAPI dependency). |
-| `storage.py` | `StorageBackend` Protocol + `LocalStorageBackend`. Path-traversal guard. Layout: `{root}/{app_id}/{user_id}/{uuid}-{name}`. |
-| `parsers/` | MIME dispatcher → `pdf_parser`, `docx_parser`, `xlsx_parser`, `txt_parser`. Common `ParsedDocument`/`ParsedPage` dataclasses. |
-| `chunker.py` | `tiktoken` sliding-window splitter. Defaults: 500 tok / 50 overlap / min 20. |
-| `embedder.py` | `AsyncOpenAI` singleton, `embed_one`, `embed_batch` (size 100, 3 retries, 30 s timeout). |
-| `retriever.py` | Top-k vector search with `embedding.cosine_distance(:q)` reused in WHERE + ORDER BY. |
-| `pipeline.py` | Orchestrator: `ingest_document()` + `retrieve_context()`. Also `schema_for_app()` + `_APP_TO_SCHEMA` map. |
-| `schemas.py` | Pydantic request/response models. |
-| `routers/documents.py` | `POST /api/documents`, `GET /api/documents`, `DELETE /api/documents/{id}`. |
-| `routers/retrieve.py` | `POST /api/retrieve`. |
-| `models/level2.py`, `models/level3.py` | SQLAlchemy ORM tables per schema. |
-| `alembic/` | Schema-aware migrations: same migration runs once per schema with `MetaData(schema=...)`. |
+| File                                   | Responsibility                                                                                                                |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `main.py`                              | FastAPI app, lifespan (DB ping at boot), CORS, router mounting, `/api/health/{,live,ready}`.                                  |
+| `config.py`                            | Pydantic-settings: `DATABASE_URL`, `OPENAI_API_KEY`, `INTERNAL_JWT_SECRET`, `CORS_ORIGINS`. Singleton via `@lru_cache`.       |
+| `db.py`                                | Async SQLAlchemy engine + `session_factory`. `ping_db()` for readiness. `dispose_engine()` on shutdown.                       |
+| `auth.py`                              | JWT verification (`InternalIdentity` model + `AuthedIdentity` FastAPI dependency).                                            |
+| `storage.py`                           | `StorageBackend` Protocol + `LocalStorageBackend`. Path-traversal guard. Layout: `{root}/{app_id}/{user_id}/{uuid}-{name}`.   |
+| `parsers/`                             | MIME dispatcher → `pdf_parser`, `docx_parser`, `xlsx_parser`, `txt_parser`. Common `ParsedDocument`/`ParsedPage` dataclasses. |
+| `chunker.py`                           | `tiktoken` sliding-window splitter. Defaults: 500 tok / 50 overlap / min 20.                                                  |
+| `embedder.py`                          | `AsyncOpenAI` singleton, `embed_one`, `embed_batch` (size 100, 3 retries, 30 s timeout).                                      |
+| `retriever.py`                         | Top-k vector search with `embedding.cosine_distance(:q)` reused in WHERE + ORDER BY.                                          |
+| `pipeline.py`                          | Orchestrator: `ingest_document()` + `retrieve_context()`. Also `schema_for_app()` + `_APP_TO_SCHEMA` map.                     |
+| `schemas.py`                           | Pydantic request/response models.                                                                                             |
+| `routers/documents.py`                 | `POST /api/documents`, `GET /api/documents`, `DELETE /api/documents/{id}`.                                                    |
+| `routers/retrieve.py`                  | `POST /api/retrieve`.                                                                                                         |
+| `models/level2.py`, `models/level3.py` | SQLAlchemy ORM tables per schema.                                                                                             |
+| `alembic/`                             | Schema-aware migrations: same migration runs once per schema with `MetaData(schema=...)`.                                     |
 
 ---
 
@@ -249,22 +249,22 @@ identical chunks across apps to cut OpenAI cost — populated later).
 All endpoints require `Authorization: Bearer <HS256-JWT>` with these
 claims:
 
-| Claim | Required | Notes |
-|-------|----------|-------|
-| `sub` | yes | becomes `user_id` |
-| `app_id` | yes | maps via `_APP_TO_SCHEMA` |
-| `exp` | yes | short TTL (e.g. 5 min) |
-| `iat` | recommended | |
-| `conversation_id` | no | UUID, scopes documents to one chat |
+| Claim             | Required    | Notes                              |
+| ----------------- | ----------- | ---------------------------------- |
+| `sub`             | yes         | becomes `user_id`                  |
+| `app_id`          | yes         | maps via `_APP_TO_SCHEMA`          |
+| `exp`             | yes         | short TTL (e.g. 5 min)             |
+| `iat`             | recommended |                                    |
+| `conversation_id` | no          | UUID, scopes documents to one chat |
 
-| Endpoint | Verb | Status | Body / Query | Returns |
-|----------|------|--------|--------------|---------|
-| `/api/health/live` | GET | 200 | — | `{status:"alive",...}` |
-| `/api/health/ready` | GET | 200 / 503 | — | DB reachability |
-| `/api/documents` | POST | 201 / 401 / 415 | multipart `file`, optional `conversation_id` form | `{document_id, status, chunk_count}` |
-| `/api/documents` | GET | 200 / 401 | optional `?conversation_id=` | `{documents: [...]}` |
-| `/api/documents/{id}` | DELETE | 204 / 401 / 404 | — | empty body |
-| `/api/retrieve` | POST | 200 / 401 | `{query, k=4, max_distance=0.4}` | `{chunks: [...]}` |
+| Endpoint              | Verb   | Status          | Body / Query                                      | Returns                              |
+| --------------------- | ------ | --------------- | ------------------------------------------------- | ------------------------------------ |
+| `/api/health/live`    | GET    | 200             | —                                                 | `{status:"alive",...}`               |
+| `/api/health/ready`   | GET    | 200 / 503       | —                                                 | DB reachability                      |
+| `/api/documents`      | POST   | 201 / 401 / 415 | multipart `file`, optional `conversation_id` form | `{document_id, status, chunk_count}` |
+| `/api/documents`      | GET    | 200 / 401       | optional `?conversation_id=`                      | `{documents: [...]}`                 |
+| `/api/documents/{id}` | DELETE | 204 / 401 / 404 | —                                                 | empty body                           |
+| `/api/retrieve`       | POST   | 200 / 401       | `{query, k=4, max_distance=0.4}`                  | `{chunks: [...]}`                    |
 
 Error model: `{"detail": "..."}` (FastAPI default).
 
@@ -295,15 +295,15 @@ Error model: `{"detail": "..."}` (FastAPI default).
 
 End-to-end ASGI smoke test (Phase 4 exit gate):
 
-| Case | Result |
-|------|--------|
-| Missing `Authorization` header | 401 |
-| Bad JWT signature | 401 |
-| Upload 800-byte `.txt` | 201, `status=ready`, 1 chunk |
-| List own docs | 200, contains the upload |
-| Retrieve HIT ("What is the capital of Germany?") | 200, 1 chunk, distance 0.3689 |
-| Retrieve MISS ("PostgreSQL connection pooling tips") | 200, 0 chunks (guard works) |
-| Soft delete | 204, follow-up list excludes it |
+| Case                                                 | Result                          |
+| ---------------------------------------------------- | ------------------------------- |
+| Missing `Authorization` header                       | 401                             |
+| Bad JWT signature                                    | 401                             |
+| Upload 800-byte `.txt`                               | 201, `status=ready`, 1 chunk    |
+| List own docs                                        | 200, contains the upload        |
+| Retrieve HIT ("What is the capital of Germany?")     | 200, 1 chunk, distance 0.3689   |
+| Retrieve MISS ("PostgreSQL connection pooling tips") | 200, 0 chunks (guard works)     |
+| Soft delete                                          | 204, follow-up list excludes it |
 
 Plus the Phase 3 standalone test: 150-word text → chunked → embedded →
 retrieved with semantically correct cosine distances on real OpenAI.
@@ -312,13 +312,13 @@ retrieved with semantically correct cosine distances on real OpenAI.
 
 ## 11. Commit history of this service
 
-| Commit | Phase |
-|--------|-------|
-| `1d16153 / 6402a9a / f8d8738` | Phase 0 — FastAPI scaffold |
-| `1801113` | Phase 1 — Neon DB connectivity |
-| `fc0db82` | Phase 2 — Alembic + initial migration |
-| `15fb818` | Phase 3.1 — storage + parsers |
-| `475b483` | Phase 3.2 + 3.3 — chunker + embedder |
-| `1c53ed7` | Phase 3.4 + 3.5 — retriever + pipeline |
-| `eeee125` | chore — formatter touches |
-| `6ee5ec7` | **Phase 4 — JWT-protected REST API** |
+| Commit                        | Phase                                  |
+| ----------------------------- | -------------------------------------- |
+| `1d16153 / 6402a9a / f8d8738` | Phase 0 — FastAPI scaffold             |
+| `1801113`                     | Phase 1 — Neon DB connectivity         |
+| `fc0db82`                     | Phase 2 — Alembic + initial migration  |
+| `15fb818`                     | Phase 3.1 — storage + parsers          |
+| `475b483`                     | Phase 3.2 + 3.3 — chunker + embedder   |
+| `1c53ed7`                     | Phase 3.4 + 3.5 — retriever + pipeline |
+| `eeee125`                     | chore — formatter touches              |
+| `6ee5ec7`                     | **Phase 4 — JWT-protected REST API**   |

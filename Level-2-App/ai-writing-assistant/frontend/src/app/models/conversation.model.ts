@@ -17,6 +17,8 @@ export interface ConversationMessage {
   content: string;
   createdAt: string;
   updatedAt: string;
+  /** Document IDs the user attached to this message (empty for assistant). */
+  attachedDocumentIds?: string[];
 }
 
 export interface GenerateTitleResult {

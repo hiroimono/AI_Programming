@@ -15,7 +15,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 # ───────────────────────── Documents ─────────────────────────────────
 
 
@@ -50,6 +49,24 @@ class DocumentListResponse(BaseModel):
     without changing the response shape)."""
 
     documents: list[DocumentItem]
+
+
+class DocumentChunkOut(BaseModel):
+    """One chunk of a document, in GET /api/documents/{id}/chunks order."""
+
+    chunk_index: int
+    content: str
+    content_tokens: int
+
+
+class DocumentChunksResponse(BaseModel):
+    """Envelope for GET /api/documents/{id}/chunks. Chunks are sorted
+    by chunk_index so a client can concatenate them to reconstruct the
+    parsed-text view of the document."""
+
+    document_id: UUID
+    file_name: str
+    chunks: list[DocumentChunkOut]
 
 
 # ───────────────────────── Retrieval ─────────────────────────────────
