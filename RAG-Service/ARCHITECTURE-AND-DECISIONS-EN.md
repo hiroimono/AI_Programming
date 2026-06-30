@@ -31,32 +31,32 @@ It deliberately does **not**:
 
 ```mermaid
 flowchart LR
-    subgraph "Consuming Apps"
-        L2BE["Level-2 Backend<br/>(writing assistant)"]
-        L3BE["Level-3 Backend<br/>(chatbot SaaS)"]
-        FUT["Future apps..."]
+    subgraph Apps[Consuming Apps]
+        L2BE[Level-2 BE<br/>writing assistant]
+        L3BE[Level-3 BE<br/>chatbot SaaS]
+        FUT[Future apps...]
     end
 
-    subgraph "rag-service (FastAPI :8100)"
-        AUTH["JWT verify<br/>(HS256, shared secret)"]
+    subgraph RAG[rag-service - FastAPI port 8100]
+        AUTH[JWT verify<br/>HS256 shared secret]
         API["/api/documents<br/>/api/retrieve"]
-        PIPE["pipeline.py<br/>orchestrator"]
-        PARSE["parsers/<br/>(pdf/docx/xlsx/txt)"]
-        CHUNK["chunker.py<br/>(500 tok / 50 overlap)"]
-        EMB["embedder.py<br/>(OpenAI text-embedding-3-small)"]
-        RET["retriever.py<br/>(pgvector cosine + HNSW)"]
-        STORE["storage.py<br/>(local filesystem)"]
+        PIPE[pipeline.py<br/>orchestrator]
+        PARSE[parsers/<br/>pdf docx xlsx txt]
+        CHUNK[chunker.py<br/>500 tok / 50 overlap]
+        EMB[embedder.py<br/>OpenAI text-embedding-3-small]
+        RET[retriever.py<br/>pgvector cosine + HNSW]
+        STORE[storage.py<br/>local filesystem]
     end
 
-    subgraph "External"
-        FS[("Local FS<br/>storage/{app}/{user}/")]
-        NEON[("Neon Postgres<br/>+ pgvector<br/>schema-per-app")]
-        OPENAI[("OpenAI API<br/>embeddings only")]
+    subgraph Ext[External]
+        FS[(Local FS<br/>storage/app/user/)]
+        NEON[(Neon Postgres<br/>pgvector<br/>schema-per-app)]
+        OPENAI[(OpenAI API<br/>embeddings only)]
     end
 
-    L2BE -- "Bearer JWT" --> AUTH
-    L3BE -- "Bearer JWT" --> AUTH
-    FUT  -- "Bearer JWT" --> AUTH
+    L2BE -- Bearer JWT --> AUTH
+    L3BE -- Bearer JWT --> AUTH
+    FUT  -- Bearer JWT --> AUTH
     AUTH --> API
     API --> PIPE
     PIPE --> PARSE
@@ -84,26 +84,26 @@ sequenceDiagram
     participant R as routers/documents.upload
     participant P as pipeline.ingest_document
     participant S as storage.LocalStorage
-    participant DB as Postgres (schema)
-    participant Par as parsers/*
+    participant DB as Postgres schema
+    participant Par as parsers
     participant Ch as chunker
     participant Em as embedder
     participant OAI as OpenAI
 
     App->>Auth: POST multipart + Bearer JWT
-    Auth-->>R: InternalIdentity(app_id, user_id, conv_id?)
-    R->>P: ingest_document(content, filename, mime, ...)
-    P->>S: save(content) -> path
-    P->>DB: INSERT document (status='uploaded') + COMMIT
-    P->>Par: parse(content, mime) -> ParsedDocument
-    P->>Ch: chunk_pages(parsed) -> [Chunk]
-    P->>Em: embed_batch([texts]) -> [vectors]
-    Em->>OAI: POST /v1/embeddings (batch=100)
-    OAI-->>Em: [1536-d vectors]
-    P->>DB: bulk INSERT chunks + UPDATE doc.status='ready' + COMMIT
+    Auth-->>R: InternalIdentity(app_id, user_id, conv_id)
+    R->>P: ingest_document(content, filename, mime)
+    P->>S: save(content) returns path
+    P->>DB: INSERT document status=uploaded + COMMIT
+    P->>Par: parse(content, mime) returns ParsedDocument
+    P->>Ch: chunk_pages(parsed) returns Chunk list
+    P->>Em: embed_batch(texts) returns vectors
+    Em->>OAI: POST /v1/embeddings batch=100
+    OAI-->>Em: 1536-d vectors
+    P->>DB: bulk INSERT chunks + UPDATE doc status=ready + COMMIT
     P-->>R: document_id
     R->>DB: re-read doc for chunk_count
-    R-->>App: 201 {document_id, status, chunk_count}
+    R-->>App: 201 document_id status chunk_count
 ```
 
 **On failure** (parse / embed / DB write): document row is updated to
@@ -121,18 +121,18 @@ sequenceDiagram
     participant P as pipeline.retrieve_context
     participant Em as embedder
     participant Ret as retriever
-    participant DB as Postgres (HNSW index)
+    participant DB as Postgres HNSW idx
 
-    App->>Auth: POST {query, k, max_distance} + JWT
+    App->>Auth: POST query+k+max_distance + JWT
     Auth-->>R: InternalIdentity
-    R->>P: retrieve_context(query, k, max_distance, ...)
-    P->>Em: embed_one(query) -> vector[1536]
+    R->>P: retrieve_context(query, k, max_distance)
+    P->>Em: embed_one(query) returns vector 1536-d
     P->>Ret: retrieve(vector, app_id, user_id, k, max_distance)
-    Ret->>DB: SELECT ... ORDER BY embedding <=> :q LIMIT k<br/>WHERE distance <= max_distance<br/>  AND app_id, user_id, deleted_at IS NULL
+    Ret->>DB: SELECT ORDER BY cosine_dist ASC LIMIT k<br/>WHERE dist &lt;= max_distance<br/>AND app_id, user_id, deleted_at IS NULL
     DB-->>Ret: rows
-    Ret-->>P: [RetrievedChunk(content, distance, doc_filename, ...)]
+    Ret-->>P: list of RetrievedChunk
     P-->>R: chunks
-    R-->>App: 200 {chunks: [...]}
+    R-->>App: 200 chunks list
 ```
 
 **Hallucination guard:** when no chunk meets `max_distance` (default
