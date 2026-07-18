@@ -42,7 +42,7 @@ from logging.config import fileConfig
 from pathlib import Path
 
 from alembic import context
-from sqlalchemy import pool
+from sqlalchemy import pool, text
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
@@ -110,8 +110,50 @@ def include_object(
     return obj_schema in MANAGED_SCHEMAS
 
 
+def _ensure_managed_schemas(connection: Connection) -> None:
+    """Create any missing RAG schemas, respecting least privilege.
+
+    PostgreSQL never auto-creates a schema referenced by a table. Alembic
+    also needs `rag_shared` to exist BEFORE it can create/inspect its
+    `alembic_version` bookkeeping table — which happens before any
+    migration's upgrade() runs. So schema creation cannot live inside a
+    migration; it must happen here, first.
+
+    We FIRST check which schemas already exist (a privilege-free read on
+    information_schema) and only issue CREATE SCHEMA for the truly missing
+    ones. This matters because:
+      - On the dev DB, `rag_service_user` is deliberately least-privilege
+        and lacks CREATE on the database. `CREATE SCHEMA IF NOT EXISTS`
+        still triggers a privilege check even when the schema exists, so
+        blindly running it would fail with "permission denied for
+        database". Skipping it when nothing is missing keeps that role
+        minimal.
+      - On a fresh Neon DB (production first deploy) the schemas ARE
+        missing, so we create them — provided the connecting role has
+        CREATE on the database. If it doesn't, we surface a clear error
+        and the operator pre-creates the schemas or grants CREATE.
+
+    Schema names come from the trusted MANAGED_SCHEMAS constant, never
+    from user input, so string interpolation here is injection-safe.
+    """
+    existing = set(
+        connection.execute(
+            text("SELECT schema_name FROM information_schema.schemata")
+        ).scalars()
+    )
+    missing = [s for s in sorted(MANAGED_SCHEMAS) if s not in existing]
+    for schema in missing:
+        connection.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{schema}"'))
+    if missing:
+        connection.commit()
+
+
 def _do_run_migrations(connection: Connection) -> None:
     """Configure Alembic context against an open DB connection and run."""
+    # Guarantee our schemas exist before Alembic touches its version table
+    # (which lives in rag_shared). Without this a fresh DB crashes here.
+    _ensure_managed_schemas(connection)
+
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
