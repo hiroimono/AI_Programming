@@ -44,9 +44,9 @@ If RAG-Service is missing, the writer backend's call to it fails
       fine — see §5).
 - [ ] OpenAI API key (same one the writer backend uses is fine).
 - [ ] A generated internal JWT secret (see §4). Generate with:
-      ```powershell
-      python -c "import secrets; print(secrets.token_urlsafe(32))"
-      ```
+      `powershell
+  python -c "import secrets; print(secrets.token_urlsafe(32))"
+  `
 - [ ] This repo pushed to GitHub (Railway deploys from the repo).
 
 ---
@@ -77,20 +77,20 @@ If RAG-Service is missing, the writer backend's call to it fails
 Set these in the rag-service **Variables** panel. Names must match
 exactly — the app reads them verbatim.
 
-| Variable                 | Value                                                        | Notes |
-| ------------------------ | ------------------------------------------------------------ | ----- |
+| Variable                 | Value                                                                                         | Notes                                                                        |
+| ------------------------ | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | `DATABASE_URL`           | `postgresql://rag_service_user:PWD@HOST.eu-central-1.aws.neon.tech/gatewaydb?sslmode=require` | Same Neon DB as dev/Gateway. Code rewrites it to asyncpg + strips `sslmode`. |
-| `OPENAI_API_KEY`         | `sk-...`                                                     | Required for embeddings. Reuse the writer's key. |
-| `INTERNAL_JWT_SECRET`    | *(the 32-byte secret from §4 below)*                         | **Must byte-match** the writer's `RAG_INTERNAL_JWT_SECRET`. |
-| `INTERNAL_JWT_ALGORITHM` | `HS256`                                                     | Default; set explicitly for clarity. |
-| `ENVIRONMENT`            | `production`                                                 | Toggles logging defaults. |
-| `STORAGE_BACKEND`        | `local`                                                     | MVP. R2/Hetzner later. |
-| `STORAGE_LOCAL_PATH`     | `/app/storage`                                              | Matches the Dockerfile volume mount point (§6). |
-| `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-small`                                    | Optional (has a default). |
-| `OPENAI_EMBEDDING_DIM`   | `1536`                                                     | Optional (has a default). |
-| `DB_POOL_SIZE`           | `5`                                                        | Optional. Neon free tier is connection-tight. |
-| `DB_MAX_OVERFLOW`        | `2`                                                        | Optional. |
-| `CORS_ORIGINS`           | *(leave empty)*                                             | rag-service is never called from a browser. |
+| `OPENAI_API_KEY`         | `sk-...`                                                                                      | Required for embeddings. Reuse the writer's key.                             |
+| `INTERNAL_JWT_SECRET`    | _(the 32-byte secret from §4 below)_                                                          | **Must byte-match** the writer's `RAG_INTERNAL_JWT_SECRET`.                  |
+| `INTERNAL_JWT_ALGORITHM` | `HS256`                                                                                       | Default; set explicitly for clarity.                                         |
+| `ENVIRONMENT`            | `production`                                                                                  | Toggles logging defaults.                                                    |
+| `STORAGE_BACKEND`        | `local`                                                                                       | MVP. R2/Hetzner later.                                                       |
+| `STORAGE_LOCAL_PATH`     | `/app/storage`                                                                                | Matches the Dockerfile volume mount point (§6).                              |
+| `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-small`                                                                      | Optional (has a default).                                                    |
+| `OPENAI_EMBEDDING_DIM`   | `1536`                                                                                        | Optional (has a default).                                                    |
+| `DB_POOL_SIZE`           | `5`                                                                                           | Optional. Neon free tier is connection-tight.                                |
+| `DB_MAX_OVERFLOW`        | `2`                                                                                           | Optional.                                                                    |
+| `CORS_ORIGINS`           | _(leave empty)_                                                                               | rag-service is never called from a browser.                                  |
 
 > `PORT` is injected by Railway automatically — **do not set it**. The
 > Dockerfile's start command reads `$PORT`.
@@ -197,11 +197,11 @@ If `/ready` returns 503, the DB is unreachable → re-check `DATABASE_URL`.
 Now tell the already-deployed **writer** service where rag-service lives.
 On the **writer** service's Variables panel:
 
-| Variable                  | Value                                          |
-| ------------------------- | ---------------------------------------------- |
-| `RAG_SERVICE_URL`         | `https://<rag-service>.up.railway.app`         |
-| `RAG_INTERNAL_JWT_SECRET` | *(the SAME secret set as rag-service `INTERNAL_JWT_SECRET`)* |
-| `RAG_APP_ID`              | `level-2-writer` *(already the code default — set only if you want it explicit)* |
+| Variable                  | Value                                                                            |
+| ------------------------- | -------------------------------------------------------------------------------- |
+| `RAG_SERVICE_URL`         | `https://<rag-service>.up.railway.app`                                           |
+| `RAG_INTERNAL_JWT_SECRET` | _(the SAME secret set as rag-service `INTERNAL_JWT_SECRET`)_                     |
+| `RAG_APP_ID`              | `level-2-writer` _(already the code default — set only if you want it explicit)_ |
 
 Then **redeploy the writer service** so it picks up the new variables.
 
@@ -218,11 +218,11 @@ Then **redeploy the writer service** so it picks up the new variables.
 
 ## 10. Troubleshooting
 
-| Symptom | Likely cause | Fix |
-| ------- | ------------ | --- |
-| Browser still 503 on upload | writer can't reach rag-service | Check writer `RAG_SERVICE_URL` points to the live rag-service URL; confirm rag-service `/api/health/live` is 200. |
-| Upload returns 401 | secret mismatch | `INTERNAL_JWT_SECRET` (rag) ≠ `RAG_INTERNAL_JWT_SECRET` (writer). Set identical values, redeploy both. |
-| Boot crash: `schema "rag_shared" does not exist` | fresh DB, role lacks CREATE | Pre-create schemas / grant CREATE (§5). |
-| Boot crash: `permission denied for database` | role lacks CREATE on a fresh DB | Same as above (§5). |
-| `/api/health/ready` = 503 | DB unreachable | Verify `DATABASE_URL` host/password; confirm Neon compute is awake. |
-| Downloaded original 404s after redeploy | no storage volume | Mount a volume at `/app/storage` (§6). |
+| Symptom                                          | Likely cause                    | Fix                                                                                                               |
+| ------------------------------------------------ | ------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Browser still 503 on upload                      | writer can't reach rag-service  | Check writer `RAG_SERVICE_URL` points to the live rag-service URL; confirm rag-service `/api/health/live` is 200. |
+| Upload returns 401                               | secret mismatch                 | `INTERNAL_JWT_SECRET` (rag) ≠ `RAG_INTERNAL_JWT_SECRET` (writer). Set identical values, redeploy both.            |
+| Boot crash: `schema "rag_shared" does not exist` | fresh DB, role lacks CREATE     | Pre-create schemas / grant CREATE (§5).                                                                           |
+| Boot crash: `permission denied for database`     | role lacks CREATE on a fresh DB | Same as above (§5).                                                                                               |
+| `/api/health/ready` = 503                        | DB unreachable                  | Verify `DATABASE_URL` host/password; confirm Neon compute is awake.                                               |
+| Downloaded original 404s after redeploy          | no storage volume               | Mount a volume at `/app/storage` (§6).                                                                            |
