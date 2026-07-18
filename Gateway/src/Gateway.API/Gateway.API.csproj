@@ -15,6 +15,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <!-- Direct pin to override the vulnerable transitive Microsoft.OpenApi 2.0.0 pulled in
+         by Microsoft.AspNetCore.OpenApi (CVE-2026-49451 / GHSA-v5pm-xwqc-g5wc). 2.7.5 is patched. -->
+    <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.14.8" />
     <PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
