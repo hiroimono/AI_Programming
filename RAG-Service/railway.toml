@@ -1,0 +1,30 @@
+# Railway service configuration for rag-service.
+#
+# Why a toml file lives in the repo (instead of clicking in the dashboard):
+# every prod-affecting setting is code-reviewed, diffable, and revertible
+# via `git revert`. Dashboard-only config = invisible drift.
+
+[build]
+# Use the Dockerfile next to this file. Without this, Railway falls back
+# to Nixpacks auto-detection which is fine but less predictable —
+# Dockerfile gives us byte-for-byte reproducible builds.
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Healthcheck path Railway hits to mark the service "Healthy" before
+# routing traffic to a new deployment. /api/health/live returns 200 as
+# soon as the FastAPI process is up — does not touch the DB. Using
+# /ready here would block deploys when Neon is briefly unreachable.
+healthcheckPath = "/api/health/live"
+healthcheckTimeout = 30
+
+# Restart on crash, but cap retries so a permanently-broken deploy
+# (e.g. bad env var) doesn't burn CPU forever.
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+
+# Start command is defined in the Dockerfile CMD; leaving this empty
+# means Railway uses the image's default entrypoint, which runs
+# `alembic upgrade head && uvicorn ...`. Defining it again here would
+# override the migration step.

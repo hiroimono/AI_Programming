@@ -1,0 +1,30 @@
+# Local-only Python artifacts — never copy into the image.
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local secrets and dev DB content. Production env vars are injected
+# by Railway; copying .env in would be a leak.
+.env
+.env.*
+!.env.example
+
+# Local upload storage — gigabytes of test PDFs do not belong in the
+# image. Production storage is a Railway volume mount.
+storage/
+
+# Editor / OS junk
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Docs are not needed at runtime; they only bloat the image.
+*.md
+!README.md
