@@ -11,10 +11,12 @@ namespace Gateway.API.Services;
 public class WriterConversationService
 {
   private readonly AppDbContext _db;
+  private readonly RagServiceClient _ragClient;
 
-  public WriterConversationService(AppDbContext db)
+  public WriterConversationService(AppDbContext db, RagServiceClient ragClient)
   {
     _db = db;
+    _ragClient = ragClient;
   }
 
   /// <summary>
@@ -165,6 +167,12 @@ public class WriterConversationService
 
     _db.WriterConversations.Remove(conversation);
     await _db.SaveChangesAsync();
+
+    // Best-effort: reclaim the documents this conversation held in rag-service.
+    // Runs after the conversation is gone; never blocks or fails the delete —
+    // a failed cleanup is logged and swept up later.
+    await _ragClient.DeleteConversationDocumentsAsync(userId, conversationId);
+
     return true;
   }
 
@@ -173,9 +181,24 @@ public class WriterConversationService
   /// </summary>
   public async Task<int> BatchDeleteAsync(Guid userId, List<Guid> ids)
   {
-    return await _db.WriterConversations
+    // Resolve which of the requested ids actually belong to this user, so we
+    // only trigger document cleanup for conversations we really delete.
+    var ownedIds = await _db.WriterConversations
       .Where(c => c.UserId == userId && ids.Contains(c.Id))
+      .Select(c => c.Id)
+      .ToListAsync();
+
+    if (ownedIds.Count == 0) return 0;
+
+    var deleted = await _db.WriterConversations
+      .Where(c => c.UserId == userId && ownedIds.Contains(c.Id))
       .ExecuteDeleteAsync();
+
+    // Best-effort document cleanup for each deleted conversation, in parallel.
+    await Task.WhenAll(
+      ownedIds.Select(id => _ragClient.DeleteConversationDocumentsAsync(userId, id)));
+
+    return deleted;
   }
 
   /// <summary>

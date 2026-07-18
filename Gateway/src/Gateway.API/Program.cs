@@ -31,6 +31,15 @@ builder.Services.AddHttpClient("GitHub", client =>
   client.DefaultRequestHeaders.UserAgent.Add(new("Gateway.API", "1.0"));
 });
 
+// Typed HttpClient for the shared rag-service. The Gateway calls this directly
+// (as the control plane) to cascade-delete a conversation's documents. BaseAddress
+// gets a trailing slash so relative request paths ("api/documents/...") combine correctly.
+builder.Services.AddHttpClient<RagServiceClient>(client =>
+{
+  var ragUrl = builder.Configuration["Rag:ServiceUrl"] ?? "http://localhost:8100";
+  client.BaseAddress = new Uri(ragUrl.TrimEnd('/') + "/");
+});
+
 // JWT Authentication
 var jwtSection = builder.Configuration.GetSection("Jwt");
 var secret = jwtSection["Secret"] ?? throw new InvalidOperationException("Jwt:Secret is not configured");

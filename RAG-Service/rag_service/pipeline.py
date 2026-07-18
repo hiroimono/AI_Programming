@@ -39,7 +39,7 @@ from rag_service.retriever import (
     retrieve,
 )
 from rag_service.storage import get_storage
-from sqlalchemy import update
+from sqlalchemy import delete, select, update
 
 # Mirror of retriever._MODELS — kept duplicated (vs imported) so pipeline
 # remains decoupled from retriever's private state. Both modules dispatch
@@ -186,6 +186,67 @@ async def ingest_document(
             )
             await session.commit()
         raise
+
+
+async def delete_documents_by_conversation(
+    *,
+    app_id: str,
+    user_id: str,
+    conversation_id: UUID,
+    schema: Literal["level2", "level3"] = "level2",
+) -> int:
+    """Permanently delete every document tied to one conversation.
+
+    Used when the owning conversation is deleted upstream (in the Gateway).
+    Unlike the per-document *soft* delete (which keeps the row so old
+    citations still resolve), this is a hard delete: there is no
+    conversation left to cite from, so we reclaim everything —
+
+      - the stored original file blobs (via storage.delete),
+      - the document rows,
+      - their chunks + pgvector embeddings (cascade via the chunks
+        FK's ON DELETE CASCADE).
+
+    Scoped by the full (app_id, user_id, conversation_id) tuple, so a
+    caller can only ever delete its own user's documents. Idempotent:
+    returns 0 when nothing matches.
+    """
+    doc_model, _ = _MODELS[schema]
+    storage = get_storage()
+
+    async with session_factory() as session:
+        # Load the matching docs first — we need their storage_path to
+        # remove the on-disk blobs before dropping the rows.
+        result = await session.execute(
+            select(doc_model.id, doc_model.storage_path).where(
+                doc_model.app_id == app_id,
+                doc_model.user_id == user_id,
+                doc_model.conversation_id == conversation_id,
+            )
+        )
+        rows = result.all()
+        if not rows:
+            return 0
+
+        # Best-effort blob cleanup. storage.delete is idempotent (missing
+        # files do not raise), so a partially-deleted blob set is safe.
+        for _doc_id, storage_path in rows:
+            if storage_path:
+                storage.delete(storage_path)
+
+        # Bulk-delete the rows in one statement. Chunks (+ their pgvector
+        # embeddings) cascade at the DB level via the chunks.document_id
+        # FK ON DELETE CASCADE.
+        await session.execute(
+            delete(doc_model).where(
+                doc_model.app_id == app_id,
+                doc_model.user_id == user_id,
+                doc_model.conversation_id == conversation_id,
+            )
+        )
+        await session.commit()
+
+    return len(rows)
 
 
 async def retrieve_context(

@@ -19,7 +19,11 @@ from rag_service.auth import AuthedIdentity
 from rag_service.db import session_factory
 from rag_service.models import Level2Chunk, Level2Document, Level3Chunk, Level3Document
 from rag_service.parsers import UnsupportedFileTypeError
-from rag_service.pipeline import ingest_document, schema_for_app
+from rag_service.pipeline import (
+    delete_documents_by_conversation,
+    ingest_document,
+    schema_for_app,
+)
 from rag_service.schemas import (
     DocumentChunkOut,
     DocumentChunksResponse,
@@ -299,3 +303,31 @@ async def delete_document(
             )
         await session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.delete(
+    "/by-conversation/{conversation_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Hard-delete every document belonging to a conversation.",
+)
+async def delete_by_conversation(
+    conversation_id: UUID,
+    identity: AuthedIdentity,
+) -> dict[str, int]:
+    """Permanently remove all documents (blobs + rows + chunks + vectors)
+    for `conversation_id`, scoped to the caller's (app_id, user_id).
+
+    Called by the Gateway when a conversation is deleted, so the uploaded
+    documents don't linger as orphans. This is a HARD delete (unlike the
+    per-document soft delete) because there is no conversation left to
+    cite from. Idempotent — returns {"deleted": 0} when the conversation
+    had no documents.
+    """
+    schema = _resolve_schema(identity.app_id)
+    deleted = await delete_documents_by_conversation(
+        app_id=identity.app_id,
+        user_id=identity.user_id,
+        conversation_id=conversation_id,
+        schema=schema,  # type: ignore[arg-type]
+    )
+    return {"deleted": deleted}
