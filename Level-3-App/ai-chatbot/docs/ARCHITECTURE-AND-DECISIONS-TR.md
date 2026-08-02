@@ -3,7 +3,7 @@
 > **Amaç:** Bu dosya projenin tek doğruluk kaynağı (single source of truth).
 > Her milestone sonunda güncellenir. Kod ile bu doküman çelişirse **kod
 > kazanır** ama çelişki bir düzeltme sinyalidir.
-> Son güncelleme: **M2 sonu** (bot + bot-config CRUD).
+> Son güncelleme: **M5 sonu** (chat SSE + RAG retrieval).
 
 ---
 
@@ -58,14 +58,19 @@ Tek `JWT_SECRET`, **HS256**. `scope` claim ile ayrışır.
 | Scope | Kim | TTL | Milestone |
 |---|---|---|---|
 | `admin` | Tenant yöneticisi (panel) | 3600s (1h) | **M1 ✅** |
-| `widget` | Anonim ziyaretçi (embed) | 86400s (24h) | M4 |
-| `preview` | Admin canlı önizleme | 300s (5m) | M4 |
+| `widget` | Anonim ziyaretçi (embed) | 86400s (24h) | **M4 ✅** |
+| `preview` | Admin canlı önizleme | 300s (5m) | **M4 ✅** |
 
 **Token claim'leri:** `sub`, `scope`, `iat`, `exp` + admin için `tenant_id`, `role`.
 
 `get_current_admin` (deps.py) = **tek seam**: token decode (scope=admin) →
 **RLS tenant GUC pin** → canlı `AdminUser` yükle (id+tenant_id+is_active). Her
 tenant-scoped handler buna bağlı → hiçbir handler başka tenant'ın verisine erişemez.
+
+`get_current_widget` (deps.py) = widget-düzlemi seam'i: token decode (scope
+`widget` veya `preview`) → **RLS tenant GUC'ı token'dan pin'le** → **DB lookup YOK**
+(imzalı token *kimliğin kendisi*; tenant scope'unu RLS zorlar). `is_preview` scope'tan
+türetilir; böylece preview turn'ler usage muhasebesinden dışlanır.
 
 ---
 
@@ -87,6 +92,12 @@ tenant-scoped handler buna bağlı → hiçbir handler başka tenant'ın verisin
 > endpoint'leri **commit sonrası okuma** için tenant'ı **yeniden pin'ler**
 > (`bots.py` create/update/config-update). Async lazy-load'dan kaçınmak için
 > `selectinload(Bot.config)`.
+>
+> ⚠️ **Kendi-session'ını açan bileşenler:** ingestion pipeline (M3) ve chat
+> orchestrator (M5) **kendi** `session_factory()` bloklarını açar ve her birinde
+> tenant'ı **yeniden pin'ler** — request session'ı stream ortasında kapanmış olabilir
+> ve GUC transaction-local'dır. Testlerde bu global'ler NullPool sessionmaker'a
+> rebind edilir (bkz. §9).
 
 ---
 
@@ -139,6 +150,48 @@ Tüm admin endpoint'leri `Authorization: Bearer <admin JWT>` ister.
 | GET | `/{bot_id}/config` | Config oku | 200 `BotConfigOut` |
 | PATCH | `/{bot_id}/config` | Config güncelle | 200 `BotConfigOut` |
 
+### Documents (M3) — `/api/bots/{bot_id}/documents`
+
+| Metot | Yol | Açıklama | Başarı |
+|---|---|---|---|
+| POST | `` | Multipart upload → parse/chunk/embed/store pipeline | 201 `DocumentOut` |
+| GET | `` | Tenant/bot dokümanları | 200 `DocumentOut[]` |
+| GET | `/{document_id}` | Tek doküman | 200 `DocumentOut` |
+| DELETE | `/{document_id}` | Soft delete (`deleted_at`) | 204 |
+
+Guard'lar: 415 desteklenmeyen uzantı, 413 > 10 MB, 422 boş. Pipeline `UsageEvent`
+yazar (`document_upload` + `embedding`) ve her session'da tenant'ı yeniden pin'ler.
+
+### Widget (M4) — `/api/widget`
+
+| Metot | Yol | Auth | Açıklama | Başarı |
+|---|---|---|---|---|
+| POST | `/session` | **public** | Embed `bot_id`+`tenant_id` gönderir; RLS çifti kendi doğrular; Origin whitelist; widget token mint | 201 `WidgetSessionResponse` |
+| GET | `/config` | widget/preview | Güvenli config'i yeniden çek (remount'ta) | 200 `WidgetConfigOut` |
+| POST | `/{bot_id}/preview-session` *(`/api/bots` altında)* | admin | 5-dk preview token mint (Origin check yok) | 201 `WidgetSessionResponse` |
+
+**Bootstrap = "Seçenek D":** public session endpoint tenant'ı bilemez ama RLS
+FORCE'lu. Embed **hem** `bot_id` **hem** `tenant_id` taşır (ikisi de public, tahmin
+edilemez UUID). Endpoint RLS'i *iddia edilen* tenant'a pin'ler, sonra
+`SELECT bot WHERE id=bot_id` — yanlış tenant iddiası **satır bulamaz** → 404. Yeni
+policy/role/migration yok; hiçbir bilgi sızmaz. `WidgetConfigOut` asla
+`system_prompt`/`model`/`temperature` taşımaz.
+
+### Chat (M5) — `/api/widget/chat` (SSE)
+
+| Metot | Yol | Auth | Açıklama | Başarı |
+|---|---|---|---|---|
+| POST | `/chat` | widget/preview | Yanıtı **Server-Sent Events** olarak stream eder | 200 `text/event-stream` |
+
+Body: `{ message, conversation_id? }`. Geçersiz `conversation_id` (session'a ait
+değil) → stream başlamadan **404**. Event sırası:
+`meta` (conversation_id, message_id) → `sources` (citation) → çok sayıda `delta`
+(metin) → `done` (token sayıları) | `error`. Retrieval cosine top-k (k=4,
+`max_distance=0.4`); yeterince yakın bir şey yoksa `[]` döner ve system prompt modele
+bilmediğini kabul etmesini söyler. Token'lar tiktoken ile sayılır; `chat` `UsageEvent`
+preview turn'ler **hariç** yazılır. Moderation no-op seam (`_moderate`, gerçek
+sağlayıcı M8'de).
+
 ### Health (M0) — `/api/health`
 
 `/api/health` (durum+versiyon) · `/api/health/live` · `/api/health/ready` (DB down → 503).
@@ -175,4 +228,13 @@ Tüm admin endpoint'leri `Authorization: Bearer <admin JWT>` ister.
   engine import-time; loop çakışmasını önlemek için conftest'te **NullPool test
   engine + `get_session` dependency override**. Cleanup: `m1test_` prefix'li email →
   tenant sil (FK cascade).
+- **Kendi-session'lı global'ler (test):** `pipeline.session_factory` (M3) ve
+  `chat.session_factory` (M5) conftest'te NullPool `TEST_SESSION`'a rebind edilir,
+  yoksa per-test event loop "Event loop is closed" verir.
+- **Deterministik mesaj sırası:** bir turn'ün user + assistant mesajları aynı
+  transaction'da eklenir, Postgres `now()` (transaction zamanı) ikisini tie yapar;
+  `chat.py` explicit `created_at` verir (`now`, `now+1ms`) → history replay + display
+  sırası deterministik kalır.
+- **SSE:** elle yazılmış (`event: … / data: …\n\n`, `X-Accel-Buffering: no`),
+  `sse-starlette` bağımlılığı yok; `StreamingResponse` + `media_type="text/event-stream"`.
 - **204 route:** FastAPI'de gövdesiz olmalı → `response_class=Response`.

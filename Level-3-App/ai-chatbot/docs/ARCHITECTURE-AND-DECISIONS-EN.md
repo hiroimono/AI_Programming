@@ -3,7 +3,7 @@
 > **Purpose:** This file is the single source of truth for the project.
 > Updated at the end of every milestone. If code and this doc disagree,
 > **code wins** — but the disagreement is a signal to fix the doc.
-> Last update: **end of M2** (bot + bot-config CRUD).
+> Last update: **end of M5** (chat SSE + RAG retrieval).
 
 ---
 
@@ -59,14 +59,19 @@ One `JWT_SECRET`, **HS256**. Differentiated by the `scope` claim.
 | Scope | Who | TTL | Milestone |
 |---|---|---|---|
 | `admin` | Tenant administrator (panel) | 3600s (1h) | **M1 ✅** |
-| `widget` | Anonymous visitor (embed) | 86400s (24h) | M4 |
-| `preview` | Admin live preview | 300s (5m) | M4 |
+| `widget` | Anonymous visitor (embed) | 86400s (24h) | **M4 ✅** |
+| `preview` | Admin live preview | 300s (5m) | **M4 ✅** |
 
 **Token claims:** `sub`, `scope`, `iat`, `exp` + for admin: `tenant_id`, `role`.
 
 `get_current_admin` (deps.py) is the **single seam**: decode token (scope=admin) →
 **pin the RLS tenant GUC** → load the live `AdminUser` (id+tenant_id+is_active).
 Every tenant-scoped handler depends on it → no handler can reach another tenant's data.
+
+`get_current_widget` (deps.py) is the widget-plane seam: decode token (scope
+`widget` or `preview`) → **pin the RLS tenant GUC from the token** → **no DB lookup**
+(the signed token *is* the identity; RLS enforces tenant scope). `is_preview` is
+derived from the scope so preview turns are excluded from usage accounting.
 
 ---
 
@@ -87,6 +92,12 @@ Every tenant-scoped handler depends on it → no handler can reach another tenan
 > ⚠️ **Transaction trap:** with `is_local=true` the GUC is cleared on commit. Write
 > endpoints **re-pin** the tenant for **post-commit reads** (`bots.py` create/update/
 > config-update). Use `selectinload(Bot.config)` to avoid an async lazy-load.
+>
+> ⚠️ **Own-session components:** the ingestion pipeline (M3) and the chat
+> orchestrator (M5) open their **own** `session_factory()` blocks and **re-pin** the
+> tenant in each — the request session may be gone mid-stream and the GUC is
+> transaction-local. In tests these globals are rebound to a NullPool sessionmaker
+> (see §9).
 
 ---
 
@@ -139,6 +150,48 @@ All admin endpoints require `Authorization: Bearer <admin JWT>`.
 | GET | `/{bot_id}/config` | Read config | 200 `BotConfigOut` |
 | PATCH | `/{bot_id}/config` | Update config | 200 `BotConfigOut` |
 
+### Documents (M3) — `/api/bots/{bot_id}/documents`
+
+| Method | Path | Description | Success |
+|---|---|---|---|
+| POST | `` | Multipart upload → parse/chunk/embed/store pipeline | 201 `DocumentOut` |
+| GET | `` | Tenant/bot documents | 200 `DocumentOut[]` |
+| GET | `/{document_id}` | Single document | 200 `DocumentOut` |
+| DELETE | `/{document_id}` | Soft delete (`deleted_at`) | 204 |
+
+Guards: 415 unsupported extension, 413 > 10 MB, 422 empty. The pipeline writes
+`UsageEvent` (`document_upload` + `embedding`) and re-pins the tenant per session.
+
+### Widget (M4) — `/api/widget`
+
+| Method | Path | Auth | Description | Success |
+|---|---|---|---|---|
+| POST | `/session` | **public** | Embed sends `bot_id`+`tenant_id`; RLS self-validates the pair; Origin whitelist; mints widget token | 201 `WidgetSessionResponse` |
+| GET | `/config` | widget/preview | Re-fetch safe config (on remount) | 200 `WidgetConfigOut` |
+| POST | `/{bot_id}/preview-session` *(on `/api/bots`)* | admin | Mints a 5-min preview token (no Origin check) | 201 `WidgetSessionResponse` |
+
+**Bootstrap = "Option D":** the public session endpoint can't know the tenant, yet
+RLS is FORCE'd. The embed carries **both** `bot_id` and `tenant_id` (both public,
+unguessable UUIDs). The endpoint pins RLS to the *claimed* tenant, then
+`SELECT bot WHERE id=bot_id` — a wrong tenant claim finds **no row** → 404. No new
+policy/role/migration; nothing leaks. `WidgetConfigOut` never carries
+`system_prompt`/`model`/`temperature`.
+
+### Chat (M5) — `/api/widget/chat` (SSE)
+
+| Method | Path | Auth | Description | Success |
+|---|---|---|---|---|
+| POST | `/chat` | widget/preview | Streams the reply as **Server-Sent Events** | 200 `text/event-stream` |
+
+Body: `{ message, conversation_id? }`. A bad `conversation_id` (not owned by the
+session) → **404** before the stream starts. Event order:
+`meta` (conversation_id, message_id) → `sources` (citations) → many `delta` (text)
+→ `done` (token counts) | `error`. Retrieval is cosine top-k (k=4, `max_distance=0.4`);
+if nothing is close enough it returns `[]` and the system prompt tells the model to
+admit ignorance. Tokens counted via tiktoken; a `chat` `UsageEvent` is written
+**except** on preview turns. Moderation is a no-op seam (`_moderate`, real provider
+in M8).
+
 ### Health (M0) — `/api/health`
 
 `/api/health` (status+version) · `/api/health/live` · `/api/health/ready` (DB down → 503).
@@ -177,4 +230,13 @@ All admin endpoints require `Authorization: Bearer <admin JWT>`.
   the engine is import-time; to avoid loop conflicts the conftest uses a **NullPool
   test engine + `get_session` dependency override**. Cleanup: delete tenants whose
   admin email has the `m1test_` prefix (FK cascade).
+- **Own-session globals in tests:** `pipeline.session_factory` (M3) and
+  `chat.session_factory` (M5) are rebound to the NullPool `TEST_SESSION` in conftest,
+  else per-test event loops raise "Event loop is closed".
+- **Deterministic message order:** the user + assistant messages of one turn are
+  inserted in the same transaction, so Postgres `now()` (transaction time) would tie
+  them; `chat.py` sets explicit `created_at` (`now`, `now+1ms`) so history replay and
+  display order stay deterministic.
+- **SSE:** hand-rolled (`event: … / data: …\n\n`, `X-Accel-Buffering: no`), no
+  `sse-starlette` dependency; `StreamingResponse` with `media_type="text/event-stream"`.
 - **204 routes:** must be body-less in FastAPI → `response_class=Response`.

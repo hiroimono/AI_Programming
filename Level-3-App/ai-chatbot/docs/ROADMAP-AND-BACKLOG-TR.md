@@ -1,7 +1,7 @@
 # Level-3 Chatbot — Yol Haritası ve Karar Takibi (Living Doc)
 
 > Milestone durumu + **ertelenen/gelecek kararların** takibi. Her milestone
-> başında/sonunda güncellenir. Son güncelleme: **M2 sonu**.
+> başında/sonunda güncellenir. Son güncelleme: **M5 sonu**.
 
 ---
 
@@ -12,30 +12,29 @@
 | **M0** | Scaffold + DB foundation (10 tablo, RLS, extensions) | ✅ | `8ebaa6b`/`d766ddc` |
 | **M1** | Tenant/admin auth plane (register/login/me, JWT, argon2) | ✅ 9/9 test | `491b989` |
 | **M2** | Bot + BotConfig CRUD (tenant-scoped, RLS izolasyon) | ✅ 9/9 test | `9a395f3` |
-| **M3** | RAG training: upload→storage→parse/chunk/embed/store | ⬜ sıradaki | — |
-| **M4** | Widget auth plane (widget/preview scope, Origin whitelist) | ⬜ | — |
-| **M5** | Chat SSE: retrieve→guards→moderation→LLM stream→citations→UsageEvent | ⬜ | — |
-| **M6** | Widget (Lit, Shadow DOM, mobile-first) | ⬜ | — |
+| **M3** | RAG training: upload→storage→parse/chunk/embed/store | ✅ 9/9 test | `d567961` |
+| **M4** | Widget auth plane (widget/preview scope, Origin whitelist) | ✅ 10/10 test | `511b016` |
+| **M5** | Chat SSE: retrieve→guards→moderation→LLM stream→citations→UsageEvent | ✅ 8/8 test | `b27c137` |
+| **M6** | Widget (Lit, Shadow DOM, mobile-first) | ⬜ sıradaki | — |
 | **M7** | Admin panel (Angular) | ⬜ | — |
 | **M8** | Polish + deploy (slowapi, PII, moderation; Railway EU + Cloudflare Pages) | ⬜ | — |
 
 ---
 
-## M3 için hazırlık notları (sıradaki)
+## M6 için hazırlık notları (sıradaki)
 
-- **Storage Protocol seam:** `storage.py` — local FS (dev) ↔ Cloudflare R2 (prod).
-  `save(tenant_id, bot_id, file) -> storage_path`, `load(path) -> bytes`, `delete`.
-- **Embedder Protocol seam:** OpenAI `text-embedding-3-small` (dim 1536); mock ile
-  test edilebilir olsun.
-- **Pipeline:** upload → Document(status=uploaded) → parse (pypdf/python-docx/openpyxl)
-  → chunk (tiktoken token-based) → embed (batch) → Chunk[] insert → Document(status=ready).
-  Hata → status=failed + error_message.
-- **UsageEvent** yaz: event_type=`document_upload` + `embedding`.
-- **RLS:** documents/chunks FORCE'lu → tüm pipeline `set_current_tenant` pinli
-  transaction içinde; büyük embed batch'lerinde commit sonrası re-pin unutma.
-- Endpoint taslağı: `POST /api/bots/{bot_id}/documents` (multipart),
-  `GET /api/bots/{bot_id}/documents`, `DELETE .../documents/{id}` (soft delete +
-  chunk temizliği).
+- **Widget (Lit + Shadow DOM):** style-izole edilebilir embed script. Güvenli config'i
+  `GET /api/widget/config` ile yükler, session'ı `POST /api/widget/session` ile açar
+  (embed `bot_id` + `tenant_id` taşır), sonra chat'i `POST /api/widget/chat` üzerinden
+  stream eder (SSE, `fetch` + `ReadableStream` ile tüketilir).
+- **Mobile-first:** önce base style, sonra `@media (min-width: …)` ile büyük ekran.
+- **SSE tüketimi:** `event: … / data: …` frame'lerini parse et → `meta` (conversation_id,
+  message_id) → `sources` (citation) → çok sayıda `delta` (metni ekle) → `done` | `error`.
+  Turn devamlılığı için `conversation_id`'yi client'ta sakla.
+- **Origin whitelist:** widget'ın gerçek Origin'i server-side olarak `Bot.allowed_domains`
+  ile doğrulanır (boş liste = MVP'de allow-all).
+- **Config asla secret sızdırmaz:** `WidgetConfigOut` `system_prompt`, `model`,
+  `temperature` içermez — bunlar server-side kalır.
 
 ---
 
@@ -55,9 +54,9 @@
 
 - [ ] Quota/plan enforcement nerede? (`Tenant.plan` var; free/paid limitleri M8?)
 - [ ] Stripe metered billing export (`UsageEvent.cost_usd` hazır) — Phase 6.
-- [ ] Moderation + PII redaction katmanı (M5/M8) — hangi sağlayıcı?
-- [ ] Widget Origin whitelist doğrulama (`Bot.allowed_domains`) — M4 widget session mint.
-- [ ] Preview conversation'lar (`is_preview=true`) quota/analytics'ten dışlanıyor — M5'te doğrula.
+- [ ] Moderation + PII redaction katmanı — sağlayıcı TBD; `_moderate` no-op seam M5'te bağlandı, gerçek sağlayıcı M8'de.
+- [x] Widget Origin whitelist doğrulama (`Bot.allowed_domains`) — M4'te tamam (`_origin_allowed`, boş liste = allow-all).
+- [x] Preview conversation'lar (`is_preview=true`) quota/analytics'ten dışlanıyor — M5'te doğrulandı (preview turn'de `UsageEvent` yok).
 - [ ] Prod DB migration stratejisi (Neon branch → production) + Alembic CI.
 
 ---

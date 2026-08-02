@@ -1,7 +1,7 @@
 # Level-3 Chatbot — Roadmap and Decision Tracking (Living Doc)
 
 > Milestone status + tracking of **deferred/future decisions**. Updated at the
-> start/end of every milestone. Last update: **end of M2**.
+> start/end of every milestone. Last update: **end of M5**.
 
 ---
 
@@ -12,31 +12,29 @@
 | **M0** | Scaffold + DB foundation (10 tables, RLS, extensions) | ✅ | `8ebaa6b`/`d766ddc` |
 | **M1** | Tenant/admin auth plane (register/login/me, JWT, argon2) | ✅ 9/9 tests | `491b989` |
 | **M2** | Bot + BotConfig CRUD (tenant-scoped, RLS isolation) | ✅ 9/9 tests | `9a395f3` |
-| **M3** | RAG training: upload→storage→parse/chunk/embed/store | ⬜ next | — |
-| **M4** | Widget auth plane (widget/preview scope, Origin whitelist) | ⬜ | — |
-| **M5** | Chat SSE: retrieve→guards→moderation→LLM stream→citations→UsageEvent | ⬜ | — |
-| **M6** | Widget (Lit, Shadow DOM, mobile-first) | ⬜ | — |
+| **M3** | RAG training: upload→storage→parse/chunk/embed/store | ✅ 9/9 tests | `d567961` |
+| **M4** | Widget auth plane (widget/preview scope, Origin whitelist) | ✅ 10/10 tests | `511b016` |
+| **M5** | Chat SSE: retrieve→guards→moderation→LLM stream→citations→UsageEvent | ✅ 8/8 tests | `b27c137` |
+| **M6** | Widget (Lit, Shadow DOM, mobile-first) | ⬜ next | — |
 | **M7** | Admin panel (Angular) | ⬜ | — |
 | **M8** | Polish + deploy (slowapi, PII, moderation; Railway EU + Cloudflare Pages) | ⬜ | — |
 
 ---
 
-## M3 prep notes (next)
+## M6 prep notes (next)
 
-- **Storage Protocol seam:** `storage.py` — local FS (dev) ↔ Cloudflare R2 (prod).
-  `save(tenant_id, bot_id, file) -> storage_path`, `load(path) -> bytes`, `delete`.
-- **Embedder Protocol seam:** OpenAI `text-embedding-3-small` (dim 1536); must be
-  mockable in tests.
-- **Pipeline:** upload → Document(status=uploaded) → parse (pypdf/python-docx/openpyxl)
-  → chunk (tiktoken token-based) → embed (batch) → insert Chunk[] → Document(status=ready).
-  On error → status=failed + error_message.
-- **Write UsageEvent:** event_type=`document_upload` + `embedding`.
-- **RLS:** documents/chunks are FORCE'd → run the whole pipeline inside a
-  `set_current_tenant`-pinned transaction; don't forget to re-pin after commit on
-  large embed batches.
-- Endpoint sketch: `POST /api/bots/{bot_id}/documents` (multipart),
-  `GET /api/bots/{bot_id}/documents`, `DELETE .../documents/{id}` (soft delete +
-  chunk cleanup).
+- **Widget (Lit + Shadow DOM):** style-isolated embeddable script. Loads safe config
+  via `GET /api/widget/config`, opens a session via `POST /api/widget/session`
+  (embed carries `bot_id` + `tenant_id`), then streams chat over
+  `POST /api/widget/chat` (SSE, consumed with `fetch` + `ReadableStream`).
+- **Mobile-first:** base styles first, `@media (min-width: …)` for larger screens.
+- **SSE consumption:** parse `event: … / data: …` frames → `meta` (conversation_id,
+  message_id) → `sources` (citations) → many `delta` (append text) → `done` | `error`.
+  Persist `conversation_id` client-side for turn continuity.
+- **Origin whitelist:** the widget's real Origin is enforced server-side against
+  `Bot.allowed_domains` (empty list = allow-all in the MVP).
+- **Config never leaks secrets:** `WidgetConfigOut` excludes `system_prompt`, `model`,
+  `temperature` — those stay server-side.
 
 ---
 
@@ -56,9 +54,9 @@
 
 - [ ] Where is quota/plan enforcement? (`Tenant.plan` exists; free/paid limits in M8?)
 - [ ] Stripe metered billing export (`UsageEvent.cost_usd` ready) — Phase 6.
-- [ ] Moderation + PII redaction layer (M5/M8) — which provider?
-- [ ] Widget Origin whitelist validation (`Bot.allowed_domains`) — M4 widget session mint.
-- [ ] Preview conversations (`is_preview=true`) excluded from quota/analytics — verify in M5.
+- [ ] Moderation + PII redaction layer — provider TBD; `_moderate` no-op seam wired in M5, real provider in M8.
+- [x] Widget Origin whitelist validation (`Bot.allowed_domains`) — done in M4 (`_origin_allowed`, empty list = allow-all).
+- [x] Preview conversations (`is_preview=true`) excluded from quota/analytics — verified in M5 (no `UsageEvent` on preview turns).
 - [ ] Prod DB migration strategy (Neon branch → production) + Alembic in CI.
 
 ---
