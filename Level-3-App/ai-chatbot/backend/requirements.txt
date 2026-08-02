@@ -49,9 +49,16 @@ PyJWT==2.10.1
 # algorithm (stronger than bcrypt against GPU cracking).
 argon2-cffi==23.1.0
 
+# Email syntax validation behind pydantic's EmailStr (auth DTOs).
+email-validator==2.2.0
+
 # Required by FastAPI to parse multipart/form-data (file uploads).
 python-multipart==0.0.20
 
 # ─── Rate limiting (M8) ─────────────────────────────────────────
 # Per-route request throttling. FastAPI-native.
 slowapi==0.1.9
+
+# ─── Dev / tests ────────────────────────────────────────────────
+pytest==8.3.4
+pytest-asyncio==0.25.2
