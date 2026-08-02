@@ -15,6 +15,7 @@ from chatbot.config import get_settings
 from chatbot.db import dispose_engine, ping_db
 from chatbot.routers.auth import router as auth_router
 from chatbot.routers.bots import router as bots_router
+from chatbot.routers.chat import router as chat_router
 from chatbot.routers.documents import router as documents_router
 from chatbot.routers.widget import router as widget_router
 from fastapi import FastAPI, Request, status
@@ -90,6 +91,7 @@ app.include_router(auth_router)
 app.include_router(bots_router)
 app.include_router(documents_router)
 app.include_router(widget_router)
+app.include_router(chat_router)
 
 
 @app.get("/api/health", tags=["meta"])

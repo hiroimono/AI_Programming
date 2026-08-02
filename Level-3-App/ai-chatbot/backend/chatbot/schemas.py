@@ -167,3 +167,16 @@ class WidgetSessionResponse(BaseModel):
     expires_in: int
     session_id: str
     config: WidgetConfigOut
+
+
+# ─── Chat (M5 — SSE) ────────────────────────────────────────────────
+# The reply itself is streamed as text/event-stream (not JSON), so there is
+# no response DTO here — only the request body is validated.
+
+
+class ChatRequest(BaseModel):
+    """One user turn. conversation_id is null on the first turn (the server
+    creates the conversation and returns its id in the SSE `meta` event)."""
+
+    message: str = Field(min_length=1, max_length=4000)
+    conversation_id: Optional[UUID] = None

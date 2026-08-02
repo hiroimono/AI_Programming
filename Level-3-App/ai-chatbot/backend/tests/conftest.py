@@ -16,6 +16,7 @@ from __future__ import annotations
 import uuid
 from typing import AsyncIterator, Callable
 
+import chatbot.chat as chat_module
 import chatbot.pipeline as pipeline_module
 import pytest_asyncio
 from chatbot.config import get_settings
@@ -52,6 +53,9 @@ app.dependency_overrides[get_session] = _override_get_session
 # "Event loop is closed". Rebind the pipeline's factory to the NullPool test
 # sessionmaker so ingestion never touches the global pooled engine in tests.
 pipeline_module.session_factory = TEST_SESSION
+
+# The chat orchestrator (M5) opens its own sessions the same way; rebind it too.
+chat_module.session_factory = TEST_SESSION
 
 
 @pytest_asyncio.fixture
