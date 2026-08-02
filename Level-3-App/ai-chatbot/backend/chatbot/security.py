@@ -84,6 +84,38 @@ def create_admin_token(admin_id: UUID, tenant_id: UUID, role: str) -> tuple[str,
     )
 
 
+def create_widget_token(
+    *, tenant_id: UUID, bot_id: UUID, session_id: str
+) -> tuple[str, int]:
+    """Mint an anonymous end-user widget session token (scope=widget).
+
+    `sub` is the opaque anonymous session id; tenant_id + bot_id let the
+    chat handler pin RLS and scope retrieval without a DB lookup.
+    """
+    return create_token(
+        subject=session_id,
+        scope="widget",
+        ttl_seconds=get_settings().widget_token_ttl,
+        extra_claims={"tenant_id": str(tenant_id), "bot_id": str(bot_id)},
+    )
+
+
+def create_preview_token(
+    *, tenant_id: UUID, bot_id: UUID, session_id: str
+) -> tuple[str, int]:
+    """Mint a short-lived admin live-preview token (scope=preview).
+
+    Same shape as a widget token but a separate scope + short TTL, so preview
+    traffic can be excluded from quota/analytics (is_preview downstream).
+    """
+    return create_token(
+        subject=session_id,
+        scope="preview",
+        ttl_seconds=get_settings().preview_token_ttl,
+        extra_claims={"tenant_id": str(tenant_id), "bot_id": str(bot_id)},
+    )
+
+
 def decode_token(token: str, *, expected_scope: str | None = None) -> dict[str, Any]:
     """Verify signature + expiry and return the claims.
 

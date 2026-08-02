@@ -16,6 +16,7 @@ from chatbot.db import dispose_engine, ping_db
 from chatbot.routers.auth import router as auth_router
 from chatbot.routers.bots import router as bots_router
 from chatbot.routers.documents import router as documents_router
+from chatbot.routers.widget import router as widget_router
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -88,6 +89,7 @@ async def _log_unhandled(request: Request, exc: Exception) -> JSONResponse:
 app.include_router(auth_router)
 app.include_router(bots_router)
 app.include_router(documents_router)
+app.include_router(widget_router)
 
 
 @app.get("/api/health", tags=["meta"])

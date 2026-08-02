@@ -84,3 +84,55 @@ async def get_current_admin(
         role=admin.role,
         email=admin.email,
     )
+
+
+@dataclass(frozen=True)
+class CurrentWidget:
+    """The anonymous widget (or admin-preview) session behind a request.
+
+    Unlike an admin, there is NO backing user row: the signed token IS the
+    identity. tenant_id/bot_id were verified against RLS when the token was
+    minted, so here we trust the signature and just pin the RLS tenant.
+    """
+
+    session_id: str
+    tenant_id: UUID
+    bot_id: UUID
+    is_preview: bool
+
+
+async def get_current_widget(
+    authorization: Annotated[str | None, Header()] = None,
+    session: AsyncSession = Depends(get_session),
+) -> CurrentWidget:
+    """Decode a widget/preview JWT and pin the RLS tenant GUC.
+
+    Accepts both `widget` and `preview` scopes on the one secret; the scope
+    only decides whether this session is a real visitor or an admin preview.
+    """
+    token = _extract_bearer(authorization)
+    try:
+        claims = decode_token(token)
+    except (pyjwt.InvalidTokenError, ValueError) as exc:
+        raise _UNAUTHENTICATED from exc
+
+    scope = claims.get("scope")
+    if scope not in ("widget", "preview"):
+        raise _UNAUTHENTICATED
+
+    try:
+        session_id = str(claims["sub"])
+        tenant_id = UUID(str(claims["tenant_id"]))
+        bot_id = UUID(str(claims["bot_id"]))
+    except (KeyError, ValueError, TypeError) as exc:
+        raise _UNAUTHENTICATED from exc
+
+    # Pin RLS BEFORE any tenant-scoped query in downstream handlers.
+    await set_current_tenant(session, tenant_id)
+
+    return CurrentWidget(
+        session_id=session_id,
+        tenant_id=tenant_id,
+        bot_id=bot_id,
+        is_preview=(scope == "preview"),
+    )

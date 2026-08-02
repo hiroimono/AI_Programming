@@ -12,12 +12,22 @@ re-loading the row for the response.
 
 from __future__ import annotations
 
+import secrets
 from uuid import UUID
 
 from chatbot.db import get_session, set_current_tenant
 from chatbot.deps import CurrentAdmin, get_current_admin
 from chatbot.models import Bot, BotConfig
-from chatbot.schemas import BotConfigOut, BotConfigUpdate, BotCreate, BotOut, BotUpdate
+from chatbot.schemas import (
+    BotConfigOut,
+    BotConfigUpdate,
+    BotCreate,
+    BotOut,
+    BotUpdate,
+    WidgetConfigOut,
+    WidgetSessionResponse,
+)
+from chatbot.security import create_preview_token
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -164,3 +174,41 @@ async def update_bot_config(
     await set_current_tenant(session, current.tenant_id)
     loaded = await _load_bot(session, current.tenant_id, bot_id)
     return BotConfigOut.model_validate(loaded.config)
+
+
+@router.post(
+    "/{bot_id}/preview-session",
+    response_model=WidgetSessionResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def open_preview_session(
+    bot_id: UUID,
+    current: CurrentAdmin = Depends(get_current_admin),
+    session: AsyncSession = Depends(get_session),
+) -> WidgetSessionResponse:
+    """Mint a short-lived preview token so an admin can test their own bot.
+
+    Same envelope as a widget session but scope=preview (5m TTL) and NO Origin
+    check — this is the authenticated admin previewing inside the panel. The
+    resulting chat threads set is_preview=true (excluded from quota/analytics).
+    """
+    bot = await _load_bot(session, current.tenant_id, bot_id)
+    session_id = secrets.token_urlsafe(24)
+    token, expires_in = create_preview_token(
+        tenant_id=current.tenant_id, bot_id=bot.id, session_id=session_id
+    )
+    config = bot.config
+    return WidgetSessionResponse(
+        access_token=token,
+        expires_in=expires_in,
+        session_id=session_id,
+        config=WidgetConfigOut(
+            bot_id=bot.id,
+            name=bot.name,
+            welcome_message=(
+                config.welcome_message if config else "Hi! How can I help you today?"
+            ),
+            suggested_questions=(config.suggested_questions if config else []),
+            primary_color=(config.primary_color if config else "#2563eb"),
+        ),
+    )

@@ -129,3 +129,41 @@ class DocumentOut(BaseModel):
     error_message: Optional[str]
     chunk_count: int
     created_at: datetime
+
+
+# ─── Widget sessions (M4 — anonymous auth plane) ────────────────────
+# The embed snippet is public but carries two unguessable UUIDs (bot_id +
+# tenant_id). The session endpoint pins RLS to the claimed tenant, so the
+# (tenant_id, bot_id) pair is self-validated by the DB: a wrong tenant claim
+# simply finds no bot (404). No tenant secret is ever exposed.
+
+
+class WidgetSessionRequest(BaseModel):
+    """Body sent by the embedded widget to open an anonymous session."""
+
+    bot_id: UUID
+    tenant_id: UUID
+
+
+class WidgetConfigOut(BaseModel):
+    """Public bot appearance/config the widget needs to render itself.
+
+    Deliberately excludes system_prompt, model, temperature — those are
+    server-side only and must never reach the browser.
+    """
+
+    bot_id: UUID
+    name: str
+    welcome_message: str
+    suggested_questions: list[str]
+    primary_color: str
+
+
+class WidgetSessionResponse(BaseModel):
+    """Token envelope + bootstrap config returned when a session opens."""
+
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int
+    session_id: str
+    config: WidgetConfigOut
