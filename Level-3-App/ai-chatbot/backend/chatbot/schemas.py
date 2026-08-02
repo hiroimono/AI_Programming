@@ -107,3 +107,25 @@ class BotOut(BaseModel):
     allowed_domains: list[str]
     created_at: datetime
     config: Optional[BotConfigOut] = None
+
+
+# ─── Documents (M3 — RAG training) ──────────────────────────────────
+# Read-only DTO: uploads come in as multipart/form-data (an UploadFile),
+# not JSON, so there is no DocumentCreate schema — the router reads the
+# file bytes directly. status is one of: uploaded | ready | failed.
+
+DocumentStatus = Literal["uploaded", "processing", "ready", "failed"]
+
+
+class DocumentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    file_name: str
+    file_type: str
+    mime_type: str
+    file_size_bytes: int
+    status: str
+    error_message: Optional[str]
+    chunk_count: int
+    created_at: datetime

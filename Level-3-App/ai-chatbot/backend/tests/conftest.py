@@ -16,6 +16,7 @@ from __future__ import annotations
 import uuid
 from typing import AsyncIterator, Callable
 
+import chatbot.pipeline as pipeline_module
 import pytest_asyncio
 from chatbot.config import get_settings
 from chatbot.db import get_session, normalize_neon_url
@@ -44,6 +45,13 @@ async def _override_get_session() -> AsyncIterator:
 
 
 app.dependency_overrides[get_session] = _override_get_session
+
+# The RAG pipeline opens its own sessions via db.session_factory (the global
+# pooled engine bound to the import-time loop). pytest-asyncio uses a fresh
+# loop per test, so reusing that pooled engine across tests raises
+# "Event loop is closed". Rebind the pipeline's factory to the NullPool test
+# sessionmaker so ingestion never touches the global pooled engine in tests.
+pipeline_module.session_factory = TEST_SESSION
 
 
 @pytest_asyncio.fixture
