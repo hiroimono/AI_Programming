@@ -63,6 +63,24 @@ def make_email() -> Callable[[], str]:
     return _factory
 
 
+async def register_admin(http_client: AsyncClient, email: str) -> dict[str, str]:
+    """Register a fresh tenant/admin and return its Bearer auth header."""
+    resp = await http_client.post(
+        "/api/auth/register",
+        json={"tenant_name": "TestCo", "email": email, "password": "supersecret1"},
+    )
+    assert resp.status_code == 201, resp.text
+    return {"Authorization": f"Bearer {resp.json()['access_token']}"}
+
+
+@pytest_asyncio.fixture
+async def admin_auth(  # pylint: disable=redefined-outer-name
+    client: AsyncClient, make_email: Callable[[], str]
+) -> dict[str, str]:
+    """Auth header for a single freshly-registered tenant admin."""
+    return await register_admin(client, make_email())
+
+
 @pytest_asyncio.fixture(autouse=True)
 async def _cleanup_test_tenants() -> AsyncIterator[None]:
     yield

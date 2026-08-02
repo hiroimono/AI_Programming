@@ -1,4 +1,4 @@
-"""Pydantic request/response DTOs for the auth plane.
+"""Pydantic request/response DTOs for the admin API (auth + bots).
 
 Kept separate from ORM models: the API contract (what browsers send/receive)
 must never leak internal columns like password_hash.
@@ -6,6 +6,8 @@ must never leak internal columns like password_hash.
 
 from __future__ import annotations
 
+from datetime import datetime
+from typing import Literal, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
@@ -52,3 +54,56 @@ class TenantOut(BaseModel):
 class MeResponse(BaseModel):
     admin: AdminOut
     tenant: TenantOut
+
+
+# ─── Bots + BotConfig (M2) ──────────────────────────────────────────
+# tenant_id is NEVER accepted from the client: it is taken from the
+# authenticated admin and enforced again by RLS. Clients only ever send
+# the bot's own fields.
+
+BotStatus = Literal["active", "disabled"]
+
+
+class BotCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    allowed_domains: list[str] = Field(default_factory=list)
+
+
+class BotUpdate(BaseModel):
+    """PATCH: only provided fields are changed (exclude_unset)."""
+
+    name: Optional[str] = Field(default=None, min_length=1, max_length=255)
+    status: Optional[BotStatus] = None
+    allowed_domains: Optional[list[str]] = None
+
+
+class BotConfigUpdate(BaseModel):
+    welcome_message: Optional[str] = Field(default=None, max_length=2000)
+    system_prompt: Optional[str] = Field(default=None, max_length=8000)
+    model: Optional[str] = Field(default=None, min_length=1, max_length=50)
+    temperature: Optional[float] = Field(default=None, ge=0, le=2)
+    suggested_questions: Optional[list[str]] = None
+    primary_color: Optional[str] = Field(default=None, min_length=1, max_length=20)
+
+
+class BotConfigOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    welcome_message: str
+    system_prompt: Optional[str]
+    model: str
+    temperature: float
+    suggested_questions: list[str]
+    primary_color: str
+
+
+class BotOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    name: str
+    status: str
+    allowed_domains: list[str]
+    created_at: datetime
+    config: Optional[BotConfigOut] = None

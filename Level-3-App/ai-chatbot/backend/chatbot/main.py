@@ -14,6 +14,7 @@ from typing import AsyncIterator
 from chatbot.config import get_settings
 from chatbot.db import dispose_engine, ping_db
 from chatbot.routers.auth import router as auth_router
+from chatbot.routers.bots import router as bots_router
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -84,6 +85,7 @@ async def _log_unhandled(request: Request, exc: Exception) -> JSONResponse:
 
 
 app.include_router(auth_router)
+app.include_router(bots_router)
 
 
 @app.get("/api/health", tags=["meta"])
