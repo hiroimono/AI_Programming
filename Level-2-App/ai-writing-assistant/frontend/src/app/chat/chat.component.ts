@@ -268,6 +268,11 @@ export class ChatComponent implements OnInit, OnDestroy {
       }
       this.conversationService.createConversation().subscribe((conv) => {
         this.activeConversationId.set(conv.id);
+        // Keep the sidebar's own active-id in sync with this auto-created
+        // conversation. Without this the sidebar never learns the new id, so
+        // (a) it won't highlight the row and (b) deleting it won't clear the
+        // open chat (its `activeConversationId() === id` check stays false).
+        this.sidebarRef?.activeConversationId.set(conv.id);
         this.sidebarRef?.loadConversations();
         resolve(conv.id);
       });

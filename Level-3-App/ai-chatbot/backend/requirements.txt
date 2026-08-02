@@ -1,0 +1,57 @@
+# ─── Web framework & ASGI server ────────────────────────────────
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# Typed settings from .env
+pydantic-settings==2.7.1
+
+# ─── PostgreSQL async stack ─────────────────────────────────────
+# Async ORM/engine; [asyncio] enables AsyncEngine, AsyncSession
+sqlalchemy[asyncio]==2.0.36
+
+# Async PostgreSQL driver used by the sqlalchemy+asyncpg dialect
+asyncpg==0.30.0
+
+# Required runtime dependency for sqlalchemy's async bridge
+greenlet==3.1.1
+
+# ─── Schema migrations + vector type ────────────────────────────
+# Alembic: DB migration tool (like EF Migrations for Python)
+alembic==1.14.0
+
+# pgvector Python client: SQLAlchemy Vector() column type mapping to
+# PostgreSQL's VECTOR(n). Chunk embeddings live in this type.
+pgvector==0.3.6
+
+# ─── Document parsing + chunking + embeddings (M3) ──────────────
+# PDF → text. Pure Python, lightweight (no native deps).
+pypdf==5.1.0
+
+# Word .docx → text (paragraphs, tables).
+python-docx==1.1.2
+
+# Excel .xlsx → text. Read-only mode keeps memory low for large sheets.
+openpyxl==3.1.5
+
+# OpenAI SDK (embeddings in M3, chat-completions streaming in M5).
+openai==1.59.6
+
+# Token counting / tokenizer for chunk size control. Same encoding used
+# by the GPT-4o family, so chunk sizes match what the LLM will see.
+tiktoken==0.8.0
+
+# ─── Auth (M1 tenant/admin + M4 anonymous widget sessions) ──────
+# JWT encode/decode. PyJWT is the standard Python implementation
+# (no cryptography dep needed for HS256).
+PyJWT==2.10.1
+
+# Password hashing for admin users. argon2 is the OWASP-recommended
+# algorithm (stronger than bcrypt against GPU cracking).
+argon2-cffi==23.1.0
+
+# Required by FastAPI to parse multipart/form-data (file uploads).
+python-multipart==0.0.20
+
+# ─── Rate limiting (M8) ─────────────────────────────────────────
+# Per-route request throttling. FastAPI-native.
+slowapi==0.1.9
