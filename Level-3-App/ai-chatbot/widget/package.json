@@ -1,0 +1,20 @@
+{
+  "name": "chatbot-widget",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Level-3 embeddable AI chatbot widget (Lit + Shadow DOM, mobile-first).",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "lit": "^3.2.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}

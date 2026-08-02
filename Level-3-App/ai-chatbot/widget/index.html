@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chatbot Widget — Demo Host</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        color: #1f2937;
+        background: #f9fafb;
+      }
+      .page {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 2rem 1rem 6rem;
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+      p {
+        line-height: 1.6;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <h1>Demo host page</h1>
+      <p>
+        This page simulates a tenant's website. The chatbot widget is mounted
+        in the bottom-right corner and talks to the local backend defined in
+        <code>widget/.env</code> (<code>VITE_API_BASE</code>).
+      </p>
+      <p>
+        The widget is style-isolated in a Shadow DOM, so nothing on this page
+        can leak into it and vice versa.
+      </p>
+    </main>
+    <script type="module" src="/src/demo.ts"></script>
+  </body>
+</html>
