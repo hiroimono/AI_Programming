@@ -1,0 +1,124 @@
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.center-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 40px 16px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.preview-title {
+  font-weight: 500;
+}
+
+// Mobile-first: a fixed-height scrollable thread so the composer stays reachable.
+.thread {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 55vh;
+  min-height: 260px;
+  overflow-y: auto;
+  padding: 12px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--app-radius);
+  background: var(--mat-sys-surface-container-low);
+}
+
+.bubble-row {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.bubble-row.user {
+  justify-content: flex-end;
+}
+
+.bubble {
+  max-width: 85%;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: var(--mat-sys-surface-container-highest);
+  color: var(--mat-sys-on-surface);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.bubble.user {
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+}
+
+.bubble-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.typing {
+  opacity: 0.6;
+}
+
+.sources {
+  margin-top: 6px;
+  font-size: 0.78rem;
+}
+
+.sources summary {
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.sources ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.suggestion {
+  font-size: 0.82rem;
+}
+
+.composer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.composer input {
+  flex: 1 1 auto;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--mat-sys-outline);
+  border-radius: 999px;
+  font-size: 0.95rem;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  outline: none;
+}
+
+.composer input:focus {
+  border-color: var(--mat-sys-primary);
+}
+
+@media (min-width: 600px) {
+  .thread {
+    height: 420px;
+  }
+}

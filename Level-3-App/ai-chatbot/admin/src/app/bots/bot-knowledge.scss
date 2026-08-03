@@ -1,0 +1,137 @@
+.knowledge {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hidden-input {
+  display: none;
+}
+
+// Mobile-first: stack the button + hint; inline them on wider screens.
+.upload-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.upload-hint {
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.center-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.empty-icon {
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+  opacity: 0.5;
+}
+
+.doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.doc-card {
+  padding: 12px;
+}
+
+.doc-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.doc-icon {
+  color: var(--mat-sys-primary);
+  flex: 0 0 auto;
+}
+
+.doc-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.doc-name {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-meta {
+  font-size: 0.78rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.doc-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.status-chip {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  text-transform: capitalize;
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.status-ready {
+  background: #e6f4ea;
+  color: #1b5e20;
+}
+
+.status-failed {
+  background: #fdecea;
+  color: #b71c1c;
+}
+
+.status-processing,
+.status-uploaded {
+  background: #fff4e5;
+  color: #8a5300;
+}
+
+.warn-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  background: #fff4e5;
+  color: #8a5300;
+}
+
+.warn-chip mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+@media (min-width: 600px) {
+  .upload-bar {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+}

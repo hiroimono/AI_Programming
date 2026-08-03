@@ -4,50 +4,50 @@
 // separated by a blank line, exactly as the backend emits them.
 
 export interface SSEEvent {
-  event: string;
+  event: string
   // Parsed JSON payload (backend always sends JSON in `data:`).
-  data: unknown;
+  data: unknown
 }
 
 function parseFrame(frame: string): SSEEvent | null {
-  let event = "";
-  const dataLines: string[] = [];
-  for (const line of frame.split("\n")) {
-    if (line.startsWith("event:")) {
-      event = line.slice(6).trim();
-    } else if (line.startsWith("data:")) {
-      dataLines.push(line.slice(5).replace(/^ /, ""));
+  let event = ''
+  const dataLines: string[] = []
+  for (const line of frame.split('\n')) {
+    if (line.startsWith('event:')) {
+      event = line.slice(6).trim()
+    } else if (line.startsWith('data:')) {
+      dataLines.push(line.slice(5).replace(/^ /, ''))
     }
   }
   if (!event) {
-    return null;
+    return null
   }
-  const raw = dataLines.join("\n");
+  const raw = dataLines.join('\n')
   try {
-    return { event, data: raw ? JSON.parse(raw) : null };
+    return { event, data: raw ? JSON.parse(raw) : null }
   } catch {
-    return { event, data: raw };
+    return { event, data: raw }
   }
 }
 
 /** Yield decoded SSE events from a streaming `fetch` Response until it ends. */
 export async function* parseSSE(response: Response): AsyncGenerator<SSEEvent> {
-  const reader = response.body!.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
+  const reader = response.body!.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
   while (true) {
-    const { done, value } = await reader.read();
+    const { done, value } = await reader.read()
     if (done) {
-      break;
+      break
     }
-    buffer += decoder.decode(value, { stream: true });
-    let sep: number;
-    while ((sep = buffer.indexOf("\n\n")) !== -1) {
-      const frame = buffer.slice(0, sep);
-      buffer = buffer.slice(sep + 2);
-      const parsed = parseFrame(frame);
+    buffer += decoder.decode(value, { stream: true })
+    let sep: number
+    while ((sep = buffer.indexOf('\n\n')) !== -1) {
+      const frame = buffer.slice(0, sep)
+      buffer = buffer.slice(sep + 2)
+      const parsed = parseFrame(frame)
       if (parsed) {
-        yield parsed;
+        yield parsed
       }
     }
   }

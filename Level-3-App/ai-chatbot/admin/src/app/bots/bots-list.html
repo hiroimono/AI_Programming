@@ -1,0 +1,56 @@
+<div class="page bots-page">
+  <header class="bots-header">
+    <h1>Your bots</h1>
+    <button mat-flat-button (click)="openCreate()">
+      <mat-icon>add</mat-icon>
+      New bot
+    </button>
+  </header>
+
+  @if (loading()) {
+    <div class="center-state">
+      <mat-spinner diameter="36" />
+    </div>
+  } @else if (bots().length === 0) {
+    <div class="center-state empty">
+      <mat-icon class="empty-icon">smart_toy</mat-icon>
+      <p>No bots yet. Create your first bot to start training it.</p>
+      <button mat-flat-button (click)="openCreate()">
+        <mat-icon>add</mat-icon>
+        New bot
+      </button>
+    </div>
+  } @else {
+    <div class="bot-grid">
+      @for (bot of bots(); track bot.id) {
+        <mat-card class="bot-card" appearance="outlined" (click)="open(bot)" tabindex="0">
+          <div class="bot-card-head">
+            <span class="bot-name">{{ bot.name }}</span>
+            <span
+              class="status-dot"
+              [class.active]="bot.status === 'active'"
+              [title]="bot.status"
+            ></span>
+          </div>
+          <div class="bot-meta">
+            <span>Created {{ bot.created_at | date: 'mediumDate' }}</span>
+            @if (bot.allowed_domains.length > 0) {
+              <span>{{ bot.allowed_domains.length }} allowed domain(s)</span>
+            }
+          </div>
+          <div class="bot-actions">
+            <button
+              mat-icon-button
+              color="warn"
+              (click)="confirmDelete(bot, $event)"
+              aria-label="Delete bot"
+              title="Delete bot"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </mat-card>
+      }
+    </div>
+  }
+</div>

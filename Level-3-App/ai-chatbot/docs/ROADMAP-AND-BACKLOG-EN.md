@@ -15,13 +15,13 @@
 | **M3** | RAG training: upload→storage→parse/chunk/embed/store | ✅ 9/9 tests | `d567961` |
 | **M4** | Widget auth plane (widget/preview scope, Origin whitelist) | ✅ 10/10 tests | `511b016` |
 | **M5** | Chat SSE: retrieve→guards→moderation→LLM stream→citations→UsageEvent | ✅ 8/8 tests | `b27c137` |
-| **M6** | Widget (Lit, Shadow DOM, mobile-first) | ⬜ next | — |
-| **M7** | Admin panel (Angular) | ⬜ | — |
-| **M8** | Polish + deploy (slowapi, PII, moderation; Railway EU + Cloudflare Pages) | ⬜ | — |
+| **M6** | Widget (Shadow DOM, SSE, mobile-first) | ✅ | `5e1ca46` |
+| **M7** | Admin panel (Angular 21, Material 3) | ✅ current | `—` |
+| **M8** | Polish + deploy (slowapi, PII, moderation; Railway EU + Cloudflare Pages) | ⬜ next | — |
 
 ---
 
-## M6 prep notes (next)
+## M6 notes (delivered)
 
 - **Widget (Lit + Shadow DOM):** style-isolated embeddable script. Loads safe config
   via `GET /api/widget/config`, opens a session via `POST /api/widget/session`

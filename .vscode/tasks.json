@@ -163,6 +163,77 @@
         "group": "rag",
         "reveal": "always"
       }
+    },
+
+    // ─── App 3: AI Chatbot SaaS (Level-3) ──────────────
+    {
+      "label": "App 3: Backend (FastAPI)",
+      "type": "shell",
+      "command": "& ./venv/Scripts/Activate.ps1; uvicorn chatbot.main:app --reload --reload-exclude storage --port 8200",
+      "options": {
+        "cwd": "${workspaceFolder}/Level-3-App/ai-chatbot/backend"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": { "regexp": "." },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "Application startup complete"
+        }
+      },
+      "presentation": {
+        "group": "app3",
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "App 3: Admin (Angular)",
+      "type": "shell",
+      "command": "ng serve --port 4202",
+      "options": {
+        "cwd": "${workspaceFolder}/Level-3-App/ai-chatbot/admin"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": { "regexp": "." },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "Application bundle generation complete"
+        }
+      },
+      "presentation": {
+        "group": "app3",
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "App 3: Widget (Vite)",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/Level-3-App/ai-chatbot/widget"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": { "regexp": "." },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "ready in"
+        }
+      },
+      "presentation": {
+        "group": "app3",
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "App 3: Start AI-Chatbot-App",
+      "dependsOn": ["App 3: Backend (FastAPI)", "App 3: Admin (Angular)", "App 3: Widget (Vite)"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
     }
   ]
 }

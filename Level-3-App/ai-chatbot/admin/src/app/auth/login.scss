@@ -1,0 +1,70 @@
+// Mobile-first: the card fills the small viewport with comfortable padding;
+// on larger screens it becomes a centered, capped panel.
+.login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 100%;
+  padding: 24px 20px;
+}
+
+.login-head {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.login-logo {
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+  color: var(--mat-sys-primary);
+}
+
+.login-head h1 {
+  margin: 8px 0 4px;
+  font-size: 1.4rem;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9rem;
+}
+
+.mode-toggle {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.mode-toggle .mat-button-toggle {
+  flex: 1 1 0;
+  text-align: center;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.submit-btn {
+  margin-top: 8px;
+  height: 44px;
+}
+
+@media (min-width: 480px) {
+  .login-wrap {
+    align-items: center;
+  }
+
+  .login-card {
+    max-width: 420px;
+    padding: 32px;
+  }
+}

@@ -1,0 +1,102 @@
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.section {
+  padding: 16px;
+}
+
+.section h2 {
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+}
+
+.full {
+  width: 100%;
+}
+
+// Mobile-first: stack fields; switch model + temperature to a row on wider
+// screens.
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.grow {
+  flex: 1 1 auto;
+}
+
+.slider-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slider-field label {
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.slider-field mat-slider {
+  width: 100%;
+}
+
+.color-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.color-field input[type='color'] {
+  width: 48px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+}
+
+.color-hex {
+  font-family: monospace;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.embed-section {
+  margin-top: 16px;
+}
+
+.embed-hint {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.embed-snippet {
+  background: var(--mat-sys-surface-container-high);
+  border-radius: 8px;
+  padding: 12px;
+  overflow-x: auto;
+  font-size: 0.8rem;
+  margin: 0 0 12px;
+  white-space: pre;
+}
+
+@media (min-width: 600px) {
+  .row {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .slider-field {
+    flex: 1 1 auto;
+    padding-top: 4px;
+  }
+}

@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig } from 'vite'
 
 // Production build emits a single self-mounting IIFE bundle (dist/widget.js)
 // that a tenant drops onto their site with data-* attributes. The dev server
@@ -6,13 +6,13 @@ import { defineConfig } from "vite";
 export default defineConfig({
   build: {
     lib: {
-      entry: "src/embed.ts",
-      name: "ChatbotWidget",
-      formats: ["iife"],
-      fileName: () => "widget.js",
+      entry: 'src/embed.ts',
+      name: 'ChatbotWidget',
+      formats: ['iife'],
+      fileName: () => 'widget.js',
     },
     rollupOptions: {
       output: { inlineDynamicImports: true },
     },
   },
-});
+})

@@ -1,0 +1,69 @@
+<div class="preview">
+  @if (loadingSession()) {
+    <div class="center-state"><mat-spinner diameter="32" /></div>
+  } @else if (sessionError()) {
+    <div class="center-state error">
+      <mat-icon>error_outline</mat-icon>
+      <p>Could not start a preview session.</p>
+      <button mat-stroked-button (click)="reset()">Try again</button>
+    </div>
+  } @else {
+    <div class="preview-head">
+      <span class="preview-title">Live preview</span>
+      <button mat-button (click)="reset()">
+        <mat-icon>refresh</mat-icon>
+        New session
+      </button>
+    </div>
+
+    <div class="thread" #scrollEl>
+      @for (msg of messages(); track $index) {
+        <div class="bubble-row" [class.user]="msg.role === 'user'">
+          <div class="bubble" [class.user]="msg.role === 'user'">
+            <span class="bubble-text">{{ msg.content }}</span>
+            @if (msg.streaming && !msg.content) {
+              <span class="typing">…</span>
+            }
+            @if (uniqueSources(msg).length > 0) {
+              <details class="sources">
+                <summary>Sources ({{ uniqueSources(msg).length }})</summary>
+                <ul>
+                  @for (name of uniqueSources(msg); track name) {
+                    <li>{{ name }}</li>
+                  }
+                </ul>
+              </details>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (!hasUserMessages() && config()?.suggested_questions?.length) {
+      <div class="suggestions">
+        @for (q of config()!.suggested_questions; track q) {
+          <button mat-stroked-button class="suggestion" (click)="ask(q)">{{ q }}</button>
+        }
+      </div>
+    }
+
+    <form class="composer" (ngSubmit)="send()">
+      <input
+        type="text"
+        name="draft"
+        [(ngModel)]="draft"
+        [disabled]="sending()"
+        placeholder="Ask the bot something…"
+        autocomplete="off"
+      />
+      <button
+        mat-flat-button
+        type="submit"
+        [disabled]="sending() || !draft.trim()"
+        aria-label="Send"
+      >
+        <mat-icon>send</mat-icon>
+      </button>
+    </form>
+  }
+</div>

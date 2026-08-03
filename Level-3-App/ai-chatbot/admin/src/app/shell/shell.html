@@ -1,0 +1,17 @@
+<mat-toolbar class="shell-toolbar">
+  <a routerLink="/" class="brand">
+    <mat-icon>smart_toy</mat-icon>
+    <span class="brand-text">Chatbot Admin</span>
+  </a>
+  <span class="spacer"></span>
+  @if (tenant(); as t) {
+    <span class="tenant-name" [title]="t.name">{{ t.name }}</span>
+  }
+  <button mat-icon-button (click)="logout()" aria-label="Log out" title="Log out">
+    <mat-icon>logout</mat-icon>
+  </button>
+</mat-toolbar>
+
+<main class="shell-body">
+  <router-outlet />
+</main>

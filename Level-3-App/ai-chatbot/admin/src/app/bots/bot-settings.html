@@ -1,0 +1,99 @@
+<form [formGroup]="form" (ngSubmit)="save()" class="settings-form">
+  <mat-card appearance="outlined" class="section">
+    <h2>Identity</h2>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>Bot name</mat-label>
+      <input matInput formControlName="name" />
+    </mat-form-field>
+
+    <mat-slide-toggle formControlName="active">
+      Active (serves the widget when on)
+    </mat-slide-toggle>
+
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>Allowed domains</mat-label>
+      <input
+        matInput
+        formControlName="allowed_domains"
+        placeholder="example.com, app.example.com"
+      />
+      <mat-hint>Comma-separated. The widget only runs on these origins.</mat-hint>
+    </mat-form-field>
+  </mat-card>
+
+  <mat-card appearance="outlined" class="section">
+    <h2>Behavior</h2>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>Welcome message</mat-label>
+      <input matInput formControlName="welcome_message" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>System prompt</mat-label>
+      <textarea
+        matInput
+        formControlName="system_prompt"
+        rows="4"
+        placeholder="Optional. Guides tone and boundaries."
+      ></textarea>
+      <mat-hint>Leave empty to use the backend default.</mat-hint>
+    </mat-form-field>
+
+    <div class="row">
+      <mat-form-field appearance="outline" class="grow">
+        <mat-label>Model</mat-label>
+        <mat-select formControlName="model">
+          @for (m of modelOptions; track m) {
+            <mat-option [value]="m">{{ m }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <div class="slider-field">
+        <label>Temperature: {{ form.controls.temperature.value }}</label>
+        <mat-slider min="0" max="2" step="0.1" discrete>
+          <input matSliderThumb formControlName="temperature" />
+        </mat-slider>
+      </div>
+    </div>
+
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>Suggested questions</mat-label>
+      <textarea
+        matInput
+        formControlName="suggested_questions"
+        rows="3"
+        placeholder="One per line"
+      ></textarea>
+      <mat-hint>Shown as quick-start chips in the widget. One per line.</mat-hint>
+    </mat-form-field>
+  </mat-card>
+
+  <mat-card appearance="outlined" class="section">
+    <h2>Appearance</h2>
+    <div class="color-field">
+      <label for="primary-color">Primary color</label>
+      <input id="primary-color" type="color" formControlName="primary_color" />
+      <span class="color-hex">{{ form.controls.primary_color.value }}</span>
+    </div>
+  </mat-card>
+
+  <div class="actions">
+    <button mat-flat-button type="submit" [disabled]="form.invalid || saving()">
+      {{ saving() ? 'Saving…' : 'Save settings' }}
+    </button>
+  </div>
+</form>
+
+<mat-card appearance="outlined" class="section embed-section">
+  <h2>Embed</h2>
+  <p class="embed-hint">
+    Paste this before the closing &lt;/body&gt; tag on your site. The widget script host is
+    finalized at deploy time.
+  </p>
+  <pre class="embed-snippet">{{ embedSnippet() }}</pre>
+  <button mat-stroked-button type="button" (click)="copyEmbed()">
+    <mat-icon>content_copy</mat-icon>
+    Copy snippet
+  </button>
+</mat-card>

@@ -1,0 +1,68 @@
+/* You can add global styles to this file, and also import other style files */
+@use '@angular/material' as mat;
+
+// Angular 21 / Material 3 theming API. `mat.theme` emits the system-level
+// design tokens (colors, typography, density) consumed by all components.
+html {
+  color-scheme: light;
+  @include mat.theme(
+    (
+      color: (
+        theme-type: light,
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+
+  // App-wide custom tokens (mobile-first base values).
+  --app-max-width: 960px;
+  --app-gap: 16px;
+  --app-radius: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
+  background: var(--mat-sys-surface-container-low, #f5f5f7);
+  color: var(--mat-sys-on-surface, #1a1a1a);
+}
+
+// Generic page container: full-width on mobile, capped + centered on larger
+// screens (mobile-first — base styles target the small viewport).
+.page {
+  width: 100%;
+  padding: var(--app-gap);
+}
+
+@media (min-width: 768px) {
+  .page {
+    max-width: var(--app-max-width);
+    margin: 0 auto;
+    padding: 24px;
+  }
+}
+
+// Toast color accents.
+.toast-success {
+  --mdc-snackbar-container-color: #1b5e20;
+  --mdc-snackbar-supporting-text-color: #ffffff;
+  --mat-snack-bar-button-color: #a5d6a7;
+}
+
+.toast-error {
+  --mdc-snackbar-container-color: #b71c1c;
+  --mdc-snackbar-supporting-text-color: #ffffff;
+  --mat-snack-bar-button-color: #ffcdd2;
+}

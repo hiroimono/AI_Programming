@@ -1,0 +1,71 @@
+<div class="knowledge">
+  <div class="upload-bar">
+    <input
+      #fileInput
+      type="file"
+      class="hidden-input"
+      accept=".pdf,.docx,.xlsx,.txt,.md,.csv"
+      (change)="onFileSelected($event)"
+    />
+    <button mat-flat-button [disabled]="uploading()" (click)="fileInput.click()">
+      <mat-icon>upload_file</mat-icon>
+      {{ uploading() ? 'Uploading…' : 'Upload document' }}
+    </button>
+    <span class="upload-hint">PDF, DOCX, XLSX, TXT, MD, CSV · up to 10 MB</span>
+  </div>
+
+  @if (uploading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (loading()) {
+    <div class="center-state"><mat-spinner diameter="32" /></div>
+  } @else if (docs().length === 0) {
+    <div class="center-state empty">
+      <mat-icon class="empty-icon">description</mat-icon>
+      <p>No documents yet. Upload files to build this bot's knowledge base.</p>
+    </div>
+  } @else {
+    <div class="doc-list">
+      @for (doc of docs(); track doc.id) {
+        <mat-card appearance="outlined" class="doc-card">
+          <div class="doc-main">
+            <mat-icon class="doc-icon">description</mat-icon>
+            <div class="doc-info">
+              <span class="doc-name" [title]="doc.file_name">{{ doc.file_name }}</span>
+              <span class="doc-meta">
+                {{ formatSize(doc.file_size_bytes) }} · {{ doc.chunk_count }} chunk(s) ·
+                {{ doc.created_at | date: 'short' }}
+              </span>
+            </div>
+            <button
+              mat-icon-button
+              color="warn"
+              (click)="confirmDelete(doc)"
+              aria-label="Remove document"
+              title="Remove document"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+
+          <div class="doc-status">
+            <span class="status-chip status-{{ doc.status }}">{{ doc.status }}</span>
+            @if (isEmptyIndex(doc)) {
+              <span class="warn-chip">
+                <mat-icon>warning</mat-icon>
+                Indexed 0 chunks — too short/empty to answer from
+              </span>
+            }
+            @if (doc.status === 'failed' && doc.error_message) {
+              <span class="warn-chip">
+                <mat-icon>error</mat-icon>
+                {{ doc.error_message }}
+              </span>
+            }
+          </div>
+        </mat-card>
+      }
+    </div>
+  }
+</div>
