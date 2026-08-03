@@ -57,7 +57,7 @@
 }
 
 .bubble.user {
-  background: var(--mat-sys-primary);
+  background: var(--preview-accent, var(--mat-sys-primary));
   color: var(--mat-sys-on-primary);
 }
 
@@ -114,7 +114,7 @@
 }
 
 .composer input:focus {
-  border-color: var(--mat-sys-primary);
+  border-color: var(--preview-accent, var(--mat-sys-primary));
 }
 
 @media (min-width: 600px) {

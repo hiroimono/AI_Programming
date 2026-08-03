@@ -1,4 +1,4 @@
-<div class="preview">
+<div class="preview" [style.--preview-accent]="config()?.primary_color || null">
   @if (loadingSession()) {
     <div class="center-state"><mat-spinner diameter="32" /></div>
   } @else if (sessionError()) {
@@ -59,6 +59,7 @@
       <button
         mat-flat-button
         type="submit"
+        [style.--mdc-filled-button-container-color]="config()?.primary_color || null"
         [disabled]="sending() || !draft.trim()"
         aria-label="Send"
       >

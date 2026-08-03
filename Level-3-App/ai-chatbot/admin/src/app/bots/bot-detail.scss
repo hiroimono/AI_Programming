@@ -11,8 +11,21 @@
 .detail-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.bot-avatar {
+  flex: 0 0 auto;
+  color: var(--mat-sys-primary);
 }
 
 .detail-header h1 {
@@ -47,4 +60,42 @@
 
 .tab-body {
   padding-top: 16px;
+}
+
+// Wider canvas than the default .page so config + preview fit side by side.
+.detail-page {
+  --app-max-width: 1200px;
+}
+
+// Mobile-first: one column — config first, live preview below (always visible).
+.workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.config-col,
+.preview-col {
+  min-width: 0;
+}
+
+.preview-col {
+  background: var(--mat-sys-surface-container-low);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--app-radius);
+  padding: 16px;
+}
+
+@media (min-width: 1024px) {
+  .workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 400px;
+    align-items: start;
+    gap: 24px;
+  }
+
+  .preview-col {
+    position: sticky;
+    top: 16px;
+  }
 }

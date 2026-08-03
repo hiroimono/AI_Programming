@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, inject, signal } from '@angular/core';
+import { Component, Input, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -13,10 +13,11 @@ import { BotPreviewComponent } from './bot-preview';
 import { BotSettingsComponent } from './bot-settings';
 
 /**
- * Bot detail shell: header (name + status) plus a three-tab workspace —
- * Settings (config), Knowledge (documents) and Preview (live test chat).
- * The Knowledge and Preview tabs are lazily rendered (matTabContent) so their
- * network work only happens when the admin actually opens them.
+ * Bot detail shell: header (name + status) plus a two-column workspace. The
+ * left column tabs between Settings (config) and Knowledge (documents); the
+ * right column hosts a Live preview that stays visible on every tab so the
+ * admin sees config changes immediately. On narrow screens the columns stack
+ * (config on top, preview below) so the preview is still always reachable.
  * `botId` is bound from the route param via withComponentInputBinding.
  */
 @Component({
@@ -36,6 +37,7 @@ import { BotSettingsComponent } from './bot-settings';
 })
 export class BotDetailComponent implements OnInit {
   @Input() botId = '';
+  @ViewChild(BotPreviewComponent) private preview?: BotPreviewComponent;
 
   private botService = inject(BotService);
   private toast = inject(ToastService);
@@ -56,8 +58,12 @@ export class BotDetailComponent implements OnInit {
     });
   }
 
-  /** Keep the header in sync after Settings saves name/status changes. */
+  /**
+   * Keep the header in sync after Settings saves, then re-mint the live preview
+   * so the new config (welcome, suggestions, color, model) is reflected at once.
+   */
   onSaved(bot: Bot): void {
     this.bot.set(bot);
+    this.preview?.reset();
   }
 }
