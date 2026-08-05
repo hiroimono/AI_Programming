@@ -14,8 +14,6 @@ Two endpoints the embeddable widget talks to before any chat happens:
 No conversation row is created here; that happens on the first chat turn (M5).
 """
 
-from __future__ import annotations
-
 import secrets
 from uuid import UUID
 
@@ -23,8 +21,9 @@ from chatbot.db import get_session, set_current_tenant
 from chatbot.deps import CurrentWidget, get_current_widget
 from chatbot.models import Bot
 from chatbot.schemas import WidgetConfigOut, WidgetSessionRequest, WidgetSessionResponse
+from chatbot.ratelimit import limiter, widget_session_limit
 from chatbot.security import create_widget_token
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -93,7 +92,9 @@ def _config_out(bot: Bot) -> WidgetConfigOut:
     response_model=WidgetSessionResponse,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit(widget_session_limit)
 async def open_widget_session(
+    request: Request,  # pylint: disable=unused-argument
     body: WidgetSessionRequest,
     origin: str | None = Header(default=None),
     session: AsyncSession = Depends(get_session),

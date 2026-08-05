@@ -18,9 +18,12 @@ from chatbot.routers.bots import router as bots_router
 from chatbot.routers.chat import router as chat_router
 from chatbot.routers.documents import router as documents_router
 from chatbot.routers.widget import router as widget_router
+from chatbot.ratelimit import limiter
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 settings = get_settings()
 
@@ -55,6 +58,12 @@ app = FastAPI(
     ),
     lifespan=lifespan,
 )
+
+# Rate limiting: expose the limiter on app.state (slowapi reads it there) and
+# map RateLimitExceeded to a 429 response. Registered before the catch-all
+# Exception handler so throttled requests return 429, not 500.
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS: the admin panel (Angular) and the widget call this API from the
 # browser, so their origins must be allow-listed via CORS_ORIGINS in .env.

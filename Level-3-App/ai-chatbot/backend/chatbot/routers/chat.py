@@ -11,8 +11,6 @@ ownership pre-check (so a bad conversation_id is a clean 404 before the stream
 starts), and formats each event dict onto the SSE wire.
 """
 
-from __future__ import annotations
-
 import json
 from typing import AsyncIterator
 
@@ -20,8 +18,9 @@ from chatbot import chat
 from chatbot.db import get_session
 from chatbot.deps import CurrentWidget, get_current_widget
 from chatbot.models import Conversation
+from chatbot.ratelimit import limiter, widget_chat_limit
 from chatbot.schemas import ChatRequest
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -61,7 +60,9 @@ async def _event_stream(
 
 
 @router.post("/chat")
+@limiter.limit(widget_chat_limit)
 async def chat_stream(
+    request: Request,  # pylint: disable=unused-argument
     body: ChatRequest,
     current: CurrentWidget = Depends(get_current_widget),
     session: AsyncSession = Depends(get_session),

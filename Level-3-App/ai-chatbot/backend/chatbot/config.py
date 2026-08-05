@@ -82,6 +82,17 @@ class Settings(BaseSettings):
     widget_token_ttl: int = Field(default=86400)
     preview_token_ttl: int = Field(default=300)
 
+    # ─── Rate limiting (M8) ─ technical abuse prevention ──────────
+    # Per-client (IP) request caps enforced by slowapi. This is NOT
+    # plan-based quota (free/paid monthly message limits) — that is a
+    # future billing-phase feature keyed on Tenant.plan + UsageEvent.
+    # Values use slowapi's "<count>/<period>" syntax and are tunable here.
+    rate_limit_enabled: bool = Field(default=True)
+    rate_limit_login: str = Field(default="5/minute")
+    rate_limit_register: str = Field(default="10/hour")
+    rate_limit_widget_session: str = Field(default="10/minute")
+    rate_limit_widget_chat: str = Field(default="30/minute")
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

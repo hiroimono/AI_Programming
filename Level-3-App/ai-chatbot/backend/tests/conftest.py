@@ -57,6 +57,12 @@ pipeline_module.session_factory = TEST_SESSION
 # The chat orchestrator (M5) opens its own sessions the same way; rebind it too.
 chat_module.session_factory = TEST_SESSION
 
+# Rate limiting is off for the bulk of the suite (tests fire many rapid
+# register/login calls); the dedicated rate-limit test toggles it on locally.
+from chatbot.ratelimit import limiter  # noqa: E402  pylint: disable=wrong-import-position
+
+limiter.enabled = False
+
 
 @pytest_asyncio.fixture
 async def client() -> AsyncIterator[AsyncClient]:

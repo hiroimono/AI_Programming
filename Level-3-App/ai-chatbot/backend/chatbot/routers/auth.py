@@ -9,8 +9,6 @@ Registration is deliberately a standalone public route so it can later be
 gated (invite-only / admin-created tenants) without touching login.
 """
 
-from __future__ import annotations
-
 from chatbot.db import get_session
 from chatbot.deps import CurrentAdmin, get_current_admin
 from chatbot.models import AdminUser, Tenant
@@ -22,8 +20,9 @@ from chatbot.schemas import (
     TenantOut,
     TokenResponse,
 )
+from chatbot.ratelimit import limiter, login_limit, register_limit
 from chatbot.security import create_admin_token, hash_password, verify_password
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -36,7 +35,9 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
     response_model=TokenResponse,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit(register_limit)
 async def register(
+    request: Request,  # pylint: disable=unused-argument
     body: RegisterRequest,
     session: AsyncSession = Depends(get_session),
 ) -> TokenResponse:
@@ -68,7 +69,9 @@ async def register(
 
 
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit(login_limit)
 async def login(
+    request: Request,  # pylint: disable=unused-argument
     body: LoginRequest,
     session: AsyncSession = Depends(get_session),
 ) -> TokenResponse:

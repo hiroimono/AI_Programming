@@ -168,10 +168,16 @@ async def test_chat_records_usage(
 
     async with TEST_SESSION() as session:
         await set_current_tenant(session, uuid.UUID(ctx["tenant_id"]))
+        # Filter by tenant_id explicitly: the app DB role has BYPASSRLS, so the
+        # RLS GUC does not scope this query. Without the filter the test would
+        # see chat usage from every other tenant in the shared dev database.
         usage = (
             (
                 await session.execute(
-                    select(UsageEvent).where(UsageEvent.event_type == "chat")
+                    select(UsageEvent).where(
+                        UsageEvent.event_type == "chat",
+                        UsageEvent.tenant_id == uuid.UUID(ctx["tenant_id"]),
+                    )
                 )
             )
             .scalars()
@@ -235,16 +241,31 @@ async def test_chat_preview_skips_usage(
 
     async with TEST_SESSION() as session:
         await set_current_tenant(session, uuid.UUID(tenant_id))
+        # Filter by tenant_id explicitly: the app DB role has BYPASSRLS, so the
+        # RLS GUC does not scope these queries against the shared dev database.
         usage = (
             (
                 await session.execute(
-                    select(UsageEvent).where(UsageEvent.event_type == "chat")
+                    select(UsageEvent).where(
+                        UsageEvent.event_type == "chat",
+                        UsageEvent.tenant_id == uuid.UUID(tenant_id),
+                    )
                 )
             )
             .scalars()
             .all()
         )
-        conv = (await session.execute(select(Conversation))).scalars().all()
+        conv = (
+            (
+                await session.execute(
+                    select(Conversation).where(
+                        Conversation.tenant_id == uuid.UUID(tenant_id)
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
     assert usage == []
     assert conv and conv[0].is_preview is True
 
