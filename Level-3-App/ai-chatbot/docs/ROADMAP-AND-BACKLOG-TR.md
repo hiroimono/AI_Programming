@@ -1,7 +1,7 @@
 # Level-3 Chatbot — Yol Haritası ve Karar Takibi (Living Doc)
 
 > Milestone durumu + **ertelenen/gelecek kararların** takibi. Her milestone
-> başında/sonunda güncellenir. Son güncelleme: **M5 sonu**.
+> başında/sonunda güncellenir. Son güncelleme: **M8 sonu**.
 
 ---
 
@@ -16,8 +16,8 @@
 | **M4** | Widget auth plane (widget/preview scope, Origin whitelist) | ✅ 10/10 test | `511b016` |
 | **M5** | Chat SSE: retrieve→guards→moderation→LLM stream→citations→UsageEvent | ✅ 8/8 test | `b27c137` |
 | **M6** | Widget (Shadow DOM, SSE, mobile-first) | ✅ | `5e1ca46` |
-| **M7** | Admin panel (Angular 21, Material 3) | ✅ current | `—` |
-| **M8** | Polish + deploy (slowapi, PII, moderation; Railway EU + Cloudflare Pages) | ⬜ sıradaki | — |
+| **M7** | Admin paneli (Angular 21, Material 3) | ✅ | `—` |
+| **M8** | Cila + deploy hazırlığı (rate limit, moderation, PII; Railway EU + Cloudflare Pages, Neon promotion) | ✅ | A `619f812` · B `0618b9b` · C `acb39d9` · D `c6db049` · E `8bdd27b` |
 
 ---
 
@@ -38,6 +38,41 @@
 
 ---
 
+## M8 notları (teslim edildi — ince dilimler A–E)
+
+- **Dilim A — teknik rate limiting (`619f812`):** slowapi IP-başına limitler
+  (login 5/dk, register 10/saat, widget session 10/dk, widget chat 30/dk),
+  hepsi `.env`'den ayarlanabilir, in-memory depo. auth/widget/chat router'larından
+  `from __future__ import annotations` kaldırıldı ki FastAPI, slowapi'nin `@wraps`
+  wrapper'ı altında Pydantic body param'larını doğru çözsün. Bu plan-bazlı kota
+  **DEĞİL** — o, `Tenant.plan` + `UsageEvent` üzerinden gelecek billing fazı işi.
+- **Dilim B — input moderation (`0618b9b`):** her kullanıcı mesajı retrieval/LLM
+  **öncesi** OpenAI `omni-moderation-latest` ile taranır. Flagged turn'ler hazır
+  bir refusal alır, `status="blocked"` ile saklanır ve **UsageEvent kaydetmez**
+  (model çağrısı yok = maliyet yok). `moderate()` **fail-open** — moderation
+  kesintisi chat'i düşürmez. Config: `moderation_enabled`, `moderation_refusal_message`.
+- **Dilim C — PII redaction (`acb39d9`):** `chatbot/redact.py` regex ile
+  email/telefon/kredi kartı/IBAN'ı typed placeholder'a çevirir. **Sadece
+  saklanan** mesaj içeriğine uygulanır (user turn + assistant answer) —
+  retrieval/LLM hâlâ ham metni görür. DB audit trail + logları PII'siz tutar
+  (GDPR). Presidio fazla ağır bulunup elendi; `redact()` swappable seam.
+- **Dilim D — deploy artefaktları, SADECE HAZIRLIK (`c6db049`):** backend
+  `Dockerfile` (non-root, PORT-bound uvicorn, HEALTHCHECK) + `.dockerignore` +
+  `railway.json`; admin `public/_redirects` (Angular SPA fallback);
+  `docs/DEPLOY-EN.md`/`-TR.md`. 3-birim topoloji (backend→Railway/Amsterdam,
+  admin→Cloudflare Pages, widget→CDN), Neon Frankfurt. **Gerçek deploy yapılmadı.**
+- **Dilim E — prod DB migration hazırlığı, SADECE HAZIRLIK (`8bdd27b`):**
+  `docs/DEPLOY-DB-MIGRATION-EN.md`/`-TR.md`. Tek head `0001_initial`,
+  owner-vs-`NOBYPASSRLS`-runtime rol ayrımı, Neon branch→production promotion,
+  offline SQL dry-run, branch-restore rollback. **Prod'a migration çalıştırılmadı.**
+
+> İşaretlenen prod takipleri (blocker değil, aşağıda izleniyor): Railway geçici
+> FS'i `storage/` için volume ister; in-memory rate limit tek replica'yı aşınca
+> Redis ister; app DB rolü şu an **RLS'i bypass ediyor** (izolasyon app-level
+> `WHERE tenant_id`'ye bağlı) — yayında ayrı runtime rolüyle düzelt.
+
+---
+
 ## Ertelenen kararlar (deferred — tool-seam bırakıldı)
 
 | Konu | Karar | Not / seam |
@@ -52,12 +87,13 @@
 
 ## Açık sorular / gelecekte netleşecek
 
-- [ ] Quota/plan enforcement nerede? (`Tenant.plan` var; free/paid limitleri M8?)
+- [ ] Quota/plan enforcement nerede? (`Tenant.plan` var; free/paid limitleri **gelecek billing fazı**, M8 değil — M8 yalnızca teknik IP-başına rate limiting getirdi.)
 - [ ] Stripe metered billing export (`UsageEvent.cost_usd` hazır) — Phase 6.
-- [ ] Moderation + PII redaction katmanı — sağlayıcı TBD; `_moderate` no-op seam M5'te bağlandı, gerçek sağlayıcı M8'de.
+- [x] Moderation + PII redaction katmanı — **M8'de tamam**: OpenAI `omni-moderation-latest` input gate (Dilim B) + saklanan içerikte regex PII redaction (Dilim C).
 - [x] Widget Origin whitelist doğrulama (`Bot.allowed_domains`) — M4'te tamam (`_origin_allowed`, boş liste = allow-all).
 - [x] Preview conversation'lar (`is_preview=true`) quota/analytics'ten dışlanıyor — M5'te doğrulandı (preview turn'de `UsageEvent` yok).
-- [ ] Prod DB migration stratejisi (Neon branch → production) + Alembic CI.
+- [x] Prod DB migration stratejisi (Neon branch → production) — **M8 Dilim E'de belgelendi** (`DEPLOY-DB-MIGRATION-TR.md`). Alembic-CI hâlâ açık.
+- [ ] **RLS-bypass düzeltmesi:** `DATABASE_URL` için ayrı `NOBYPASSRLS` runtime rolü oluştur ki RLS tenant'ları gerçekten izole etsin (owner rol migration'da kalır). SQL Dilim E dokümanlarında; yayında çalıştır.
 
 ---
 

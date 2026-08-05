@@ -1,7 +1,7 @@
 # Level-3 Chatbot — Roadmap and Decision Tracking (Living Doc)
 
 > Milestone status + tracking of **deferred/future decisions**. Updated at the
-> start/end of every milestone. Last update: **end of M5**.
+> start/end of every milestone. Last update: **end of M8**.
 
 ---
 
@@ -16,8 +16,8 @@
 | **M4** | Widget auth plane (widget/preview scope, Origin whitelist) | ✅ 10/10 tests | `511b016` |
 | **M5** | Chat SSE: retrieve→guards→moderation→LLM stream→citations→UsageEvent | ✅ 8/8 tests | `b27c137` |
 | **M6** | Widget (Shadow DOM, SSE, mobile-first) | ✅ | `5e1ca46` |
-| **M7** | Admin panel (Angular 21, Material 3) | ✅ current | `—` |
-| **M8** | Polish + deploy (slowapi, PII, moderation; Railway EU + Cloudflare Pages) | ⬜ next | — |
+| **M7** | Admin panel (Angular 21, Material 3) | ✅ | `—` |
+| **M8** | Polish + deploy prep (rate limit, moderation, PII; Railway EU + Cloudflare Pages, Neon promotion) | ✅ | A `619f812` · B `0618b9b` · C `acb39d9` · D `c6db049` · E `8bdd27b` |
 
 ---
 
@@ -38,6 +38,41 @@
 
 ---
 
+## M8 notes (delivered — thin slices A–E)
+
+- **Slice A — technical rate limiting (`619f812`):** slowapi per-IP caps (login
+  5/min, register 10/hour, widget session 10/min, widget chat 30/min), all
+  `.env`-tunable, in-memory storage. Removed `from __future__ import annotations`
+  from the auth/widget/chat routers so FastAPI resolves Pydantic body params
+  correctly under slowapi's `@wraps` wrapper. **NOT** plan-based quota — that is
+  a future billing-phase feature keyed on `Tenant.plan` + `UsageEvent`.
+- **Slice B — input moderation (`0618b9b`):** each user message is screened by
+  OpenAI `omni-moderation-latest` **before** retrieval/LLM. Flagged turns get a
+  canned refusal, persist with `status="blocked"`, and record **no** UsageEvent
+  (no model call = no cost). `moderate()` **fails open** so a moderation outage
+  never takes chat down. Config: `moderation_enabled`, `moderation_refusal_message`.
+- **Slice C — PII redaction (`acb39d9`):** `chatbot/redact.py` regex-scrubs
+  email/phone/credit-card/IBAN into typed placeholders. Applied **only to stored**
+  message content (user turn + assistant answer) — retrieval/LLM still see the raw
+  text. Keeps the DB audit trail + logs PII-free (GDPR). Presidio rejected as
+  overkill; `redact()` is a swappable seam.
+- **Slice D — deploy artifacts, PREPARE-ONLY (`c6db049`):** backend `Dockerfile`
+  (non-root, PORT-bound uvicorn, HEALTHCHECK) + `.dockerignore` + `railway.json`;
+  admin `public/_redirects` (Angular SPA fallback); `docs/DEPLOY-EN.md`/`-TR.md`.
+  3-unit topology (backend→Railway/Amsterdam, admin→Cloudflare Pages, widget→CDN),
+  Neon Frankfurt. **No real deploy performed.**
+- **Slice E — prod DB migration prep, PREPARE-ONLY (`8bdd27b`):**
+  `docs/DEPLOY-DB-MIGRATION-EN.md`/`-TR.md`. Single head `0001_initial`,
+  owner-vs-`NOBYPASSRLS`-runtime role split, Neon branch→production promotion,
+  offline SQL dry-run, branch-restore rollback. **No migration run against prod.**
+
+> Flagged prod follow-ups (not blockers, tracked below): ephemeral Railway FS
+> needs a volume for `storage/`; in-memory rate limit needs Redis past one
+> replica; the app DB role currently **bypasses RLS** (isolation relies on
+> app-level `WHERE tenant_id`) — fix with a dedicated runtime role at go-live.
+
+---
+
 ## Deferred decisions (tool-seams left in place)
 
 | Topic | Decision | Note / seam |
@@ -52,12 +87,13 @@
 
 ## Open questions / to be clarified later
 
-- [ ] Where is quota/plan enforcement? (`Tenant.plan` exists; free/paid limits in M8?)
+- [ ] Where is quota/plan enforcement? (`Tenant.plan` exists; free/paid limits are a **future billing phase**, not M8 — M8 shipped only technical per-IP rate limiting.)
 - [ ] Stripe metered billing export (`UsageEvent.cost_usd` ready) — Phase 6.
-- [ ] Moderation + PII redaction layer — provider TBD; `_moderate` no-op seam wired in M5, real provider in M8.
+- [x] Moderation + PII redaction layer — **done in M8**: OpenAI `omni-moderation-latest` input gate (Slice B) + regex PII redaction on stored content (Slice C).
 - [x] Widget Origin whitelist validation (`Bot.allowed_domains`) — done in M4 (`_origin_allowed`, empty list = allow-all).
 - [x] Preview conversations (`is_preview=true`) excluded from quota/analytics — verified in M5 (no `UsageEvent` on preview turns).
-- [ ] Prod DB migration strategy (Neon branch → production) + Alembic in CI.
+- [x] Prod DB migration strategy (Neon branch → production) — **documented in M8 Slice E** (`DEPLOY-DB-MIGRATION-EN.md`). Alembic-in-CI still open.
+- [ ] **RLS-bypass fix:** create a dedicated `NOBYPASSRLS` runtime role for `DATABASE_URL` so RLS actually isolates tenants (owner role kept for migrations). SQL provided in Slice E docs; execute at go-live.
 
 ---
 
