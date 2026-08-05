@@ -1,6 +1,39 @@
 {
   "version": "2.0.0",
   "tasks": [
+    // ─── Codebase Memory Graph UI (port 9749) ─────────
+    {
+      "label": "Codebase Memory: Graph UI",
+      "type": "process",
+      "command": "${workspaceFolder}\\.tools\\codebase-memory-mcp\\codebase-memory-mcp-ui.exe",
+      "args": ["--ui=true", "--port=9749"],
+      "options": {
+        "env": {
+          "CBM_ALLOWED_ROOT": "${workspaceFolder}",
+          "CBM_CACHE_DIR": "${workspaceFolder}\\.cbm-cache"
+        }
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": { "regexp": "." },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "server.start",
+          "endsPattern": "ui.serving"
+        }
+      },
+      "runOptions": {
+        "runOn": "folderOpen",
+        "instanceLimit": 1
+      },
+      "presentation": {
+        "group": "codebase-memory",
+        "reveal": "silent",
+        "panel": "dedicated",
+        "showReuseMessage": false
+      }
+    },
+
     // ─── App 1: AI Classifier (Level-1) ────────────────
     {
       "label": "App 1: Backend (FastAPI)",
