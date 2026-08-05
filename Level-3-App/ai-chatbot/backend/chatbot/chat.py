@@ -13,7 +13,10 @@ Design notes:
   - Grounding guard: the retriever returns [] when nothing is close enough;
     we then stream a normal reply but the system prompt tells the model to
     admit it lacks the info instead of hallucinating.
-  - Moderation is a documented no-op seam for now (provider TBD in M8).
+  - Input moderation (M8): each user message is screened by OpenAI's free
+    moderation endpoint before retrieval/LLM. A flagged turn is answered with
+    a canned refusal (persisted for audit, status "blocked") and never calls
+    the model.
   - Preview turns (is_preview) skip the UsageEvent so admin testing never
     counts toward quota/analytics.
 """
@@ -28,7 +31,7 @@ from chatbot.chunker import count_tokens
 from chatbot.config import get_settings
 from chatbot.db import session_factory, set_current_tenant
 from chatbot.embedder import embed_one
-from chatbot.llm import stream_chat
+from chatbot.llm import moderate, stream_chat
 from chatbot.models import BotConfig, Conversation, Message, UsageEvent
 from chatbot.retriever import RetrievedChunk, retrieve
 from sqlalchemy import select, update
@@ -46,13 +49,15 @@ _DEFAULT_SYSTEM_PROMPT = (
 )
 
 
-def _moderate(text: str) -> None:
-    """No-op content-moderation seam (provider chosen in M8).
+async def _is_flagged(text: str) -> bool:
+    """Return True when the input should be blocked by content moderation.
 
-    Kept as an explicit call site so wiring a real moderation API later is a
-    one-function change with no orchestration edits.
+    Honors settings.moderation_enabled so moderation can be turned off per
+    environment (and in tests) without touching the call site.
     """
-    _ = text
+    if not get_settings().moderation_enabled:
+        return False
+    return await moderate(text)
 
 
 def _build_context_block(chunks: list[RetrievedChunk]) -> str:
@@ -224,8 +229,6 @@ async def run_chat_turn(
     conversation_id: Optional[UUID] = None,
 ) -> AsyncIterator[dict]:
     """Drive one chat turn, yielding SSE event dicts as it progresses."""
-    _moderate(user_message)
-
     conv_id, assistant_id, history, system_prompt, model, temperature = (
         await _open_turn(
             tenant_id=tenant_id,
@@ -241,6 +244,35 @@ async def run_chat_turn(
         "event": "meta",
         "data": {"conversation_id": str(conv_id), "message_id": str(assistant_id)},
     }
+
+    # Input moderation gate (M8): block disallowed content before it reaches
+    # retrieval or the LLM. Stream a canned refusal and persist it as the
+    # assistant answer (audit trail, status "blocked") without a model call.
+    if await _is_flagged(user_message):
+        refusal = get_settings().moderation_refusal_message
+        yield {"event": "sources", "data": []}
+        yield {"event": "delta", "data": {"text": refusal}}
+        await _finalize_turn(
+            tenant_id=tenant_id,
+            bot_id=bot_id,
+            assistant_id=assistant_id,
+            answer=refusal,
+            sources=[],
+            status="blocked",
+            is_preview=is_preview,
+            model=model,
+            tokens_in=0,
+            tokens_out=0,
+        )
+        yield {
+            "event": "done",
+            "data": {
+                "message_id": str(assistant_id),
+                "tokens_in": 0,
+                "tokens_out": 0,
+            },
+        }
+        return
 
     answer_parts: list[str] = []
     try:

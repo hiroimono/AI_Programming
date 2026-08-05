@@ -14,13 +14,19 @@ testable) rather than parsing the fragile streamed usage chunk.
 
 from __future__ import annotations
 
+import logging
 from typing import AsyncIterator
 
 from chatbot.config import get_settings
 from openai import AsyncOpenAI
 
+_LOGGER = logging.getLogger(__name__)
+
 _SDK_MAX_RETRIES = 3
 _SDK_TIMEOUT_SECONDS = 60.0
+
+# OpenAI's free content-moderation model (multi-modal, text + image).
+_MODERATION_MODEL = "omni-moderation-latest"
 
 # Separate client from the embedder's: chat and embeddings have different
 # latency/timeout profiles, and a streaming call holds the connection longer.
@@ -80,3 +86,22 @@ async def stream_chat(
         text = getattr(delta, "content", None)
         if text:
             yield text
+
+
+async def moderate(text: str) -> bool:
+    """Return True when `text` is flagged by OpenAI's moderation endpoint.
+
+    Uses the free `omni-moderation-latest` model. Fails OPEN: on any provider
+    error the message is treated as allowed (returns False) and the failure is
+    logged, so a moderation outage never takes chat down. Moderation is a
+    defense-in-depth layer, not the only safety control.
+    """
+    try:
+        client = _get_client()
+        resp = await client.moderations.create(
+            model=_MODERATION_MODEL, input=text
+        )
+        return bool(resp.results[0].flagged)
+    except Exception:  # pylint: disable=broad-exception-caught
+        _LOGGER.warning("Moderation check failed; allowing message (fail-open)", exc_info=True)
+        return False

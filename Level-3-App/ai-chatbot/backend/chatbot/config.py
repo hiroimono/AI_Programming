@@ -93,6 +93,20 @@ class Settings(BaseSettings):
     rate_limit_widget_session: str = Field(default="10/minute")
     rate_limit_widget_chat: str = Field(default="30/minute")
 
+    # ─── Content moderation (M8) ─ input screening ────────────────
+    # Screen each incoming user message with OpenAI's free moderation
+    # endpoint (omni-moderation-latest) BEFORE it reaches retrieval or the
+    # LLM. Flagged turns are answered with a canned refusal (persisted for
+    # audit) and never call the model. Fails open on provider error so a
+    # moderation outage cannot take chat down.
+    moderation_enabled: bool = Field(default=True)
+    moderation_refusal_message: str = Field(
+        default=(
+            "I can't help with that request. Please rephrase it or ask "
+            "something else."
+        )
+    )
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

@@ -14,6 +14,7 @@ from typing import AsyncIterator, Callable
 
 import chatbot.chat as chat_module
 import pytest
+from chatbot.config import get_settings
 from chatbot.db import set_current_tenant
 from chatbot.models import Conversation, Message, UsageEvent
 from chatbot.retriever import RetrievedChunk
@@ -298,3 +299,52 @@ async def test_chat_empty_message_422(
         "/api/widget/chat", headers=ctx["headers"], json={"message": ""}
     )
     assert resp.status_code == 422, resp.text
+
+
+@pytest.mark.asyncio
+async def test_chat_blocks_flagged_input(
+    client: AsyncClient,
+    make_email: Callable[[], str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A flagged message is answered with the canned refusal, never reaches the
+    LLM, is persisted with status 'blocked', and records no usage."""
+
+    async def _flagged(_text: str) -> bool:
+        return True
+
+    def _must_not_stream(*_args, **_kwargs):
+        raise AssertionError("stream_chat must not run for a flagged turn")
+
+    monkeypatch.setattr(chat_module, "moderate", _flagged)
+    monkeypatch.setattr(chat_module, "stream_chat", _must_not_stream)
+    monkeypatch.setattr(get_settings(), "moderation_enabled", True)
+
+    ctx = await _open_session(client, make_email)
+    events = await _stream_chat_events(client, ctx["headers"], {"message": "bad"})
+
+    assert [e for e, _ in events][-1] == "done"
+    deltas = [d["text"] for e, d in events if e == "delta"]
+    refusal = get_settings().moderation_refusal_message
+    assert "".join(deltas) == refusal
+
+    conv_id = next(d for e, d in events if e == "meta")["conversation_id"]
+    msgs = await _messages(ctx["tenant_id"], conv_id)
+    assert msgs[-1].status == "blocked"
+    assert msgs[-1].content == refusal
+
+    async with TEST_SESSION() as session:
+        await set_current_tenant(session, uuid.UUID(ctx["tenant_id"]))
+        usage = (
+            (
+                await session.execute(
+                    select(UsageEvent).where(
+                        UsageEvent.event_type == "chat",
+                        UsageEvent.tenant_id == uuid.UUID(ctx["tenant_id"]),
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+    assert usage == []

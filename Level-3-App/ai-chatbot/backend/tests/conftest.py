@@ -63,6 +63,11 @@ from chatbot.ratelimit import limiter  # noqa: E402  pylint: disable=wrong-impor
 
 limiter.enabled = False
 
+# Content moderation is off for the bulk of the suite so chat tests never make
+# a real OpenAI moderation call; the dedicated moderation test enables it and
+# monkeypatches the provider.
+get_settings().moderation_enabled = False
+
 
 @pytest_asyncio.fixture
 async def client() -> AsyncIterator[AsyncClient]:
