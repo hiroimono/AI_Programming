@@ -1,5 +1,9 @@
 # Cloudflare Pages SPA fallback for the Angular admin panel.
+
 # Files under public/ are copied to the build output root, so this lands next
+
 # to index.html. Any path that isn't a real static file is served index.html
+
 # (HTTP 200) so Angular's client-side router can handle deep links / refresh.
+
 /*    /index.html   200
