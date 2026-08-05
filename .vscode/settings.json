@@ -30,12 +30,10 @@
     "**/node_modules/**": true,
     "**/venv/**": true
   },
-  "markdownlint.config": {
-    "MD020": false,
-    "MD026": false,
-    "MD034": false,
-    "MD060": false,
-    "MD040": false
+  // Cloudflare/Netlify _redirects has no extension; VS Code otherwise guesses
+  // Markdown and markdownlint mis-flags its `#` comments as headings.
+  "files.associations": {
+    "**/_redirects": "plaintext"
   },
   "chat.restoreLastPanelSession": true,
   "chat.viewProgressBadge.enabled": true,
