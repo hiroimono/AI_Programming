@@ -1,0 +1,24 @@
+# Build context excludes — keeps the image small and secrets out.
+# Secrets / local env
+.env
+.env.*
+!.env.example
+
+# Python virtualenv and caches (rebuilt from requirements.txt in-image)
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Tests are not shipped in the runtime image
+tests/
+
+# Local uploaded-file storage (runtime volume, not baked into the image)
+storage/
+
+# Tooling / VCS
+.git/
+.gitignore
+*.md
