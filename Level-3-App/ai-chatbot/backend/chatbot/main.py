@@ -13,12 +13,12 @@ from typing import AsyncIterator
 
 from chatbot.config import get_settings
 from chatbot.db import dispose_engine, ping_db
+from chatbot.ratelimit import limiter
 from chatbot.routers.auth import router as auth_router
 from chatbot.routers.bots import router as bots_router
 from chatbot.routers.chat import router as chat_router
 from chatbot.routers.documents import router as documents_router
 from chatbot.routers.widget import router as widget_router
-from chatbot.ratelimit import limiter
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse

@@ -20,8 +20,8 @@ from uuid import UUID
 from chatbot.db import get_session, set_current_tenant
 from chatbot.deps import CurrentWidget, get_current_widget
 from chatbot.models import Bot
-from chatbot.schemas import WidgetConfigOut, WidgetSessionRequest, WidgetSessionResponse
 from chatbot.ratelimit import limiter, widget_session_limit
+from chatbot.schemas import WidgetConfigOut, WidgetSessionRequest, WidgetSessionResponse
 from chatbot.security import create_widget_token
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from sqlalchemy import select

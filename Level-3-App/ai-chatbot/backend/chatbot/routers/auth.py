@@ -12,6 +12,7 @@ gated (invite-only / admin-created tenants) without touching login.
 from chatbot.db import get_session
 from chatbot.deps import CurrentAdmin, get_current_admin
 from chatbot.models import AdminUser, Tenant
+from chatbot.ratelimit import limiter, login_limit, register_limit
 from chatbot.schemas import (
     AdminOut,
     LoginRequest,
@@ -20,7 +21,6 @@ from chatbot.schemas import (
     TenantOut,
     TokenResponse,
 )
-from chatbot.ratelimit import limiter, login_limit, register_limit
 from chatbot.security import create_admin_token, hash_password, verify_password
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select

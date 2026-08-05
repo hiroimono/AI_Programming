@@ -23,6 +23,10 @@ from chatbot.config import get_settings
 from chatbot.db import get_session, normalize_neon_url
 from chatbot.main import app
 from chatbot.models import AdminUser, Tenant
+
+# Rate limiting is off for the bulk of the suite (tests fire many rapid
+# register/login calls); the dedicated rate-limit test toggles it on locally.
+from chatbot.ratelimit import limiter
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -55,11 +59,9 @@ app.dependency_overrides[get_session] = _override_get_session
 pipeline_module.session_factory = TEST_SESSION
 
 # The chat orchestrator (M5) opens its own sessions the same way; rebind it too.
-chat_module.session_factory = TEST_SESSION
-
-# Rate limiting is off for the bulk of the suite (tests fire many rapid
-# register/login calls); the dedicated rate-limit test toggles it on locally.
-from chatbot.ratelimit import limiter  # noqa: E402  pylint: disable=wrong-import-position
+chat_module.session_factory = (
+    TEST_SESSION  # noqa: E402  pylint: disable=wrong-import-position
+)
 
 limiter.enabled = False
 

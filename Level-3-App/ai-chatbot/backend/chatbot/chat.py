@@ -33,6 +33,7 @@ from chatbot.db import session_factory, set_current_tenant
 from chatbot.embedder import embed_one
 from chatbot.llm import moderate, stream_chat
 from chatbot.models import BotConfig, Conversation, Message, UsageEvent
+from chatbot.redact import redact
 from chatbot.retriever import RetrievedChunk, retrieve
 from sqlalchemy import select, update
 
@@ -144,12 +145,14 @@ async def _open_turn(
         # time) would tie them and ORDER BY created_at would be ambiguous.
         # A 1ms gap keeps history replay and display order deterministic.
         now = datetime.now(timezone.utc)
+        # Persist a PII-redacted copy of the user message. The raw `user_message`
+        # is still used downstream for embedding/LLM (redaction is storage-only).
         session.add(
             Message(
                 tenant_id=tenant_id,
                 conversation_id=conv_id,
                 role="user",
-                content=user_message,
+                content=redact(user_message),
                 status="completed",
                 created_at=now,
             )
@@ -200,10 +203,12 @@ async def _finalize_turn(
     non-preview turns) a chat UsageEvent."""
     async with session_factory() as session:
         await set_current_tenant(session, tenant_id)
+        # Redact the stored assistant answer too, in case the model echoed PII
+        # from the context or the user turn.
         await session.execute(
             update(Message)
             .where(Message.id == assistant_id)
-            .values(content=answer, sources=sources or None, status=status)
+            .values(content=redact(answer), sources=sources or None, status=status)
         )
         if not is_preview and status == "completed":
             session.add(

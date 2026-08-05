@@ -98,10 +98,10 @@ async def moderate(text: str) -> bool:
     """
     try:
         client = _get_client()
-        resp = await client.moderations.create(
-            model=_MODERATION_MODEL, input=text
-        )
+        resp = await client.moderations.create(model=_MODERATION_MODEL, input=text)
         return bool(resp.results[0].flagged)
     except Exception:  # pylint: disable=broad-exception-caught
-        _LOGGER.warning("Moderation check failed; allowing message (fail-open)", exc_info=True)
+        _LOGGER.warning(
+            "Moderation check failed; allowing message (fail-open)", exc_info=True
+        )
         return False
