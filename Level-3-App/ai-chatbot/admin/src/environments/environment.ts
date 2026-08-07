@@ -8,5 +8,5 @@
  */
 export const environment = {
   production: true,
-  apiBase: '',
+  apiBase: 'https://aichatbot-production-b8f1.up.railway.app',
 };
