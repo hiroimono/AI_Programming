@@ -291,9 +291,18 @@ async def run_chat_turn(
         yield {"event": "sources", "data": sources}
 
         # Build the chat prompt: system(+context) -> history -> user turn.
+        # An explicit "no context" marker is required (not just an absent
+        # Context section) — otherwise the model treats the grounding
+        # instruction as inapplicable and answers from its own knowledge.
         system_content = system_prompt
         if chunks:
             system_content += "\n\nContext:\n" + _build_context_block(chunks)
+        else:
+            system_content += (
+                "\n\nNo relevant context was found in the knowledge base for "
+                "this question. You do not know the answer — say so instead "
+                "of answering from your own general knowledge."
+            )
         messages: list[dict[str, str]] = [
             {"role": "system", "content": system_content},
             *history,
