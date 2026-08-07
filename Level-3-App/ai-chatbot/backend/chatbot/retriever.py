@@ -31,10 +31,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 # 500-token chunk size + a small chat context window.
 DEFAULT_K = 4
 
-# Cosine distance ceiling (0.0 = identical, 2.0 = opposite). 0.4 keeps the
-# model from being grounded on weakly-related chunks — the leading cause of
-# plausible-but-wrong answers.
-DEFAULT_MAX_DISTANCE = 0.4
+# Cosine distance ceiling (0.0 = identical, 2.0 = opposite). Empirically, with
+# text-embedding-3-small even tightly relevant chunks sit around 0.30 - 0.45
+# for casually-phrased queries (confirmed in Level-2's RAG add-on), so 0.4 is
+# too strict and silently drops on-topic chunks. 1.5 keeps genuinely unrelated
+# content out (that lands near the 2.0 ceiling) while not starving retrieval.
+DEFAULT_MAX_DISTANCE = 1.5
 
 
 @dataclass
