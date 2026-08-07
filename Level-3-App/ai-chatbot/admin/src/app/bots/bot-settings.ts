@@ -120,10 +120,11 @@ export class BotSettingsComponent implements OnInit {
 
   embedSnippet(): string {
     const apiBase = environment.apiBase || 'https://your-api-host';
+    const widgetBase = environment.widgetBase || 'https://your-widget-host';
     const tenantId = this.auth.tenant()?.id ?? '';
     return [
       '<script',
-      '  src="https://your-widget-host/widget.js"',
+      `  src="${widgetBase}/widget.js"`,
       `  data-bot-id="${this.bot.id}"`,
       `  data-tenant-id="${tenantId}"`,
       `  data-api-base="${apiBase}"`,
